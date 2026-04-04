@@ -121,7 +121,7 @@ Chaque module frontend sera traité selon la méthode suivante :
 5. Cas d’utilisation
 6. Routes frontend
 7. Pages
-8. Maquettes Stitch AI
+8. Maquettes figma et stich 
 9. Issues et sous-issues frontend
 10. Développement
 
