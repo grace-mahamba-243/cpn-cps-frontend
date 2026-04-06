@@ -1,3 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-container-high: #e5e9eb;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary-fixed: #24434f;
+  --color-surface-dim: #d5dbdd;
+  --color-secondary-container: #c7e8f6;
+  --color-on-secondary: #f2faff;
+  --color-on-tertiary-fixed: #003e39;
+  --color-on-surface-variant: #5a6062;
+  --color-error-dim: #67040d;
+  --color-primary-fixed: #85d7f9;
+  --color-primary-container: #85d7f9;
+  --color-on-secondary-container: #375662;
+  --color-on-primary-fixed-variant: #00546b;
+  --color-on-error-container: #6e0a12;
+  --color-background: #f8f9fa;
+  --color-on-surface: #2d3335;
+  --color-on-background: #2d3335;
+  --color-primary-dim: #005a74;
+  --color-on-error: #fff7f6;
+  --color-surface-tint: #006784;
+  --color-on-primary-fixed: #003545;
+  --color-tertiary-dim: #005e57;
+  --color-on-primary-container: #004a5f;
+  --color-error-container: #fa746f;
+  --color-surface-container: #ebeef0;
+  --color-on-tertiary: #e2fffa;
+  --color-secondary: #456370;
+  --color-on-primary: #f2faff;
+  --color-inverse-primary: #85d7f9;
+  --color-on-secondary-fixed-variant: #41606c;
+  --color-tertiary-fixed-dim: #71d7cd;
+  --color-surface-bright: #f8f9fa;
+  --color-outline: #767c7e;
+  --color-secondary-fixed: #c7e8f6;
+  --color-secondary-dim: #395764;
+  --color-on-tertiary-container: #00534d;
+  --color-error: #a83836;
+  --color-surface-container-low: #f1f4f5;
+  --color-tertiary: #006b64;
+  --color-inverse-on-surface: #9b9d9e;
+  --color-on-tertiary-fixed-variant: #005d57;
+  --color-surface-variant: #dee3e6;
+  --color-secondary-fixed-dim: #b9d9e8;
+  --color-outline-variant: #adb3b5;
+  --color-inverse-surface: #0c0f10;
+  --color-tertiary-container: #7fe6db;
+  --color-primary: #006784;
+  --color-tertiary-fixed: #7fe6db;
+  --color-surface: #f8f9fa;
+  --color-surface-container-highest: #dee3e6;
+  --color-primary-fixed-dim: #77c9eb;
+
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Public Sans", sans-serif;
+  --font-label: "Public Sans", sans-serif;
+}
+
 :root {
   font-family: 'Public Sans', 'Segoe UI', sans-serif;
   line-height: 1.5;

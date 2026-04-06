@@ -1,7 +1,8 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import LayoutPrive from '../layouts/LayoutPrive'
 import LayoutPublic from '../layouts/LayoutPublic'
-import ConnexionPage from '../../pages/authentification/ConnexionPage'
+import PageConnexion from '../../modules/authentification/pages/PageConnexion'
+import PageSessionExpiree from '../../modules/authentification/pages/PageSessionExpiree'
 import BibliothequeComposantsPage from '../../pages/bibliotheque-composants/BibliothequeComposantsPage'
 import PatientsPage from '../../pages/patients/PatientsPage'
 import TableauDeBordPage from '../../pages/tableau-de-bord/TableauDeBordPage'
@@ -13,8 +14,9 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route element={<LayoutPublic />}>
-          <Route index element={<ConnexionPage />} />
+          <Route index element={<PageConnexion />} />
           <Route path="/acces-refuse" element={<AccesRefusePage />} />
+          <Route path="/session-expiree" element={<PageSessionExpiree />} />
         </Route>
 
         <Route path="/tableau-de-bord" element={<LayoutPrive />}>
