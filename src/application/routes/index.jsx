@@ -2,6 +2,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import LayoutPrive from '../layouts/LayoutPrive'
 import LayoutPublic from '../layouts/LayoutPublic'
 import ConnexionPage from '../../pages/authentification/ConnexionPage'
+import BibliothequeComposantsPage from '../../pages/bibliotheque-composants/BibliothequeComposantsPage'
+import PatientsPage from '../../pages/patients/PatientsPage'
 import TableauDeBordPage from '../../pages/tableau-de-bord/TableauDeBordPage'
 import AccesRefusePage from '../../pages/erreurs/AccesRefusePage'
 import PageIntrouvable from '../../pages/erreurs/PageIntrouvable'
@@ -17,6 +19,14 @@ function AppRoutes() {
 
         <Route path="/tableau-de-bord" element={<LayoutPrive />}>
           <Route index element={<TableauDeBordPage />} />
+        </Route>
+
+        <Route path="/bibliotheque-composants" element={<LayoutPrive />}>
+          <Route index element={<BibliothequeComposantsPage />} />
+        </Route>
+
+        <Route path="/patients" element={<LayoutPrive />}>
+          <Route index element={<PatientsPage />} />
         </Route>
 
         <Route path="*" element={<PageIntrouvable />} />

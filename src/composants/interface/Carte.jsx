@@ -1,10 +1,13 @@
-function Carte({ titre, description, children }) {
+function Carte({ titre, description, actions, children, className, variant = 'standard' }) {
   return (
-    <section className="carte">
-      {(titre || description) && (
+    <section className={['carte', `carte--${variant}`, className].filter(Boolean).join(' ')}>
+      {(titre || description || actions) && (
         <header className="carte__entete">
-          {titre ? <h2 className="carte__titre">{titre}</h2> : null}
-          {description ? <p className="carte__description">{description}</p> : null}
+          <div>
+            {titre ? <h2 className="carte__titre">{titre}</h2> : null}
+            {description ? <p className="carte__description">{description}</p> : null}
+          </div>
+          {actions ? <div className="carte__actions">{actions}</div> : null}
         </header>
       )}
 

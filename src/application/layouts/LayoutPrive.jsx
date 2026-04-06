@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import BarreLaterale from '../../composants/navigation/BarreLaterale'
-import Entete from '../../composants/navigation/Entete'
+import EnteteApplication from '../../composants/navigation/EnteteApplication'
 
 function LayoutPrive() {
   return (
@@ -8,7 +8,7 @@ function LayoutPrive() {
       <BarreLaterale />
 
       <div className="layout-prive__contenu">
-        <Entete />
+        <EnteteApplication />
 
         <main className="layout-prive__principal">
           <Outlet />
