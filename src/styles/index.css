@@ -103,10 +103,7 @@ body {
   margin: 0;
   color: #2d3335;
   background: transparent;
-}
-
-a {
-  color: inherit;
+  zoom: 80%;
 }
 
 button,

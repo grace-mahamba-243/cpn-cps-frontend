@@ -1,124 +1,73 @@
-import { useState } from 'react';
-import lbbm from '../../../assets/login-bg.jpg';
-import ChampSaisieIcone from '../../../composants/interface/ChampSaisieIcone';
-import BoutonAction from '../../../composants/interface/BoutonAction';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import FormulaireConnexion from '../composants/FormulaireConnexion'
+import PanneauMarqueConnexion from '../composants/PanneauMarqueConnexion'
 
 export default function PageConnexion() {
-    const [motDePasseVisible, setMotDePasseVisible] = useState(false);
-    const [enChargement, setEnChargement] = useState(false);
+  const navigate = useNavigate()
+  const [identifiant, setIdentifiant] = useState('')
+  const [motDePasse, setMotDePasse] = useState('')
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false)
+  const [enChargement, setEnChargement] = useState(false)
+  const [messageErreur, setMessageErreur] = useState('')
 
-    const gererSoumission = (e) => {
-        e.preventDefault();
-        setEnChargement(true);
-        // Simulation d'une requête de connexion
-        setTimeout(() => {
-            setEnChargement(false);
-        }, 1500);
-    };
+  const gererSoumission = (event) => {
+    event.preventDefault()
 
-    return (
-        <>
-            <main className="relative z-30 w-full max-w-4xl mx-auto grid md:grid-cols-2 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden border border-white/20 bg-white">
-                {/* Colonne de gauche : Marque & Message avec image de fond */}
-                <div className="hidden md:flex flex-col justify-between p-10 relative text-on-primary">
-                    {/* Couche d'image en arrière-plan */}
-                    <div className="absolute inset-0 z-0">
-                        <img
-                            alt="Medical staff with baby"
-                            className="w-full h-full object-cover"
-                            src={lbbm}
-                        />
-                        <div className="absolute inset-0 bg-primary/40 mix-blend-multiply"></div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60"></div>
-                    </div>
+    if (!identifiant.trim() || !motDePasse.trim()) {
+      setMessageErreur('L identifiant ou le mot de passe est incorrect.')
+      return
+    }
 
-                    <div className="space-y-4 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-3xl" data-icon="medical_services">medical_services</span>
-                            <h1 className="text-xl font-extrabold tracking-tight">Centre de Santé Afia Himbi</h1>
-                        </div>
-                        <div className="h-1 w-12 bg-tertiary-container rounded-full"></div>
-                    </div>
+    setMessageErreur('')
+    setEnChargement(true)
 
-                    <div className="space-y-6 relative z-10">
-                        <div className="bg-white/20 backdrop-blur-md p-5 rounded-xl border border-white/30 mt-5">
-                            <p className="text-lg leading-relaxed font-headline font-semibold italic text-white">
-                                "Pour la maman et son enfant, chaque consultation est un geste de vie, d’amour et de protection."
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-white font-medium">
-                            <span className="flex items-center gap-1 drop-shadow-md">
-                                <span className="material-symbols-outlined text-base" data-icon="verified_user">verified_user</span>
-                                Portail Sécurisé
-                            </span>
-                            <span className="flex items-center gap-1 drop-shadow-md">
-                                <span className="material-symbols-outlined text-base" data-icon="maternity">pregnancy</span>
-                                Santé Maternelle
-                            </span>
-                        </div>
-                    </div>
-                </div>
+    setTimeout(() => {
+      setEnChargement(false)
+      navigate('/tableau-de-bord')
+    }, 1500)
+  }
 
-                {/* Colonne de droite : Formulaire de connexion */}
-                <div className="p-6 md:p-10 flex flex-col justify-center bg-white">
-                    <div className="mb-6 md:hidden text-center">
-                        <h1 className="text-xl font-extrabold text-primary">Centre de Santé Afia Himbi</h1>
-                    </div>
+  const gererChangementIdentifiant = (event) => {
+    setIdentifiant(event.target.value)
+    if (messageErreur) {
+      setMessageErreur('')
+    }
+  }
 
-                    <div className="mb-8 text-center md:text-left">
-                        <h2 className="text-2xl font-bold text-on-surface mb-2">Bon retour</h2>
-                        <p className="text-sm text-on-surface-variant font-medium">Accédez à votre espace professionnel</p>
-                    </div>
+  const gererChangementMotDePasse = (event) => {
+    setMotDePasse(event.target.value)
+    if (messageErreur) {
+      setMessageErreur('')
+    }
+  }
 
-                    {/* Conteneur du formulaire */}
-                    <form onSubmit={gererSoumission} className="space-y-5">
+  return (
+    <>
+      <main className="relative left-1/2 grid min-h-screen w-screen -translate-x-1/2 md:grid-cols-2">
+        <PanneauMarqueConnexion />
 
-                        <ChampSaisieIcone
-                            id="identifiant"
-                            label="Identifiant"
-                            placeholder="ex: baraka.believe.baraka@himbi.cd"
-                            icone="person"
-                        />
+        <FormulaireConnexion
+          identifiant={identifiant}
+          motDePasse={motDePasse}
+          motDePasseVisible={motDePasseVisible}
+          enChargement={enChargement}
+          messageErreur={messageErreur}
+          onIdentifiantChange={gererChangementIdentifiant}
+          onMotDePasseChange={gererChangementMotDePasse}
+          onMotDePasseVisibleChange={() => setMotDePasseVisible((visible) => !visible)}
+          onSubmit={gererSoumission}
+        />
+      </main>
 
-                        <ChampSaisieIcone
-                            id="motdepasse"
-                            label="Mot de passe"
-                            type={motDePasseVisible ? "text" : "password"}
-                            placeholder="••••••••"
-                            icone="lock"
-                            lienMotDePasseOublie="#"
-                            actionIcone={{
-                                icone: motDePasseVisible ? "visibility_off" : "visibility",
-                                onClick: () => setMotDePasseVisible(!motDePasseVisible)
-                            }}
-                        />
-
-                        {/* Bouton de soumission */}
-                        <BoutonAction
-                            type="submit"
-                            texte="Se connecter"
-                            icone="login"
-                            enChargement={enChargement}
-                            texteChargement="Vérification des accès..."
-                        />
-
-                    </form>
-
-                    <div className="mt-8 text-center">
-                        <p className="text-on-surface-variant text-xs">Besoin d'aide ?
-                            <a className="text-primary font-bold hover:underline ml-1" href="#">Contacter l'assistance technique</a>
-                        </p>
-                    </div>
-                </div>
-            </main>
-
-            {/* Bouton d'action flottant pour l'assistance */}
-            <div className="fixed bottom-6 right-6 z-50">
-                <button className="bg-tertiary text-on-tertiary w-12 h-12 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform group">
-                    <span className="material-symbols-outlined" data-icon="support_agent">support_agent</span>
-                    <span className="absolute right-full mr-4 bg-on-surface text-surface text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Assistance Directe</span>
-                </button>
-            </div>
-        </>
-    );
+      <div className="fixed bottom-8 right-8 z-50">
+        <button className="group flex h-14 w-14 items-center justify-center rounded-full bg-tertiary text-on-tertiary shadow-xl transition-transform hover:scale-110 active:scale-95">
+          <span className="material-symbols-outlined">support_agent</span>
+          <span className="absolute right-full mr-4 whitespace-nowrap rounded-lg bg-on-surface px-3 py-1 text-xs text-surface opacity-0 transition-opacity group-hover:opacity-100">
+            Assistance Directe
+          </span>
+        </button>
+      </div>
+    </>
+  )
 }
