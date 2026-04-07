@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import useAuthentification from '../../modules/authentification/hooks/useAuthentification'
 
 const liensNavigation = [
   { to: '/tableau-de-bord', label: 'Tableau de bord', abreviation: 'TB' },
@@ -6,13 +7,17 @@ const liensNavigation = [
   { to: '/bibliotheque-composants', label: 'Bibliotheque UI', abreviation: 'UI' },
 ]
 
+// Ce composant affiche la navigation laterale de l'espace prive, les raccourcis principaux
+// et l'action de deconnexion pour la session en cours.
 function BarreLaterale() {
+  const { deconnexion, utilisateurConnecte } = useAuthentification()
+
   return (
     <aside className="barre-laterale">
       <div className="barre-laterale__bloc">
         <div>
           <p className="barre-laterale__marque">Centre de Sante Himbi</p>
-          <h2 className="barre-laterale__titre">Clinical Excellence</h2>
+          <h2 className="barre-laterale__titre">{utilisateurConnecte?.nomAffichage ?? 'Clinical Excellence'}</h2>
         </div>
 
         <nav className="barre-laterale__navigation" aria-label="Navigation principale">
@@ -35,9 +40,9 @@ function BarreLaterale() {
         <button type="button" className="barre-laterale__action-principale">
           Nouvelle consultation
         </button>
-        <NavLink to="/" className="barre-laterale__deconnexion">
-          Retour a la connexion
-        </NavLink>
+        <button type="button" className="barre-laterale__deconnexion" onClick={() => deconnexion()}>
+          Deconnexion
+        </button>
       </div>
     </aside>
   )

@@ -1,31 +1,46 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import FormulaireConnexion from '../composants/FormulaireConnexion'
 import PanneauMarqueConnexion from '../composants/PanneauMarqueConnexion'
+import useAuthentification from '../hooks/useAuthentification'
 
+// Ce composant gere l'ecran de connexion, pilote le formulaire et redirige l'utilisateur
+// vers l'espace prive quand la session est ouverte avec succes.
 export default function PageConnexion() {
+  const location = useLocation()
   const navigate = useNavigate()
+  const { connexion, estConnecte, reinitialiserSessionExpiree } = useAuthentification()
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse, setMotDePasse] = useState('')
   const [motDePasseVisible, setMotDePasseVisible] = useState(false)
   const [enChargement, setEnChargement] = useState(false)
   const [messageErreur, setMessageErreur] = useState('')
+  const destinationApresConnexion = location.state?.de ?? '/tableau-de-bord'
 
-  const gererSoumission = (event) => {
-    event.preventDefault()
+  useEffect(() => {
+    reinitialiserSessionExpiree()
+  }, [reinitialiserSessionExpiree])
 
-    if (!identifiant.trim() || !motDePasse.trim()) {
-      setMessageErreur('L identifiant ou le mot de passe est incorrect.')
-      return
+  useEffect(() => {
+    if (estConnecte) {
+      navigate(destinationApresConnexion, { replace: true })
     }
+  }, [destinationApresConnexion, estConnecte, navigate])
+
+  const gererSoumission = async (event) => {
+    event.preventDefault()
 
     setMessageErreur('')
     setEnChargement(true)
 
-    setTimeout(() => {
+    try {
+      await connexion({ identifiant, motDePasse })
+      navigate(destinationApresConnexion, { replace: true })
+    } catch (error) {
+      setMessageErreur(error.message)
+    } finally {
       setEnChargement(false)
-      navigate('/tableau-de-bord')
-    }, 1500)
+    }
   }
 
   const gererChangementIdentifiant = (event) => {

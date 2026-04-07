@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+// Ce composant affiche le formulaire de connexion avec les champs, les messages d'erreur
+// et le bouton de soumission relies a la logique de la page par les props.
 function FormulaireConnexion({
   identifiant,
   motDePasse,

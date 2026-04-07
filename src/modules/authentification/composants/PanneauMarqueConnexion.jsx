@@ -1,5 +1,7 @@
 import illustrationConnexion from '../../../assets/login-bg.png'
 
+// Ce composant affiche le panneau visuel de la page de connexion avec l'image de marque
+// et le message editorial du portail clinique.
 function PanneauMarqueConnexion() {
   return (
     <aside className="relative hidden min-h-screen flex-col justify-between overflow-hidden p-12 md:flex">
