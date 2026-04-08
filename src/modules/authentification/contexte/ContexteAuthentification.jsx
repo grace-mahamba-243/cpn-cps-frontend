@@ -31,12 +31,13 @@ function lireSessionStockee() {
   }
 }
 
-function sauvegarderSession(utilisateur, expiration) {
+function sauvegarderSession(utilisateur, expiration, sessionId = null) {
   localStorage.setItem(
     CLE_STOCKAGE_SESSION,
     JSON.stringify({
       utilisateur,
       expiration,
+      sessionId,
     }),
   )
 }
@@ -61,6 +62,15 @@ function FournisseurAuthentification({ children }) {
   }
 
   const deconnexion = ({ sessionExpiree: expirationForcee = false } = {}) => {
+    const sessionCourante = lireSessionStockee()
+
+    if (sessionCourante?.utilisateur?.identifiant) {
+      void serviceAuthentification.deconnexion({
+        identifiant: sessionCourante.utilisateur.identifiant,
+        sessionId: sessionCourante.sessionId ?? null,
+      })
+    }
+
     viderMinuteurExpiration()
     nettoyerSessionStockee()
     setUtilisateurConnecte(null)
@@ -91,7 +101,7 @@ function FournisseurAuthentification({ children }) {
   const connexion = async ({ identifiant, motDePasse }) => {
     const session = await serviceAuthentification.connexion({ identifiant, motDePasse })
 
-    sauvegarderSession(session.utilisateur, session.expiration)
+    sauvegarderSession(session.utilisateur, session.expiration, session.sessionId ?? null)
     appliquerSession(session)
 
     return session.utilisateur

@@ -1,37 +1,58 @@
-const DUREE_SESSION_MS = 30 * 60 * 1000
+const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
-function pause(ms) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms)
-  })
-}
+async function lireCorpsJson(reponse) {
+  const texte = await reponse.text()
 
-function normaliserNomAffichage(identifiant) {
-  const prefixe = identifiant.split('@')[0] ?? identifiant
-
-  return prefixe
-    .split(/[._-]/)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
-    .join(' ')
-}
-
-function determinerRole(identifiant) {
-  const identifiantNormalise = identifiant.toLowerCase()
-
-  if (identifiantNormalise.startsWith('admin')) {
-    return 'Administrateur'
+  if (!texte) {
+    return null
   }
 
-  if (identifiantNormalise.startsWith('superviseur')) {
-    return 'Superviseur'
+  try {
+    return JSON.parse(texte)
+  } catch {
+    return null
   }
-
-  return 'Agent clinique'
 }
 
-// Ce service centralise la logique frontend d'authentification, simule l'appel de connexion
-// et retourne soit une session exploitable, soit un message d'erreur clair pour l'interface.
+function construireMessageErreur(reponse, corps) {
+  if (typeof corps?.message === 'string') {
+    return corps.message
+  }
+
+  if (Array.isArray(corps?.message) && corps.message.length > 0) {
+    return corps.message[0]
+  }
+
+  if (reponse.status === 401) {
+    return 'Identifiant ou mot de passe invalide.'
+  }
+
+  if (reponse.status >= 500) {
+    return 'Le serveur est indisponible pour le moment. Veuillez reessayer.'
+  }
+
+  return 'La connexion a echoue. Veuillez verifier les informations saisies.'
+}
+
+function normaliserSession(payload) {
+  const utilisateur = payload?.utilisateur
+  const expiration = Number(payload?.expiration ?? payload?.session?.expiration)
+  const sessionId = payload?.session?.id ?? null
+
+  if (!utilisateur || !Number.isFinite(expiration)) {
+    throw new Error('La reponse du serveur est incomplete pour initialiser la session.')
+  }
+
+  return {
+    utilisateur,
+    expiration,
+    sessionId,
+    message: payload?.message ?? 'Connexion reussie.',
+  }
+}
+
+// Ce service centralise les appels HTTP d'authentification et normalise les reponses
+// du backend pour les rendre directement exploitables par le frontend.
 const serviceAuthentification = {
   async connexion({ identifiant, motDePasse }) {
     const identifiantNettoye = identifiant.trim()
@@ -45,17 +66,50 @@ const serviceAuthentification = {
       throw new Error('Le mot de passe doit contenir au moins 4 caracteres.')
     }
 
-    await pause(900)
+    let reponse
 
-    return {
-      utilisateur: {
-        id: identifiantNettoye,
-        identifiant: identifiantNettoye,
-        nomAffichage: normaliserNomAffichage(identifiantNettoye),
-        role: determinerRole(identifiantNettoye),
-      },
-      expiration: Date.now() + DUREE_SESSION_MS,
-      message: 'Connexion reussie.',
+    try {
+      reponse = await fetch(`${URL_API}/auth/connexion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifiant: identifiantNettoye,
+          motDePasse: motDePasseNettoye,
+        }),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur d authentification.')
+    }
+
+    const corps = await lireCorpsJson(reponse)
+
+    if (!reponse.ok) {
+      throw new Error(construireMessageErreur(reponse, corps))
+    }
+
+    return normaliserSession(corps)
+  },
+
+  async deconnexion({ identifiant, sessionId }) {
+    if (!identifiant) {
+      return
+    }
+
+    try {
+      await fetch(`${URL_API}/auth/deconnexion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifiant,
+          sessionId,
+        }),
+      })
+    } catch {
+      return
     }
   },
 }

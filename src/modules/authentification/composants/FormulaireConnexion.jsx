@@ -8,6 +8,7 @@ function FormulaireConnexion({
   motDePasseVisible,
   enChargement,
   messageErreur,
+  formulaireValide,
   onIdentifiantChange,
   onMotDePasseChange,
   onMotDePasseVisibleChange,
@@ -40,11 +41,14 @@ function FormulaireConnexion({
               className="w-full rounded-xl border-none bg-surface-container py-3 pl-12 pr-4 text-on-surface transition-all placeholder:text-outline-variant/60 focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20"
               id="identifiant"
               onChange={onIdentifiantChange}
-              placeholder="ex: baraka.believe.@himbi.cd"
+              placeholder="Saisissez votre identifiant"
               type="text"
               value={identifiant}
             />
           </div>
+          <p className="ml-1 text-xs text-on-surface-variant">
+            Utilisez les informations de connexion attribuees a votre compte.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -92,7 +96,7 @@ function FormulaireConnexion({
         <div className="flex flex-col gap-4 pt-4">
           <button
             className="flex w-full items-center justify-center gap-3 rounded-full bg-primary py-4 text-lg font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
-            disabled={enChargement}
+            disabled={enChargement || !formulaireValide}
             type="submit"
           >
             {!enChargement ? <span className="material-symbols-outlined">login</span> : null}

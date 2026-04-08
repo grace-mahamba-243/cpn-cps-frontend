@@ -15,6 +15,7 @@ export default function PageConnexion() {
   const [motDePasseVisible, setMotDePasseVisible] = useState(false)
   const [enChargement, setEnChargement] = useState(false)
   const [messageErreur, setMessageErreur] = useState('')
+  const formulaireValide = Boolean(identifiant.trim() && motDePasse.trim())
   const destinationApresConnexion = location.state?.de ?? '/tableau-de-bord'
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function PageConnexion() {
           motDePasseVisible={motDePasseVisible}
           enChargement={enChargement}
           messageErreur={messageErreur}
+          formulaireValide={formulaireValide}
           onIdentifiantChange={gererChangementIdentifiant}
           onMotDePasseChange={gererChangementMotDePasse}
           onMotDePasseVisibleChange={() => setMotDePasseVisible((visible) => !visible)}
