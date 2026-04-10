@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import LayoutPrive from '../layouts/LayoutPrive'
 import LayoutPublic from '../layouts/LayoutPublic'
+import RedirectionSectionProtegee from './RedirectionSectionProtegee'
 import RouteInviteSeulement from './RouteInviteSeulement'
 import RouteProtegee from './RouteProtegee'
 import PageConnexion from '../../modules/authentification/pages/PageConnexion'
@@ -10,6 +11,27 @@ import PatientsPage from '../../pages/patients/PatientsPage'
 import TableauDeBordPage from '../../pages/tableau-de-bord/TableauDeBordPage'
 import AccesRefusePage from '../../pages/erreurs/AccesRefusePage'
 import PageIntrouvable from '../../pages/erreurs/PageIntrouvable'
+import PageAjoutRole from '../../modules/gestion-acces/pages/PageAjoutRole'
+import PageListeRoles from '../../modules/gestion-acces/pages/PageListeRoles'
+import PageDetailRole from '../../modules/gestion-acces/pages/PageDetailRole'
+import PageListeUtilisateurs from '../../modules/gestion-acces/pages/PageListeUtilisateurs'
+import PageAjoutUtilisateur from '../../modules/gestion-acces/pages/PageAjoutUtilisateur'
+import PageDetailUtilisateur from '../../modules/gestion-acces/pages/PageDetailUtilisateur'
+import PageModifierUtilisateur from '../../modules/gestion-acces/pages/PageModifierUtilisateur'
+import { routesAdministration, routesPrivees } from './registreRoutes'
+
+const composantsRoutesPrivees = {
+  '/tableau-de-bord': <TableauDeBordPage />,
+  '/bibliotheque-composants': <BibliothequeComposantsPage />,
+  '/patients': <PatientsPage />,
+  '/admin/utilisateurs': <PageListeUtilisateurs />,
+  '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
+  '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,
+  '/admin/utilisateurs/:userId/modifier': <PageModifierUtilisateur />,
+  '/admin/roles-acces': <PageListeRoles />,
+  '/admin/roles-acces/nouveau': <PageAjoutRole />,
+  '/admin/roles-acces/:roleCode': <PageDetailRole />,
+}
 
 // Ce composant centralise le routage de l'application et applique les protections
 // des routes publiques et privees selon l'etat courant de la session utilisateur.
@@ -30,19 +52,47 @@ function AppRoutes() {
           <Route path="/session-expiree" element={<PageSessionExpiree />} />
         </Route>
 
-        <Route element={<RouteProtegee />}>
-          <Route path="/tableau-de-bord" element={<LayoutPrive />}>
-            <Route index element={<TableauDeBordPage />} />
-          </Route>
+        <Route path="/admin" element={<RedirectionSectionProtegee groupe="admin" />} />
 
-          <Route path="/bibliotheque-composants" element={<LayoutPrive />}>
-            <Route index element={<BibliothequeComposantsPage />} />
+        {routesAdministration.map((route) => (
+          <Route
+            key={route.path}
+            element={
+              <RouteProtegee
+                rolesAutorises={route.rolesAutorises}
+                permissionsRequises={route.permissions}
+                modePermissions={route.modePermissions}
+                doitEtreActif={route.doitEtreActif}
+              />
+            }
+          >
+            <Route path={route.path} element={<LayoutPrive />}>
+              <Route index element={composantsRoutesPrivees[route.path]} />
+            </Route>
           </Route>
+        ))}
 
-          <Route path="/patients" element={<LayoutPrive />}>
-            <Route index element={<PatientsPage />} />
+        {routesPrivees
+          .filter((route) => route.groupe !== 'admin')
+          .map((route) => (
+          <Route
+            key={route.path}
+            element={
+              <RouteProtegee
+                rolesAutorises={route.rolesAutorises}
+                permissionsRequises={route.permissions}
+                modePermissions={route.modePermissions}
+                doitEtreActif={route.doitEtreActif}
+              />
+            }
+          >
+            <Route path={route.path} element={<LayoutPrive />}>
+              <Route index element={composantsRoutesPrivees[route.path]} />
+            </Route>
           </Route>
-        </Route>
+        ))}
+
+        <Route path="/gestion-acces" element={<RedirectionSectionProtegee groupe="admin" />} />
 
         <Route path="*" element={<PageIntrouvable />} />
       </Routes>

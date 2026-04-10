@@ -3,20 +3,21 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import FormulaireConnexion from '../composants/FormulaireConnexion'
 import PanneauMarqueConnexion from '../composants/PanneauMarqueConnexion'
 import useAuthentification from '../hooks/useAuthentification'
+import { obtenirRedirectionApresConnexion } from '../../../application/routes/registreRoutes'
 
 // Ce composant gere l'ecran de connexion, pilote le formulaire et redirige l'utilisateur
 // vers l'espace prive quand la session est ouverte avec succes.
 export default function PageConnexion() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { connexion, estConnecte, reinitialiserSessionExpiree } = useAuthentification()
+  const { connexion, estConnecte, utilisateurConnecte, reinitialiserSessionExpiree } = useAuthentification()
   const [identifiant, setIdentifiant] = useState('')
   const [motDePasse, setMotDePasse] = useState('')
   const [motDePasseVisible, setMotDePasseVisible] = useState(false)
   const [enChargement, setEnChargement] = useState(false)
   const [messageErreur, setMessageErreur] = useState('')
   const formulaireValide = Boolean(identifiant.trim() && motDePasse.trim())
-  const destinationApresConnexion = location.state?.de ?? '/tableau-de-bord'
+  const destinationApresConnexion = obtenirRedirectionApresConnexion(utilisateurConnecte, location.state?.de)
 
   useEffect(() => {
     reinitialiserSessionExpiree()
@@ -35,8 +36,8 @@ export default function PageConnexion() {
     setEnChargement(true)
 
     try {
-      await connexion({ identifiant, motDePasse })
-      navigate(destinationApresConnexion, { replace: true })
+      const utilisateurAuthentifie = await connexion({ identifiant, motDePasse })
+      navigate(obtenirRedirectionApresConnexion(utilisateurAuthentifie, location.state?.de), { replace: true })
     } catch (error) {
       setMessageErreur(error.message)
     } finally {
