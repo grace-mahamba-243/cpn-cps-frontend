@@ -22,12 +22,7 @@ function AccesRefusePage() {
         </div>
 
         <div className="hidden items-center gap-3 sm:flex">
-          <span className="material-symbols-outlined rounded-full bg-surface-container p-2 text-on-surface-variant">
-            language
-          </span>
-          <span className="material-symbols-outlined rounded-full bg-surface-container p-2 text-on-surface-variant">
-            help_outline
-          </span>
+         
         </div>
       </div>
 

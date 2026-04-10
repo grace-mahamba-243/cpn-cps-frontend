@@ -1,5 +1,13 @@
-import { createContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useEffect, useRef, useState } from 'react'
 import serviceAuthentification from '../../../services/api/serviceAuthentification'
+import serviceGestionAcces from '../../../services/api/serviceGestionAcces'
+import {
+  enrichirUtilisateur,
+  possedeAuMoinsUnePermission,
+  possedeToutesLesPermissions,
+  possedeUnePermission,
+  verifierAccesParPermissions,
+} from '../../gestion-acces/controle-acces'
 
 const CLE_STOCKAGE_SESSION = 'cpn-cps-session'
 
@@ -46,12 +54,57 @@ function sessionEstExpiree(expiration) {
   return !expiration || expiration <= Date.now()
 }
 
+function enrichirUtilisateurAuthentifie(utilisateur) {
+  const utilisateurLocal = serviceGestionAcces.recupererUtilisateurLocalParIdentifiant(
+    utilisateur?.identifiant,
+  )
+  const roles = serviceGestionAcces.lireEtatLocal().roles
+
+  return enrichirUtilisateur(
+    {
+      ...utilisateurLocal,
+      ...utilisateur,
+      accesSpecifiques: utilisateurLocal?.accesSpecifiques ?? utilisateur?.accesSpecifiques,
+    },
+    roles,
+  )
+}
+
+function determinerEtatSessionInitial() {
+  const session = lireSessionStockee()
+
+  if (!session) {
+    return {
+      utilisateurConnecte: null,
+      sessionExpiree: false,
+      estInitialisation: false,
+    }
+  }
+
+  if (sessionEstExpiree(session.expiration)) {
+    nettoyerSessionStockee()
+
+    return {
+      utilisateurConnecte: null,
+      sessionExpiree: true,
+      estInitialisation: false,
+    }
+  }
+
+  return {
+    utilisateurConnecte: enrichirUtilisateurAuthentifie(session.utilisateur),
+    sessionExpiree: false,
+    estInitialisation: false,
+  }
+}
+
 // Ce composant fournit l'etat global d'authentification, gere la persistance de la session
 // et expose les actions de connexion, deconnexion et expiration a toute l'application.
 function FournisseurAuthentification({ children }) {
-  const [utilisateurConnecte, setUtilisateurConnecte] = useState(null)
-  const [sessionExpiree, setSessionExpiree] = useState(false)
-  const [estInitialisation, setEstInitialisation] = useState(true)
+  const etatSessionInitial = determinerEtatSessionInitial()
+  const [utilisateurConnecte, setUtilisateurConnecte] = useState(etatSessionInitial.utilisateurConnecte)
+  const [sessionExpiree, setSessionExpiree] = useState(etatSessionInitial.sessionExpiree)
+  const [estInitialisation] = useState(etatSessionInitial.estInitialisation)
   const expirationTimeoutRef = useRef(null)
 
   const viderMinuteurExpiration = () => {
@@ -61,7 +114,7 @@ function FournisseurAuthentification({ children }) {
     }
   }
 
-  const deconnexion = ({ sessionExpiree: expirationForcee = false } = {}) => {
+  const deconnexion = useCallback(({ sessionExpiree: expirationForcee = false } = {}) => {
     const sessionCourante = lireSessionStockee()
 
     if (sessionCourante?.utilisateur?.identifiant) {
@@ -75,9 +128,10 @@ function FournisseurAuthentification({ children }) {
     nettoyerSessionStockee()
     setUtilisateurConnecte(null)
     setSessionExpiree(expirationForcee)
-  }
+  }, [])
 
-  const programmerExpiration = (expiration) => {
+  const programmerExpiration = useCallback(
+    (expiration) => {
     viderMinuteurExpiration()
 
     const delaiRestant = expiration - Date.now()
@@ -90,21 +144,27 @@ function FournisseurAuthentification({ children }) {
     expirationTimeoutRef.current = window.setTimeout(() => {
       deconnexion({ sessionExpiree: true })
     }, delaiRestant)
-  }
+    },
+    [deconnexion],
+  )
 
-  const appliquerSession = (session) => {
-    setUtilisateurConnecte(session.utilisateur)
+  const appliquerSession = useCallback(
+    (session) => {
+    setUtilisateurConnecte(enrichirUtilisateurAuthentifie(session.utilisateur))
     setSessionExpiree(false)
     programmerExpiration(session.expiration)
-  }
+    },
+    [programmerExpiration],
+  )
 
   const connexion = async ({ identifiant, motDePasse }) => {
     const session = await serviceAuthentification.connexion({ identifiant, motDePasse })
+    const utilisateurEnrichi = enrichirUtilisateurAuthentifie(session.utilisateur)
 
-    sauvegarderSession(session.utilisateur, session.expiration, session.sessionId ?? null)
-    appliquerSession(session)
+    sauvegarderSession(utilisateurEnrichi, session.expiration, session.sessionId ?? null)
+    appliquerSession({ ...session, utilisateur: utilisateurEnrichi })
 
-    return session.utilisateur
+    return utilisateurEnrichi
   }
 
   const reinitialiserSessionExpiree = () => {
@@ -115,18 +175,19 @@ function FournisseurAuthentification({ children }) {
     const session = lireSessionStockee()
 
     if (!session) {
-      setEstInitialisation(false)
       return undefined
     }
 
     if (sessionEstExpiree(session.expiration)) {
-      deconnexion({ sessionExpiree: true })
-      setEstInitialisation(false)
+      nettoyerSessionStockee()
       return undefined
     }
 
-    appliquerSession(session)
-    setEstInitialisation(false)
+    viderMinuteurExpiration()
+    expirationTimeoutRef.current = window.setTimeout(
+      () => deconnexion({ sessionExpiree: true }),
+      session.expiration - Date.now(),
+    )
 
     const synchroniserSession = () => {
       const sessionMiseAJour = lireSessionStockee()
@@ -144,16 +205,34 @@ function FournisseurAuthentification({ children }) {
       appliquerSession(sessionMiseAJour)
     }
 
+    const synchroniserConfigurationAcces = () => {
+      const sessionMiseAJour = lireSessionStockee()
+
+      if (!sessionMiseAJour) {
+        return
+      }
+
+      const utilisateurEnrichi = enrichirUtilisateurAuthentifie(sessionMiseAJour.utilisateur)
+
+      sauvegarderSession(utilisateurEnrichi, sessionMiseAJour.expiration, sessionMiseAJour.sessionId ?? null)
+      setUtilisateurConnecte(utilisateurEnrichi)
+    }
+
     window.addEventListener('storage', synchroniserSession)
+    window.addEventListener(serviceGestionAcces.evenementMiseAJour, synchroniserConfigurationAcces)
 
     return () => {
       window.removeEventListener('storage', synchroniserSession)
+      window.removeEventListener(serviceGestionAcces.evenementMiseAJour, synchroniserConfigurationAcces)
       viderMinuteurExpiration()
     }
-  }, [])
+  }, [appliquerSession, deconnexion])
+
+  const permissionsUtilisateur = utilisateurConnecte?.permissions ?? []
 
   const valeur = {
     utilisateurConnecte,
+    permissionsUtilisateur,
     estConnecte: Boolean(utilisateurConnecte),
     estNonConnecte: !utilisateurConnecte,
     etatAuthentification: utilisateurConnecte ? 'connecte' : 'non-connecte',
@@ -161,6 +240,13 @@ function FournisseurAuthentification({ children }) {
     estInitialisation,
     connexion,
     deconnexion,
+    possedePermission: (permission) => possedeUnePermission(permissionsUtilisateur, permission),
+    possedeToutesLesPermissions: (permissions) =>
+      possedeToutesLesPermissions(permissionsUtilisateur, permissions),
+    possedeAuMoinsUnePermission: (permissions) =>
+      possedeAuMoinsUnePermission(permissionsUtilisateur, permissions),
+    peutAcceder: (permissions, { mode = 'toutes' } = {}) =>
+      verifierAccesParPermissions(permissionsUtilisateur, permissions, mode),
     reinitialiserSessionExpiree,
   }
 
