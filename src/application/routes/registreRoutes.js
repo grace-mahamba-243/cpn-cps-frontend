@@ -1,8 +1,8 @@
 import { matchPath } from 'react-router-dom'
-import { PERMISSIONS, ROLES_ADMINISTRATEURS } from '../../modules/gestion-acces/controle-acces'
+import { normaliserCodeRole, PERMISSIONS, ROLES_ADMINISTRATEURS } from '../../modules/gestion-acces/controle-acces'
 import { verifierPolitiqueProtection } from './politiqueProtection'
 
-const ORDRE_SECTIONS_MENU = ['Principal', 'Administration', 'Support']
+const ORDRE_SECTIONS_MENU = ['Principal', 'Services', 'Administration', 'Support']
 
 const routesPrivees = [
   {
@@ -13,23 +13,140 @@ const routesPrivees = [
     section: 'Principal',
     fil: 'Pilotage / Tableau de bord',
     titre: 'Centre de Sante Himbi',
-    permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER],
+    permissions: [],
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
   },
   {
     path: '/patients',
-    label: 'Patients',
+    label: 'Meres',
     abreviation: 'PT',
     icone: 'person',
     section: 'Principal',
-    fil: 'Soins / Patients',
-    titre: 'Gestion des patients',
-    permissions: [PERMISSIONS.PATIENTS_CONSULTER],
+    fil: 'Reception / Liste des meres',
+    titre: 'Liste des meres',
+    permissions: [],
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
+  },
+  {
+    path: '/patients/nouveau',
+    label: 'Meres',
+    abreviation: 'NM',
+    icone: 'person_add',
+    section: 'Principal',
+    fil: 'Reception / Liste des meres / Creation',
+    titre: 'Création dossier mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/patients/:mereId',
+    label: 'Meres',
+    abreviation: 'DM',
+    icone: 'description',
+    section: 'Principal',
+    fil: 'Reception / Liste des meres / Dossier administratif',
+    titre: 'Dossier administratif mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/patients/:mereId/modifier',
+    label: 'Meres',
+    abreviation: 'MM',
+    icone: 'edit',
+    section: 'Principal',
+    fil: 'Reception / Liste des meres / Modification',
+    titre: 'Modification dossier mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/enfants',
+    label: 'Enfants',
+    abreviation: 'EN',
+    icone: 'child_care',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants',
+    titre: 'Liste des enfants',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
+    path: '/enfants/nouveau',
+    label: 'Enfants',
+    abreviation: 'NE',
+    icone: 'person_add',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants / Creation',
+    titre: 'Création dossier enfant',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/enfants/:enfantId',
+    label: 'Enfants',
+    abreviation: 'DE',
+    icone: 'description',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants / Dossier administratif',
+    titre: 'Dossier administratif enfant',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/reception',
+    label: 'Reception',
+    abreviation: 'RC',
+    icone: 'storefront',
+    section: 'Services',
+    fil: 'Services / Reception',
+    titre: 'Tableau de bord Reception',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: true,
+  },
+  {
+    path: '/rendez-vous',
+    label: 'Rendez-vous',
+    abreviation: 'RDV',
+    icone: 'calendar_today',
+    section: 'Services',
+    fil: 'Services / Rendez-vous',
+    titre: 'Liste des rendez-vous',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
+    path: '/rendez-vous/:rendezVousId',
+    label: 'Rendez-vous',
+    abreviation: 'DRV',
+    icone: 'event_note',
+    section: 'Services',
+    fil: 'Services / Rendez-vous / Detail administratif',
+    titre: 'Detail rendez-vous',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
   },
   {
     path: '/bibliotheque-composants',
@@ -125,7 +242,7 @@ const routesPrivees = [
       PERMISSIONS.ADMIN_ACCES_GERER,
     ],
     modePermissions: 'une',
-    visibleMenu: true,
+    visibleMenu: false,
     visibleEntete: true,
   },
   {
@@ -236,7 +353,25 @@ function obtenirPremiereRouteAutorisee(utilisateur, options = {}) {
   return filtrerRoutesAutorisees(utilisateur, options)[0] ?? null
 }
 
+function obtenirCheminAccueilParProfil(utilisateur) {
+  const roleNormalise = normaliserCodeRole(utilisateur?.roleCode ?? utilisateur?.role) ?? ''
+
+  if (roleNormalise === 'RECEPTION') {
+    return '/reception'
+  }
+
+  return '/tableau-de-bord'
+}
+
 function obtenirCheminAccueil(utilisateur, { groupe, fallback = '/acces-refuse' } = {}) {
+  if (!groupe) {
+    const cheminPreferentiel = obtenirCheminAccueilParProfil(utilisateur)
+
+    if (peutAccederAuChemin(cheminPreferentiel, utilisateur)) {
+      return cheminPreferentiel
+    }
+  }
+
   return obtenirPremiereRouteAutorisee(utilisateur, { groupe, visibleMenuSeulement: true })?.path ?? fallback
 }
 

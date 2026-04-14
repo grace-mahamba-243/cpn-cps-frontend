@@ -8,6 +8,11 @@ import PageConnexion from '../../modules/authentification/pages/PageConnexion'
 import PageSessionExpiree from '../../modules/authentification/pages/PageSessionExpiree'
 import BibliothequeComposantsPage from '../../pages/bibliotheque-composants/BibliothequeComposantsPage'
 import PatientsPage from '../../pages/patients/PatientsPage'
+import EnfantsPage from '../../pages/patients/EnfantsPage'
+import PageCreationDossierMere from '../../pages/patients/PageCreationDossierMere'
+import PageCreationDossierEnfant from '../../pages/patients/PageCreationDossierEnfant'
+import PageDetailDossierMere from '../../pages/patients/PageDetailDossierMere'
+import PageDetailDossierEnfant from '../../pages/patients/PageDetailDossierEnfant'
 import TableauDeBordPage from '../../pages/tableau-de-bord/TableauDeBordPage'
 import AccesRefusePage from '../../pages/erreurs/AccesRefusePage'
 import PageIntrouvable from '../../pages/erreurs/PageIntrouvable'
@@ -18,12 +23,24 @@ import PageListeUtilisateurs from '../../modules/gestion-acces/pages/PageListeUt
 import PageAjoutUtilisateur from '../../modules/gestion-acces/pages/PageAjoutUtilisateur'
 import PageDetailUtilisateur from '../../modules/gestion-acces/pages/PageDetailUtilisateur'
 import PageModifierUtilisateur from '../../modules/gestion-acces/pages/PageModifierUtilisateur'
+import PageTableauDeBordReception from '../../modules/reception/pages/PageTableauDeBordReception'
+import PageListeRendezVous from '../../modules/rendez-vous/pages/PageListeRendezVous'
+import PageDetailRendezVous from '../../modules/rendez-vous/pages/PageDetailRendezVous'
 import { routesAdministration, routesPrivees } from './registreRoutes'
 
 const composantsRoutesPrivees = {
   '/tableau-de-bord': <TableauDeBordPage />,
   '/bibliotheque-composants': <BibliothequeComposantsPage />,
   '/patients': <PatientsPage />,
+  '/patients/nouveau': <PageCreationDossierMere />,
+  '/patients/:mereId': <PageDetailDossierMere />,
+  '/patients/:mereId/modifier': <PageCreationDossierMere />,
+  '/enfants': <EnfantsPage />,
+  '/enfants/nouveau': <PageCreationDossierEnfant />,
+  '/enfants/:enfantId': <PageDetailDossierEnfant />,
+  '/reception': <PageTableauDeBordReception />,
+  '/rendez-vous': <PageListeRendezVous />,
+  '/rendez-vous/:rendezVousId': <PageDetailRendezVous />,
   '/admin/utilisateurs': <PageListeUtilisateurs />,
   '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
   '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,

@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import Bouton from '../../../composants/interface/Bouton'
 import serviceGestionAcces from '../../../services/api/serviceGestionAcces'
+import serviceRoles from '../../../services/api/serviceRoles'
+import { PERMISSIONS } from '../controle-acces'
 
 const ETAT_INITIAL_FORMULAIRE = {
   libelle: '',
   code: '',
   description: '',
-  permissions: [],
+  permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER],
 }
 
 // Ce composant affiche le formulaire de creation d un role et permet
@@ -81,12 +83,22 @@ function PageAjoutRole() {
       return
     }
 
+    if (!Array.isArray(formulaire.permissions) || formulaire.permissions.length === 0) {
+      setErreur('Veuillez selectionner au moins une permission pour ce role.')
+      return
+    }
+
     setEstEnregistrement(true)
 
     try {
-      const role = await serviceGestionAcces.creerRole({
+      const roleBackend = await serviceRoles.creerRole({
         libelle: formulaire.libelle,
         code: formulaire.code,
+      })
+
+      const role = await serviceGestionAcces.creerRole({
+        libelle: roleBackend.libelle,
+        code: roleBackend.code,
         description: formulaire.description,
         permissions: formulaire.permissions,
       })

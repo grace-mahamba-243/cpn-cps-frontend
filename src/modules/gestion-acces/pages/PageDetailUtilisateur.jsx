@@ -56,8 +56,12 @@ function determinerVariantAvatar(roleCode) {
     return 'primaire'
   }
 
-  if (roleCode === 'MEDECIN') {
+  if (roleCode === 'MEDECIN' || roleCode === 'SAGE_FEMME') {
     return 'tertiaire'
+  }
+
+  if (roleCode === 'INFIRMIERE') {
+    return 'secondaire'
   }
 
   return 'neutre'

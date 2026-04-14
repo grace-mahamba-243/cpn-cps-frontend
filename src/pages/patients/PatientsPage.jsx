@@ -1,212 +1,263 @@
-import { Link } from 'react-router-dom'
-import AvatarInitiales from '../../composants/interface/AvatarInitiales'
-import BadgeEtat from '../../composants/interface/BadgeEtat'
-import Bouton from '../../composants/interface/Bouton'
-import Carte from '../../composants/interface/Carte'
-import CarteIndicateur from '../../composants/interface/CarteIndicateur'
-import ChampRecherche from '../../composants/interface/ChampRecherche'
-import TableauDonnees from '../../composants/interface/TableauDonnees'
-import BlocTitrePage from '../../composants/partages/BlocTitrePage'
-import GroupeAvatars from '../../composants/partages/GroupeAvatars'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import Alerte from '../../composants/interface/Alerte'
+import serviceDossiersMeres from '../../services/donnees-simulees/serviceDossiersMeres'
 
-const admissionsRecentes = [
-  {
-    id: 1,
-    initiales: 'BK',
-    patient: 'Bahati Kavira',
-    reference: '1022-A',
-    suivi: 'CPS (Pediatric)',
-    statut: 'Stable',
-    varianteStatut: 'tertiaire',
-    indicateur: 'Croissance optimale',
-  },
-  {
-    id: 2,
-    initiales: 'NS',
-    patient: 'Neema Sifa',
-    reference: '1045-C',
-    suivi: 'CPN (Prenatal)',
-    statut: 'High Risk',
-    varianteStatut: 'danger',
-    indicateur: 'Anemie detectee',
-  },
-]
+const TAILLE_PAGE = 8
 
-const colonnesAdmissions = [
-  {
-    key: 'patient',
-    label: 'Patient',
-    render: (ligne) => (
-      <div className="patient-cellule">
-        <AvatarInitiales initiales={ligne.initiales} variant="secondaire" />
-        <div className="patient-cellule__texte">
-          <strong>{ligne.patient}</strong>
-          <span className="patient-cellule__ligne">ID: {ligne.reference}</span>
-        </div>
-      </div>
-    ),
-  },
-  { key: 'suivi', label: 'Type de suivi' },
-  {
-    key: 'statut',
-    label: 'Statut',
-    render: (ligne) => <BadgeEtat variant={ligne.varianteStatut}>{ligne.statut}</BadgeEtat>,
-  },
-  { key: 'indicateur', label: 'Indicateurs de sante' },
-  {
-    key: 'actions',
-    label: 'Actions',
-    align: 'droite',
-    render: () => (
-      <div className="bibliotheque__retour-actions">
-        <Bouton variant="fantome" taille="petit">Voir</Bouton>
-        <Bouton variant="clair" taille="petit">Modifier</Bouton>
-      </div>
-    ),
-  },
-]
+function construireNomComplet(mere) {
+  return [mere.nom, mere.postnom, mere.prenom].filter(Boolean).join(' ')
+}
 
-const rappels = [
-  { titre: 'Stock de vaccin tetanos', valeur: 'Faible (12 fioles)', icone: 'ST' },
-  { titre: 'Sortie communautaire planifiee', valeur: 'Demain, 08:00', icone: 'SC' },
-  { titre: 'Reunion des sages-femmes', valeur: 'Vendredi', icone: 'RM' },
-]
+function normaliserTexte(valeur = '') {
+  return valeur
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
 
+// Ce composant affiche la liste administrative des meres pour la reception.
+// Il permet la recherche anti-doublons sans exposer de donnees cliniques.
 function PatientsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const rechercheNavbar = normaliserTexte((searchParams.get('q') ?? '').trim())
+  const messageSucces = location.state?.messageSucces ?? ''
+
+  const [etat, setEtat] = useState({
+    chargement: true,
+    meres: [],
+  })
+
+  const [filtres, setFiltres] = useState({
+    rechercheRapide: '',
+    numeroDossier: '',
+    nom: '',
+    postnom: '',
+    prenom: '',
+    telephone: '',
+  })
+
+  const [pageCourante, setPageCourante] = useState(1)
+
+  useEffect(() => {
+    let estActif = true
+
+    const chargerDossiers = async () => {
+      setEtat((courant) => ({ ...courant, chargement: true }))
+      const dossiers = await serviceDossiersMeres.lister()
+
+      if (!estActif) {
+        return
+      }
+
+      setEtat({
+        chargement: false,
+        meres: dossiers,
+      })
+    }
+
+    void chargerDossiers()
+
+    return () => {
+      estActif = false
+    }
+  }, [])
+
+  useEffect(() => {
+    setPageCourante(1)
+  }, [filtres, rechercheNavbar])
+
+  const meresFiltrees = useMemo(() => {
+    const rechercheGlobale = normaliserTexte([rechercheNavbar, filtres.rechercheRapide].filter(Boolean).join(' '))
+
+    return etat.meres.filter((mere) => {
+      const nomComplet = construireNomComplet(mere)
+      const matchGlobal =
+        !rechercheGlobale ||
+        [mere.numeroDossier, nomComplet, mere.nom, mere.postnom, mere.prenom, mere.telephone, mere.adresse]
+          .filter(Boolean)
+          .some((valeur) => normaliserTexte(valeur).includes(rechercheGlobale))
+
+      const matchNumero = !filtres.numeroDossier || normaliserTexte(mere.numeroDossier).includes(normaliserTexte(filtres.numeroDossier))
+      const matchNom = !filtres.nom || normaliserTexte(mere.nom).includes(normaliserTexte(filtres.nom))
+      const matchPostnom = !filtres.postnom || normaliserTexte(mere.postnom).includes(normaliserTexte(filtres.postnom))
+      const matchPrenom = !filtres.prenom || normaliserTexte(mere.prenom).includes(normaliserTexte(filtres.prenom))
+      const matchTelephone = !filtres.telephone || normaliserTexte(mere.telephone).includes(normaliserTexte(filtres.telephone))
+
+      return matchGlobal && matchNumero && matchNom && matchPostnom && matchPrenom && matchTelephone
+    })
+  }, [etat.meres, filtres, rechercheNavbar])
+
+  const totalPages = Math.max(1, Math.ceil(meresFiltrees.length / TAILLE_PAGE))
+  const pageActive = Math.min(pageCourante, totalPages)
+  const debut = (pageActive - 1) * TAILLE_PAGE
+  const meresPage = meresFiltrees.slice(debut, debut + TAILLE_PAGE)
+
+  const majFiltre = (champ, valeur) => {
+    setFiltres((courant) => ({ ...courant, [champ]: valeur }))
+  }
+
+  const totalDossiers = etat.meres.length
+  const nouveauxDossiers = etat.meres.length
+
   return (
-    <div className="page-patients">
-      <BlocTitrePage
-        surtitre="Suivi clinique"
-        titre="Maternal Health Dashboard"
-        description="Suivi des parcours prenataux et pediatriques avec une lecture rapide des indicateurs clefs."
-        actions={
-          <>
-            <Bouton variant="secondaire">Exporter le rapport</Bouton>
-            <Bouton variant="primaire">Enregistrer un patient</Bouton>
-          </>
-        }
-      />
-
-      <section className="grille-hero-patients">
-        <Carte className="page-patients__resume">
-          <div className="resume-patient__entete">
-            <div className="resume-patient__identite">
-              <AvatarInitiales initiales="MK" taille="grand" variant="tertiaire" />
-              <div className="resume-patient__meta">
-                <h3>Mariam Kabuo</h3>
-                <p className="etat-information">Patient ID: #HMB-2024-0892</p>
-                <BadgeEtat variant="tertiaire">CPN active - 28 semaines</BadgeEtat>
-              </div>
-            </div>
-
-            <div className="resume-patient__meta">
-              <span className="bloc-titre-page__surtitre">Derniere visite</span>
-              <strong>12 oct 2023</strong>
-            </div>
-          </div>
-
-          <div className="resume-patient__grille">
-            <div>
-              <span className="etat-information">Tension arterielle</span>
-              <strong>120/80 mmHg</strong>
-            </div>
-            <div>
-              <span className="etat-information">Prise de poids</span>
-              <strong>+8.2 kg</strong>
-            </div>
-            <div>
-              <span className="etat-information">Rythme cardiaque foetal</span>
-              <strong>145 bpm</strong>
-            </div>
-            <div>
-              <span className="etat-information">Evaluation du risque</span>
-              <strong>Faible</strong>
-            </div>
-          </div>
-        </Carte>
-
-        <Carte className="action-rapide">
-          <span className="action-rapide__icone">NC</span>
-          <div>
-            <h3>Nouvelle consultation</h3>
-            <p className="hero-tableau-de-bord__description">
-              Lancez instantanement une nouvelle session CPN ou CPS depuis ce point d entree.
-            </p>
-          </div>
-          <Bouton variant="clair">Demarrer</Bouton>
-        </Carte>
-      </section>
-
-      <section className="filtres-patients">
-        <div className="filtres-patients__recherche">
-          <ChampRecherche placeholder="Filtrer par nom, ID ou localite..." />
+    <div className="mx-auto max-w-7xl space-y-10 px-8 pb-16 pt-24">
+      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div>
+          <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-on-surface">Dossiers des Mères</h1>
+          <p className="max-w-2xl text-lg text-on-surface-variant">
+            Consultez, gérez et créez les dossiers d enregistrement pour les patientes du centre de santé.
+          </p>
         </div>
 
-        <div className="filtres-patients__actions">
-          <button type="button" className="puce-filtre">Tous les patients</button>
-          <button type="button" className="puce-filtre puce-filtre--active">CPN actifs</button>
-          <button type="button" className="puce-filtre">CPS actifs</button>
-          <button type="button" className="puce-filtre">Risque eleve</button>
-        </div>
-      </section>
-
-      <section className="bibliotheque__table">
-        <div className="bibliotheque__table-entete">
-          <h3>Admissions recentes</h3>
-          <Link to="/patients" className="formulaire-connexion__lien">
-            Voir tout le registre
-          </Link>
-        </div>
-        <TableauDonnees colonnes={colonnesAdmissions} lignes={admissionsRecentes} />
-      </section>
-
-      <div className="grille-insights">
-        <section className="rappels-critiques">
-          <h3>Indicateurs cliniques</h3>
-          <div className="grille-insights">
-            <CarteIndicateur
-              titre="Charge de la structure"
-              valeur="84%"
-              description="occupation des equipes"
-              variation="+12% vs semaine precedente"
-              variant="primaire"
-            />
-            <CarteIndicateur
-              titre="Taux de vaccination"
-              valeur="92.5%"
-              description="couverture actuelle"
-              variation="objectif: 95%"
-              variant="tertiaire"
-            />
-          </div>
-        </section>
-
-        <section className="rappels-critiques">
-          <h3>Rappels critiques</h3>
-          <div className="liste-rappels">
-            {rappels.map((rappel) => (
-              <div key={rappel.titre} className="liste-rappels__item">
-                <div className="liste-rappels__groupe">
-                  <span className="liste-rappels__icone">{rappel.icone}</span>
-                  <span>{rappel.titre}</span>
-                </div>
-                <strong>{rappel.valeur}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+          onClick={() => navigate('/patients/nouveau')}
+        >
+          <span className="material-symbols-outlined">add</span>
+          <span>Nouvelle mère</span>
+        </button>
       </div>
 
-      <Carte titre="Patients suivis ce mois" description="Exemple de regroupement visuel reutilisable dans les autres modules.">
-        <GroupeAvatars
-          elements={[
-            { initiales: 'AM', variant: 'primaire' },
-            { initiales: 'BK', variant: 'tertiaire' },
-            { initiales: 'NS', variant: 'danger' },
-          ]}
-          surplus={39}
-        />
-      </Carte>
+      {messageSucces ? (
+        <Alerte type="succes" titre="Dossier enregistré">
+          {messageSucces}
+        </Alerte>
+      ) : null}
+
+      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
+        <p className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
+          Cette page est strictement administrative. Aucune donnée clinique n est affichée ni accessible depuis cette liste.
+        </p>
+      </div>
+
+      {/* Champ de recherche rapide supprimé à la demande */}
+
+      <div className="rounded-xl bg-surface-container-lowest shadow-sm">
+        {etat.chargement ? (
+          <div className="flex items-center gap-3 px-6 py-10 text-on-surface-variant">
+            <span className="material-symbols-outlined">hourglass_top</span>
+            <p>Chargement de la liste des mères...</p>
+          </div>
+        ) : meresPage.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl text-outline-variant">search_off</span>
+            <div className="space-y-1">
+              <p className="text-lg font-bold text-on-surface">Aucun résultat</p>
+              <p className="text-sm">Aucune mère ne correspond à votre recherche. Vérifiez le numéro de dossier, le nom ou le téléphone pour éviter les doublons.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="bg-surface-container-low">
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Numéro dossier</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Nom complet</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Âge</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Téléphone</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Adresse</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Enregistrement</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {meresPage.map((mere, index) => (
+                    <tr
+                      key={mere.id}
+                      className={
+                        index % 2 === 1
+                          ? 'group bg-surface-container-low/30 transition-colors hover:bg-surface-container'
+                          : 'group transition-colors hover:bg-surface-container'
+                      }
+                    >
+                      <td className="px-6 py-6 font-mono font-bold text-cyan-700">{mere.numeroDossier}</td>
+                      <td className="px-6 py-6 font-bold text-on-surface">{construireNomComplet(mere)}</td>
+                      <td className="px-6 py-6 text-on-surface-variant">{mere.age} ans</td>
+                      <td className="px-6 py-6 text-on-surface-variant">{mere.telephone}</td>
+                      <td className="px-6 py-6 text-on-surface-variant">{mere.adresse}</td>
+                      <td className="px-6 py-6 text-on-surface-variant">{mere.dateEnregistrement}</td>
+                      <td className="px-6 py-6">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 rounded-full border border-outline-variant px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                          onClick={() => navigate(`/patients/${mere.id}`)}
+                        >
+                          Voir dossier
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between bg-surface-container-low px-6 py-6">
+              <span className="text-sm text-on-surface-variant">
+                Affichage de {meresFiltrees.length === 0 ? 0 : debut + 1} à {Math.min(debut + TAILLE_PAGE, meresFiltrees.length)} sur {meresFiltrees.length} dossiers
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant text-on-surface-variant transition-all hover:bg-surface hover:text-primary disabled:opacity-40"
+                  onClick={() => setPageCourante((page) => Math.max(1, page - 1))}
+                  disabled={pageActive === 1}
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                {Array.from({ length: totalPages }, (_, index) => index + 1).slice(0, 5).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={
+                      page === pageActive
+                        ? 'flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-on-primary'
+                        : 'flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container'
+                    }
+                    onClick={() => setPageCourante(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant text-on-surface-variant transition-all hover:bg-surface hover:text-primary disabled:opacity-40"
+                  onClick={() => setPageCourante((page) => Math.min(totalPages, page + 1))}
+                  disabled={pageActive === totalPages}
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="relative overflow-hidden rounded-xl bg-primary p-6">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dim opacity-100" />
+          <div className="relative z-10">
+            <span className="material-symbols-outlined mb-4 block text-primary-container">group_add</span>
+            <div className="text-3xl font-extrabold text-on-primary">{nouveauxDossiers}</div>
+            <div className="text-sm uppercase tracking-widest text-on-primary/80">Nouveaux dossiers</div>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-secondary-container p-6">
+          <span className="material-symbols-outlined mb-4 block text-secondary">event_note</span>
+          <div className="text-3xl font-extrabold text-on-secondary-container">{totalDossiers}</div>
+          <div className="text-sm uppercase tracking-widest text-on-secondary-container/80">Total dossiers actifs</div>
+        </div>
+      </div>
     </div>
   )
 }

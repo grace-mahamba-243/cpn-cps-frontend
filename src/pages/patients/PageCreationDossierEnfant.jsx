@@ -1,0 +1,257 @@
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Alerte from '../../composants/interface/Alerte'
+import serviceDossiersEnfants from '../../services/donnees-simulees/serviceDossiersEnfants'
+
+function genererNumeroFiche() {
+  const suffixe = String(Date.now()).slice(-4)
+  return `EF-${new Date().getFullYear()}-${suffixe}`
+}
+
+function dateDuJourIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+const ETAT_INITIAL = {
+  numeroFiche: genererNumeroFiche(),
+  nom: '',
+  postnom: '',
+  prenom: '',
+  sexe: '',
+  dateNaissance: '',
+  nomMere: '',
+  nomPere: '',
+  telephone: '',
+  adresse: '',
+  dateEnregistrement: dateDuJourIso(),
+}
+
+function Champ({ label, obligatoire = false, erreur, children }) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-bold text-on-surface">
+        {label}
+        {obligatoire ? <span className="ml-1 text-error">*</span> : null}
+      </span>
+      {children}
+      {erreur ? <span className="text-xs font-semibold text-error">{erreur}</span> : null}
+    </label>
+  )
+}
+
+function valider(formulaire) {
+  const erreurs = {}
+
+  if (!formulaire.nom.trim()) {
+    erreurs.nom = 'Le nom de l enfant est obligatoire.'
+  }
+  if (!formulaire.postnom.trim()) {
+    erreurs.postnom = 'Le postnom de l enfant est obligatoire.'
+  }
+  if (!formulaire.sexe) {
+    erreurs.sexe = 'Le sexe est obligatoire.'
+  }
+  if (!formulaire.dateNaissance) {
+    erreurs.dateNaissance = 'La date de naissance est obligatoire.'
+  }
+  if (!formulaire.nomMere.trim()) {
+    erreurs.nomMere = 'Le nom de la mère est obligatoire.'
+  }
+  if (!formulaire.telephone.trim()) {
+    erreurs.telephone = 'Le téléphone est obligatoire.'
+  }
+
+  return erreurs
+}
+
+// Ce composant permet à la réception de créer un dossier administratif enfant.
+// Il reste limité aux informations d'identification et de contact, sans données cliniques.
+function PageCreationDossierEnfant() {
+  const navigate = useNavigate()
+  const [formulaire, setFormulaire] = useState(ETAT_INITIAL)
+  const [erreurs, setErreurs] = useState({})
+  const [messageErreur, setMessageErreur] = useState('')
+  const [estEnregistrement, setEstEnregistrement] = useState(false)
+
+  const nomComplet = useMemo(() => {
+    return [formulaire.nom, formulaire.postnom, formulaire.prenom].filter(Boolean).join(' ')
+  }, [formulaire.nom, formulaire.postnom, formulaire.prenom])
+
+  const mettreAJourChamp = (champ, valeur) => {
+    setFormulaire((courant) => ({ ...courant, [champ]: valeur }))
+    setErreurs((courant) => {
+      if (!courant[champ]) {
+        return courant
+      }
+
+      const prochainesErreurs = { ...courant }
+      delete prochainesErreurs[champ]
+      return prochainesErreurs
+    })
+
+    if (messageErreur) {
+      setMessageErreur('')
+    }
+  }
+
+  const enregistrer = async (event) => {
+    event.preventDefault()
+
+    const erreursTrouvees = valider(formulaire)
+    setErreurs(erreursTrouvees)
+
+    if (Object.keys(erreursTrouvees).length > 0) {
+      setMessageErreur('Veuillez corriger les champs obligatoires avant de continuer.')
+      return
+    }
+
+    setEstEnregistrement(true)
+
+    try {
+      await serviceDossiersEnfants.creer(formulaire)
+
+      navigate('/enfants', {
+        replace: true,
+        state: {
+          messageSucces: `Le dossier administratif de ${nomComplet} a été créé avec succès.`,
+        },
+      })
+    } catch {
+      setMessageErreur('L enregistrement a échoué. Veuillez réessayer.')
+      setEstEnregistrement(false)
+      return
+    }
+
+    setEstEnregistrement(false)
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6 px-8 py-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <nav className="mb-2 flex items-center gap-2 text-sm text-on-surface-variant">
+            <span>Enfants</span>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span className="font-medium text-primary">Nouveau Dossier Administratif</span>
+          </nav>
+          <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">Centre de Santé Afia Himbi</h2>
+          <p className="mt-1 text-on-surface-variant">Enregistrement d un nouveau profil administratif pour enfant.</p>
+        </div>
+        <button
+          type="button"
+          className="rounded-full border border-primary/20 px-6 py-2.5 text-sm font-semibold text-primary transition-all hover:bg-primary/10"
+          onClick={() => navigate('/enfants')}
+        >
+          Retour à la liste
+        </button>
+      </div>
+
+      {messageErreur ? (
+        <Alerte type="erreur" titre="Vérification nécessaire">
+          {messageErreur}
+        </Alerte>
+      ) : null}
+
+      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
+        <p className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
+          Ce formulaire est limité au dossier administratif enfant. Aucune donnée clinique de suivi, nutrition ou vaccination n est saisie ici.
+        </p>
+      </div>
+
+      <form className="space-y-6" onSubmit={enregistrer}>
+        <section className="rounded-xl bg-surface-container-low p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-tertiary">badge</span>
+            <h3 className="text-2xl font-bold text-on-surface">Identité de l enfant</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Champ label="Numéro fiche">
+              <input
+                type="text"
+                value={formulaire.numeroFiche}
+                readOnly
+                disabled
+                className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm font-semibold outline-none disabled:cursor-not-allowed"
+              />
+            </Champ>
+
+            <Champ label="Date d enregistrement">
+              <input
+                type="date"
+                value={formulaire.dateEnregistrement}
+                readOnly
+                disabled
+                className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none disabled:cursor-not-allowed"
+              />
+            </Champ>
+
+            <div className="hidden lg:block" />
+
+            <Champ label="Nom" obligatoire erreur={erreurs.nom}>
+              <input type="text" value={formulaire.nom} onChange={(event) => mettreAJourChamp('nom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Postnom" obligatoire erreur={erreurs.postnom}>
+              <input type="text" value={formulaire.postnom} onChange={(event) => mettreAJourChamp('postnom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Prénom">
+              <input type="text" value={formulaire.prenom} onChange={(event) => mettreAJourChamp('prenom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Sexe" obligatoire erreur={erreurs.sexe}>
+              <select value={formulaire.sexe} onChange={(event) => mettreAJourChamp('sexe', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                <option value="">Sélectionner</option>
+                <option value="F">F</option>
+                <option value="M">M</option>
+              </select>
+            </Champ>
+
+            <Champ label="Date de naissance" obligatoire erreur={erreurs.dateNaissance}>
+              <input type="date" value={formulaire.dateNaissance} onChange={(event) => mettreAJourChamp('dateNaissance', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+          </div>
+        </section>
+
+        <section className="rounded-xl bg-surface-container-low p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">family_restroom</span>
+            <h3 className="text-2xl font-bold text-on-surface">Responsables</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Champ label="Nom de la mère" obligatoire erreur={erreurs.nomMere}>
+              <input type="text" value={formulaire.nomMere} onChange={(event) => mettreAJourChamp('nomMere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Nom du père">
+              <input type="text" value={formulaire.nomPere} onChange={(event) => mettreAJourChamp('nomPere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Téléphone" obligatoire erreur={erreurs.telephone}>
+              <input type="tel" value={formulaire.telephone} onChange={(event) => mettreAJourChamp('telephone', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+
+            <Champ label="Adresse">
+              <input type="text" value={formulaire.adresse} onChange={(event) => mettreAJourChamp('adresse', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+            </Champ>
+          </div>
+        </section>
+
+        <div className="flex justify-end gap-4 border-t border-surface-container-high pt-4">
+          <button type="button" className="rounded-full px-8 py-2.5 text-sm font-semibold text-on-surface-variant transition-all hover:bg-surface-container-highest" onClick={() => navigate('/enfants')} disabled={estEnregistrement}>
+            Annuler
+          </button>
+          <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-10 py-3 font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70" disabled={estEnregistrement}>
+            <span className="material-symbols-outlined">save</span>
+            {estEnregistrement ? 'Enregistrement en cours...' : 'Enregistrer le dossier'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+export default PageCreationDossierEnfant

@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import Bouton from '../../../composants/interface/Bouton'
 import serviceUtilisateurs from '../../../services/api/serviceUtilisateurs'
+import { ROLES_PAR_DEFAUT } from '../controle-acces'
+
+const ROLES_CREATION_UTILISATEUR = ROLES_PAR_DEFAUT.map((role) => ({
+  code: role.code,
+  libelle: role.libelle,
+}))
 
 const ETAT_INITIAL_FORMULAIRE = {
   nomComplet: '',
@@ -41,6 +47,11 @@ function PageAjoutUtilisateur() {
 
     if (!formulaire.sexe) {
       setErreur('Veuillez selectionner le sexe.')
+      return
+    }
+
+    if (!formulaire.roleCode) {
+      setErreur('Ajoutez d abord un role avant de creer un utilisateur.')
       return
     }
 
@@ -152,14 +163,12 @@ function PageAjoutUtilisateur() {
           <div className="ajout-utilisateur__grille">
             <label className="ajout-utilisateur__champ">
               <span>Rôle</span>
-              <select
-                value={formulaire.roleCode}
-                onChange={(event) => mettreAJourChamp('roleCode', event.target.value)}
-              >
-                <option value="RECEPTION">Réceptionniste</option>
-                <option value="MEDECIN">Médecin</option>
-                <option value="ADMIN">Administrateur</option>
-                <option value="SUPER_ADMIN">Super administrateur</option>
+              <select value={formulaire.roleCode} onChange={(event) => mettreAJourChamp('roleCode', event.target.value)}>
+                {ROLES_CREATION_UTILISATEUR.map((role) => (
+                  <option key={role.code} value={role.code}>
+                    {role.libelle}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -222,7 +231,11 @@ function PageAjoutUtilisateur() {
             Annuler
           </button>
 
-          <Bouton type="submit" variant="primaire" disabled={estEnregistrement}>
+          <Bouton
+            type="submit"
+            variant="primaire"
+            disabled={estEnregistrement}
+          >
             <span className="material-symbols-outlined">person_add</span>
             {estEnregistrement ? 'Enregistrement...' : "Enregistrer l'utilisateur"}
           </Bouton>

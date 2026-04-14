@@ -1,7 +1,5 @@
 import {
   CATALOGUE_PERMISSIONS,
-  PERMISSIONS,
-  ROLES_PAR_DEFAUT,
   calculerPermissionsUtilisateur,
   enrichirUtilisateur,
   obtenirRoleParCode,
@@ -12,88 +10,17 @@ const CLE_STOCKAGE_GESTION_ACCES = 'cpn-cps-gestion-acces'
 const EVENEMENT_GESTION_ACCES = 'cpn-cps-gestion-acces-mis-a-jour'
 
 const ETAT_PAR_DEFAUT = Object.freeze({
-  roles: ROLES_PAR_DEFAUT.map((role) => ({
-    ...role,
-    permissions: [...role.permissions],
-  })),
-  utilisateurs: [
-    {
-      id: 'usr-001',
-      identifiant: 'superadmin',
-      nomAffichage: 'Mireille Mumbere',
-      roleCode: 'SUPER_ADMIN',
-      actif: true,
-      sexe: 'F',
-      dateNaissance: '1989-03-14',
-      telephone: '+243 970 000 111',
-      email: 'mireille.mumbere@afiahimbi.cd',
-      adresse: 'Quartier Himbi 2, Goma',
-      unite: 'Direction generale',
-      dernierAccesAt: '2026-04-09T07:10:00.000Z',
-      accesSpecifiques: { ajoutes: [], retires: [] },
-    },
-    {
-      id: 'usr-002',
-      identifiant: 'admin',
-      nomAffichage: 'Josue Safari',
-      roleCode: 'ADMIN',
-      actif: true,
-      sexe: 'M',
-      dateNaissance: '1990-08-02',
-      telephone: '+243 976 120 450',
-      email: 'josue.safari@afiahimbi.cd',
-      adresse: 'Avenue du Lac, Himbi',
-      unite: 'Administration',
-      dernierAccesAt: '2026-04-09T06:25:00.000Z',
-      accesSpecifiques: { ajoutes: [], retires: [] },
-    },
-    {
-      id: 'usr-003',
-      identifiant: 'dr.mwamba',
-      nomAffichage: 'Dr Sarah Mwamba',
-      roleCode: 'MEDECIN',
-      actif: true,
-      sexe: 'F',
-      dateNaissance: '1988-05-12',
-      telephone: '+243 812 345 678',
-      email: 'sarah.mwamba@afiahimbi.cd',
-      adresse: 'Av. du Lac, Quartier Himbi, Goma, RDC',
-      unite: 'Maternite',
-      dernierAccesAt: '2026-04-08T14:48:00.000Z',
-      accesSpecifiques: { ajoutes: [], retires: [] },
-    },
-    {
-      id: 'usr-004',
-      identifiant: 'reception1',
-      nomAffichage: 'Aline Kavira',
-      roleCode: 'RECEPTION',
-      actif: true,
-      sexe: 'F',
-      dateNaissance: '1994-11-25',
-      telephone: '+243 811 220 003',
-      email: 'aline.kavira@afiahimbi.cd',
-      adresse: 'Katindo, Goma',
-      unite: 'Accueil',
-      dernierAccesAt: '2026-04-08T12:05:00.000Z',
-      accesSpecifiques: { ajoutes: [PERMISSIONS.BIBLIOTHEQUE_CONSULTER], retires: [] },
-    },
-    {
-      id: 'usr-005',
-      identifiant: 'audit',
-      nomAffichage: 'Equipe audit',
-      roleCode: 'OBSERVATEUR',
-      actif: false,
-      sexe: '',
-      dateNaissance: null,
-      telephone: null,
-      email: 'audit@afiahimbi.cd',
-      adresse: null,
-      unite: 'Qualite',
-      dernierAccesAt: '2026-04-02T09:20:00.000Z',
-      accesSpecifiques: { ajoutes: [], retires: [] },
-    },
-  ],
+  roles: [],
+  utilisateurs: [],
 })
+
+function normaliserRole(role) {
+  return {
+    ...role,
+    estSysteme: false,
+    permissions: Array.isArray(role?.permissions) ? trierCodesPermission(role.permissions) : [],
+  }
+}
 
 function peutUtiliserStockage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -115,7 +42,9 @@ function normaliserUtilisateur(utilisateur) {
 
 function clonerEtat(etat) {
   return {
-    roles: obtenirRolesActifs(etat.roles),
+    roles: obtenirRolesActifs(etat.roles)
+      .filter((role) => role?.estSysteme !== true)
+      .map(normaliserRole),
     utilisateurs: etat.utilisateurs.map(normaliserUtilisateur),
   }
 }
@@ -413,6 +342,12 @@ const serviceGestionAcces = {
         email: donneesUtilisateur.email ?? utilisateur.email ?? null,
         adresse: donneesUtilisateur.adresse ?? utilisateur.adresse ?? null,
         unite: donneesUtilisateur.unite ?? utilisateur.unite ?? 'Service non renseigne',
+        accesSpecifiques: donneesUtilisateur.accesSpecifiques
+          ? {
+              ajoutes: trierCodesPermission(donneesUtilisateur.accesSpecifiques.ajoutes ?? []),
+              retires: trierCodesPermission(donneesUtilisateur.accesSpecifiques.retires ?? []),
+            }
+          : utilisateur.accesSpecifiques,
       })
 
       return utilisateurMisAJour
