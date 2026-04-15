@@ -1,35 +1,230 @@
 import { matchPath } from 'react-router-dom'
-import { PERMISSIONS, ROLES_ADMINISTRATEURS } from '../../modules/gestion-acces/controle-acces'
+import { normaliserCodeRole, PERMISSIONS, ROLES_ADMINISTRATEURS } from '../../modules/gestion-acces/controle-acces'
 import { verifierPolitiqueProtection } from './politiqueProtection'
 
-const ORDRE_SECTIONS_MENU = ['Principal', 'Administration', 'Support']
+const ORDRE_SECTIONS_MENU = ['Principal', 'Services', 'Administration', 'Support']
 
 const routesPrivees = [
   {
-    path: '/tableau-de-bord',
-    label: 'Dashboard',
-    abreviation: 'TB',
-    icone: 'dashboard',
+    path: '/patients',
+    label: 'Meres',
+    abreviation: 'PT',
+    icone: 'person',
     section: 'Principal',
-    fil: 'Pilotage / Tableau de bord',
-    titre: 'Centre de Sante Himbi',
-    permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER],
+    fil: 'Reception / Liste des meres',
+    titre: 'Liste des meres',
+    permissions: [],
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
   },
   {
-    path: '/patients',
-    label: 'Patients',
-    abreviation: 'PT',
-    icone: 'person',
+    path: '/patients/nouveau',
+    label: 'Meres',
+    abreviation: 'NM',
+    icone: 'person_add',
     section: 'Principal',
-    fil: 'Soins / Patients',
-    titre: 'Gestion des patients',
-    permissions: [PERMISSIONS.PATIENTS_CONSULTER],
+    fil: 'Reception / Liste des meres / Creation',
+    titre: 'Création dossier mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/patients/:mereId',
+    label: 'Meres',
+    abreviation: 'DM',
+    icone: 'description',
+    section: 'Principal',
+    fil: 'Reception / Liste des meres / Dossier administratif',
+    titre: 'Dossier administratif mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/patients/:mereId/modifier',
+    label: 'Meres',
+    abreviation: 'MM',
+    icone: 'edit',
+    section: 'Principal',
+    fil: 'Reception / Liste des meres / Modification',
+    titre: 'Modification dossier mère',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/enfants',
+    label: 'Enfants',
+    abreviation: 'EN',
+    icone: 'child_care',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants',
+    titre: 'Liste des enfants',
+    permissions: [],
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
+  },
+  {
+    path: '/enfants/nouveau',
+    label: 'Enfants',
+    abreviation: 'NE',
+    icone: 'person_add',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants / Creation',
+    titre: 'Création dossier enfant',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/enfants/:enfantId',
+    label: 'Enfants',
+    abreviation: 'DE',
+    icone: 'description',
+    section: 'Principal',
+    fil: 'Reception / Liste des enfants / Dossier administratif',
+    titre: 'Dossier administratif enfant',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/reception',
+    label: 'Reception',
+    abreviation: 'RC',
+    icone: 'storefront',
+    section: 'Services',
+    fil: 'Services / Reception',
+    titre: 'Tableau de bord Reception',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: true,
+  },
+  {
+    path: '/rendez-vous',
+    label: 'Rendez-vous',
+    abreviation: 'RDV',
+    icone: 'calendar_today',
+    section: 'Services',
+    fil: 'Services / Rendez-vous',
+    titre: 'Liste des rendez-vous',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
+    path: '/rendez-vous/:rendezVousId',
+    label: 'Rendez-vous',
+    abreviation: 'DRV',
+    icone: 'event_note',
+    section: 'Services',
+    fil: 'Services / Rendez-vous / Detail administratif',
+    titre: 'Detail rendez-vous',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/rendez-vous/nouveau',
+    label: 'Rendez-vous',
+    abreviation: 'NRV',
+    icone: 'calendar_add_on',
+    section: 'Services',
+    fil: 'Services / Rendez-vous / Creation',
+    titre: 'Planifier un rendez-vous',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/rendez-vous/surprise',
+    label: 'Rendez-vous',
+    abreviation: 'RVS',
+    icone: 'directions_run',
+    section: 'Services',
+    fil: 'Services / Rendez-vous / Surprise',
+    titre: 'Enregistrer un rendez-vous surprise',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cpn',
+    label: 'CPN',
+    abreviation: 'CPN',
+    icone: 'pregnant_woman',
+    section: 'Services',
+    fil: 'Services / CPN',
+    titre: 'Consultations Prénatales',
+    permissions: [PERMISSIONS.CPN_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
+    path: '/cpn/nouveau',
+    label: 'CPN',
+    abreviation: 'NCPN',
+    icone: 'add_circle',
+    section: 'Services',
+    fil: 'Services / CPN / Ouvrir un dossier',
+    titre: 'Ouvrir un dossier CPN',
+    permissions: [PERMISSIONS.CPN_GERER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cpn/:dossierId',
+    label: 'CPN',
+    abreviation: 'DCPN',
+    icone: 'description',
+    section: 'Services',
+    fil: 'Services / CPN / Dossier',
+    titre: 'Dossier CPN',
+    permissions: [PERMISSIONS.CPN_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cpn/:dossierId/contacts/nouveau',
+    label: 'CPN',
+    abreviation: 'NCCPN',
+    icone: 'add_circle',
+    section: 'Services',
+    fil: 'Services / CPN / Nouveau contact',
+    titre: 'Nouveau contact CPN',
+    permissions: [PERMISSIONS.CPN_GERER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cpn/:dossierId/contacts/:contactId',
+    label: 'CPN',
+    abreviation: 'DCCPN',
+    icone: 'event_note',
+    section: 'Services',
+    fil: 'Services / CPN / Detail contact',
+    titre: 'Détail contact CPN',
+    permissions: [PERMISSIONS.CPN_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
   },
   {
     path: '/bibliotheque-composants',
@@ -125,7 +320,7 @@ const routesPrivees = [
       PERMISSIONS.ADMIN_ACCES_GERER,
     ],
     modePermissions: 'une',
-    visibleMenu: true,
+    visibleMenu: false,
     visibleEntete: true,
   },
   {
@@ -236,7 +431,25 @@ function obtenirPremiereRouteAutorisee(utilisateur, options = {}) {
   return filtrerRoutesAutorisees(utilisateur, options)[0] ?? null
 }
 
+function obtenirCheminAccueilParProfil(utilisateur) {
+  const roleNormalise = normaliserCodeRole(utilisateur?.roleCode ?? utilisateur?.role) ?? ''
+
+  if (roleNormalise === 'RECEPTION') {
+    return '/reception'
+  }
+
+  return '/reception'
+}
+
 function obtenirCheminAccueil(utilisateur, { groupe, fallback = '/acces-refuse' } = {}) {
+  if (!groupe) {
+    const cheminPreferentiel = obtenirCheminAccueilParProfil(utilisateur)
+
+    if (peutAccederAuChemin(cheminPreferentiel, utilisateur)) {
+      return cheminPreferentiel
+    }
+  }
+
   return obtenirPremiereRouteAutorisee(utilisateur, { groupe, visibleMenuSeulement: true })?.path ?? fallback
 }
 

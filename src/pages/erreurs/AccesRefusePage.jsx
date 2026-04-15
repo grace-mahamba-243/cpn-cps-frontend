@@ -1,9 +1,18 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import illustrationConnexion from '../../assets/image.png'
+import useAuthentification from '../../modules/authentification/hooks/useAuthentification'
 
 // Ce composant affiche la page d'acces refuse et informe l'utilisateur que son profil
 // ne dispose pas des autorisations necessaires pour atteindre la ressource demandee.
 function AccesRefusePage() {
+  const navigate = useNavigate()
+  const { deconnexion } = useAuthentification()
+
+  const gererRetourConnexion = () => {
+    deconnexion()
+    navigate('/connexion', { replace: true })
+  }
+
   return (
     <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_30px_80px_rgba(16,24,40,0.12)] backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-outline-variant/20 px-6 py-5 md:px-8">
@@ -76,13 +85,14 @@ function AccesRefusePage() {
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row">
-              <Link
+              <button
+                type="button"
                 className="inline-flex items-center justify-center gap-3 rounded-full bg-primary px-8 py-3.5 text-sm font-extrabold text-on-primary transition-all hover:bg-primary-dim hover:shadow-lg hover:shadow-primary/20"
-                to="/"
+                onClick={gererRetourConnexion}
               >
                 <span className="material-symbols-outlined text-xl">login</span>
                 Retour a la connexion
-              </Link>
+              </button>
             </div>
 
            

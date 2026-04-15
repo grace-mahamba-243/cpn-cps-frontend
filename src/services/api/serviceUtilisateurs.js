@@ -22,11 +22,21 @@ function construireMessageErreur(reponse, corps) {
     return corps.message
   }
 
+  if (Array.isArray(corps?.message)) {
+    return corps.message.join(' ')
+  }
+
   if (reponse.status >= 500) {
     return 'Le service utilisateurs est indisponible pour le moment.'
   }
 
   return 'La liste des utilisateurs n a pas pu etre chargee.'
+}
+
+function creerErreurApi(message) {
+  const erreur = new Error(message)
+  erreur.estErreurApi = true
+  return erreur
 }
 
 function formaterUtilisateurApi(utilisateur) {
@@ -44,6 +54,10 @@ function formaterUtilisateurApi(utilisateur) {
     telephone: utilisateur.telephone ?? null,
     email: utilisateur.email ?? null,
     adresse: utilisateur.adresse ?? null,
+    accesSpecifiques: {
+      ajoutes: Array.isArray(utilisateur?.accesSpecifiques?.ajoutes) ? utilisateur.accesSpecifiques.ajoutes : [],
+      retires: Array.isArray(utilisateur?.accesSpecifiques?.retires) ? utilisateur.accesSpecifiques.retires : [],
+    },
   }
 }
 
@@ -56,6 +70,10 @@ function enrichirProfilUtilisateur(utilisateur) {
     email: utilisateur.email ?? null,
     adresse: utilisateur.adresse ?? null,
     unite: utilisateur.unite ?? 'Service non renseigne',
+    accesSpecifiques: {
+      ajoutes: Array.isArray(utilisateur?.accesSpecifiques?.ajoutes) ? utilisateur.accesSpecifiques.ajoutes : [],
+      retires: Array.isArray(utilisateur?.accesSpecifiques?.retires) ? utilisateur.accesSpecifiques.retires : [],
+    },
   }
 }
 
@@ -136,11 +154,16 @@ const serviceUtilisateurs = {
       const corps = await lireCorpsJson(reponse)
 
       if (!reponse.ok) {
-        throw new Error(construireMessageErreur(reponse, corps))
+        throw creerErreurApi(construireMessageErreur(reponse, corps))
       }
 
       return corps?.utilisateur ?? corps
-    } catch {
+    } catch (erreur) {
+      // En cas d erreur HTTP backend, on remonte l erreur pour eviter un faux succes.
+      if (erreur?.estErreurApi) {
+        throw erreur
+      }
+
       return serviceGestionAcces.creerUtilisateur(donneesUtilisateur)
     }
   },
@@ -157,11 +180,16 @@ const serviceUtilisateurs = {
       const corps = await lireCorpsJson(reponse)
 
       if (!reponse.ok) {
-        throw new Error(construireMessageErreur(reponse, corps))
+        throw creerErreurApi(construireMessageErreur(reponse, corps))
       }
 
       return corps?.utilisateur ?? corps
-    } catch {
+    } catch (erreur) {
+      // En cas d erreur HTTP backend, on remonte l erreur pour eviter un faux succes.
+      if (erreur?.estErreurApi) {
+        throw erreur
+      }
+
       return serviceGestionAcces.modifierUtilisateur(utilisateurId, donneesUtilisateur)
     }
   },
@@ -174,11 +202,16 @@ const serviceUtilisateurs = {
       const corps = await lireCorpsJson(reponse)
 
       if (!reponse.ok) {
-        throw new Error(construireMessageErreur(reponse, corps))
+        throw creerErreurApi(construireMessageErreur(reponse, corps))
       }
 
       return corps ?? { id: utilisateurId }
-    } catch {
+    } catch (erreur) {
+      // En cas d erreur HTTP backend, on remonte l erreur pour eviter un faux succes.
+      if (erreur?.estErreurApi) {
+        throw erreur
+      }
+
       return serviceGestionAcces.supprimerUtilisateur(utilisateurId)
     }
   },

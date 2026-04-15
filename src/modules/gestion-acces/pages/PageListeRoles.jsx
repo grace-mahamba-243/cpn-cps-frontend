@@ -91,7 +91,9 @@ function PageListeRoles() {
   }, [])
 
   const rolesEnrichis = useMemo(() => {
-    return etat.roles.map((role) => {
+    return etat.roles
+      .filter((role) => role?.estSysteme !== true)
+      .map((role) => {
       const effectif = etat.utilisateurs.filter((utilisateur) => utilisateur.roleCode === role.code).length
       const permissionsLiees = etat.permissions
         .filter((permission) => role.permissions.includes(permission.code))
@@ -102,7 +104,7 @@ function PageListeRoles() {
         effectif,
         permissionsLiees,
       }
-    })
+      })
   }, [etat.permissions, etat.roles, etat.utilisateurs])
 
   const rolesFiltres = useMemo(() => {

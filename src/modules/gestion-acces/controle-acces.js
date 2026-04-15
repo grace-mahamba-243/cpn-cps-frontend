@@ -9,6 +9,9 @@ const PERMISSIONS = Object.freeze({
   TABLEAU_BORD_CONSULTER: 'tableau_bord.consulter',
   PATIENTS_CONSULTER: 'patients.consulter',
   BIBLIOTHEQUE_CONSULTER: 'bibliotheque.consulter',
+  RECEPTION_TABLEAU_BORD_CONSULTER: 'reception.tableau_bord.consulter',
+  CPN_CONSULTER: 'cpn.consulter',
+  CPN_GERER: 'cpn.gerer',
   ADMIN_UTILISATEURS_GERER: 'administration.utilisateurs.gerer',
   ADMIN_ROLES_GERER: 'administration.roles.gerer',
   ADMIN_ACCES_GERER: 'administration.acces.gerer',
@@ -32,6 +35,24 @@ const CATALOGUE_PERMISSIONS = Object.freeze([
     'Consulter la bibliotheque UI',
     'Ouvre la bibliotheque de composants utilisee par l equipe produit.',
     'Support',
+  ),
+  creerPermission(
+    PERMISSIONS.RECEPTION_TABLEAU_BORD_CONSULTER,
+    'Consulter le tableau de bord reception',
+    'Autorise l acces a la vue d accueil de la reception et des rendez-vous.',
+    'Reception',
+  ),
+  creerPermission(
+    PERMISSIONS.CPN_CONSULTER,
+    'Consulter les dossiers CPN',
+    'Permet d acceder a la liste et au detail des dossiers de consultation prenatale.',
+    'Soins',
+  ),
+  creerPermission(
+    PERMISSIONS.CPN_GERER,
+    'Gerer les dossiers CPN',
+    'Permet d ouvrir, modifier et enregistrer les contacts et examens CPN.',
+    'Soins',
   ),
   creerPermission(
     PERMISSIONS.ADMIN_UTILISATEURS_GERER,
@@ -70,38 +91,47 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
       PERMISSIONS.BIBLIOTHEQUE_CONSULTER,
+      PERMISSIONS.RECEPTION_TABLEAU_BORD_CONSULTER,
       PERMISSIONS.ADMIN_UTILISATEURS_GERER,
       PERMISSIONS.ADMIN_ROLES_GERER,
       PERMISSIONS.ADMIN_ACCES_GERER,
     ],
   },
   {
-    code: 'SUPERVISEUR',
-    libelle: 'Superviseur',
-    description: 'Supervise les activités cliniques et consulte les espaces de suivi.',
+    code: 'MEDECIN',
+    libelle: 'Medecin',
+    description: 'Supervise les activites cliniques et accede aux modules medicaux.',
     estSysteme: true,
     permissions: [
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
       PERMISSIONS.BIBLIOTHEQUE_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
     ],
   },
   {
-    code: 'AGENT_CLINIQUE',
-    libelle: 'Agent clinique',
-    description: 'Accède aux modules de consultation nécessaires au travail de terrain.',
-    estSysteme: true,
-    permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER, PERMISSIONS.PATIENTS_CONSULTER],
-  },
-  {
-    code: 'MEDECIN',
-    libelle: 'Medecin',
-    description: 'Consulte les espaces cliniques et les indicateurs utiles au suivi.',
+    code: 'SAGE_FEMME',
+    libelle: 'Sage-femme',
+    description: 'Assure le suivi maternel et neonatal avec acces aux modules cliniques.',
     estSysteme: true,
     permissions: [
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
-      PERMISSIONS.BIBLIOTHEQUE_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
+    ],
+  },
+  {
+    code: 'INFIRMIERE',
+    libelle: 'Infirmiere',
+    description: 'Intervient dans la prise en charge clinique quotidienne.',
+    estSysteme: true,
+    permissions: [
+      PERMISSIONS.TABLEAU_BORD_CONSULTER,
+      PERMISSIONS.PATIENTS_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
     ],
   },
   {
@@ -109,14 +139,11 @@ const ROLES_PAR_DEFAUT = Object.freeze([
     libelle: 'Reception',
     description: 'Acces centré sur l accueil et la consultation rapide des dossiers.',
     estSysteme: true,
-    permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER, PERMISSIONS.PATIENTS_CONSULTER],
-  },
-  {
-    code: 'OBSERVATEUR',
-    libelle: 'Observateur',
-    description: 'Profil lecture seule limite au tableau de bord.',
-    estSysteme: true,
-    permissions: [PERMISSIONS.TABLEAU_BORD_CONSULTER],
+    permissions: [
+      PERMISSIONS.TABLEAU_BORD_CONSULTER,
+      PERMISSIONS.PATIENTS_CONSULTER,
+      PERMISSIONS.RECEPTION_TABLEAU_BORD_CONSULTER,
+    ],
   },
 ])
 
@@ -128,17 +155,21 @@ const ALIAS_CODES_ROLE = Object.freeze({
   ADMIN: 'ADMIN',
   ADMINISTRATEUR: 'ADMIN',
   ADMINISTRATRICE: 'ADMIN',
-  SUPERVISEUR: 'SUPERVISEUR',
-  SUPERVISION: 'SUPERVISEUR',
-  AGENT_CLINIQUE: 'AGENT_CLINIQUE',
-  AGENT: 'AGENT_CLINIQUE',
-  CLINICIEN: 'AGENT_CLINIQUE',
   MEDECIN: 'MEDECIN',
   DOCTEUR: 'MEDECIN',
+  INFIRMIERE: 'INFIRMIERE',
+  INFIRMIER: 'INFIRMIERE',
+  INFIRMIRE: 'INFIRMIERE',
+  INFIRMIER_E: 'INFIRMIERE',
+  SAGE_FEMME: 'SAGE_FEMME',
+  SAGEFEMME: 'SAGE_FEMME',
+  SAGE_FEMMES: 'SAGE_FEMME',
+  MAIEUTICIENNE: 'SAGE_FEMME',
   RECEPTION: 'RECEPTION',
+  RECEPTIONNISTE: 'RECEPTION',
+  RECEPTIONISTE: 'RECEPTION',
+  RECEPTIONNIST: 'RECEPTION',
   ACCUEIL: 'RECEPTION',
-  OBSERVATEUR: 'OBSERVATEUR',
-  AUDIT: 'OBSERVATEUR',
 })
 
 function normaliserCodeRole(role) {
@@ -177,12 +208,28 @@ function obtenirRolesActifs(rolesPersonnalises = []) {
 function obtenirRoleParCode(roleCode, rolesPersonnalises = []) {
   const codeNormalise = normaliserCodeRole(roleCode)
   const roles = obtenirRolesActifs(rolesPersonnalises)
+  const rolesSysteme = obtenirRolesActifs([])
 
   if (!codeNormalise) {
-    return roles.find((role) => role.code === 'OBSERVATEUR') ?? null
+    return roles.find((role) => role.code === 'RECEPTION') ?? null
   }
 
-  return roles.find((role) => role.code === codeNormalise) ?? null
+  const roleTrouve = roles.find((role) => role.code === codeNormalise) ?? null
+  const roleSysteme = rolesSysteme.find((role) => role.code === codeNormalise) ?? null
+
+  if (!roleTrouve) {
+    return roleSysteme
+  }
+
+  if (!roleSysteme) {
+    return roleTrouve
+  }
+
+  // Les roles systeme conservent toujours leurs permissions minimales.
+  return {
+    ...roleTrouve,
+    permissions: trierCodesPermission([...(roleTrouve.permissions ?? []), ...(roleSysteme.permissions ?? [])]),
+  }
 }
 
 function calculerPermissionsUtilisateur(utilisateur, rolesPersonnalises = []) {
@@ -210,7 +257,7 @@ function enrichirUtilisateur(utilisateur, rolesPersonnalises = []) {
   return {
     ...utilisateur,
     role: role?.libelle ?? utilisateur.role ?? 'Profil non defini',
-    roleCode: role?.code ?? normaliserCodeRole(utilisateur.roleCode ?? utilisateur.role) ?? 'OBSERVATEUR',
+    roleCode: role?.code ?? normaliserCodeRole(utilisateur.roleCode ?? utilisateur.role) ?? 'RECEPTION',
     permissions,
   }
 }

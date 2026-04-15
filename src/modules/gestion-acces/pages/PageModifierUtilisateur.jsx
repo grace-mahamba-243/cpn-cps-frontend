@@ -3,6 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import Bouton from '../../../composants/interface/Bouton'
 import serviceUtilisateurs from '../../../services/api/serviceUtilisateurs'
+import serviceGestionAcces from '../../../services/api/serviceGestionAcces'
+
+const OPTIONS_ROLES_SECOURS = [
+  { code: 'SUPER_ADMIN', libelle: 'Super administrateur' },
+  { code: 'ADMIN', libelle: 'Administrateur' },
+  { code: 'MEDECIN', libelle: 'Médecin' },
+  { code: 'INFIRMIERE', libelle: 'Infirmière' },
+  { code: 'SAGE_FEMME', libelle: 'Sage-femme' },
+  { code: 'RECEPTION', libelle: 'Réceptionniste' },
+]
 
 const ETAT_FORMULAIRE_VIDE = {
   nomComplet: '',
@@ -16,6 +26,10 @@ const ETAT_FORMULAIRE_VIDE = {
   actif: true,
   motDePasseInitial: '',
   confirmationMotDePasse: '',
+  accesSpecifiques: {
+    ajoutes: [],
+    retires: [],
+  },
 }
 
 function construireFormulaire(utilisateur) {
@@ -31,6 +45,10 @@ function construireFormulaire(utilisateur) {
     actif: Boolean(utilisateur.actif),
     motDePasseInitial: '',
     confirmationMotDePasse: '',
+    accesSpecifiques: {
+      ajoutes: Array.isArray(utilisateur?.accesSpecifiques?.ajoutes) ? [...utilisateur.accesSpecifiques.ajoutes] : [],
+      retires: Array.isArray(utilisateur?.accesSpecifiques?.retires) ? [...utilisateur.accesSpecifiques.retires] : [],
+    },
   }
 }
 
@@ -49,6 +67,10 @@ function PageModifierUtilisateur() {
   const [reinitialiserMotDePasse, setReinitialiserMotDePasse] = useState(false)
   const [estEnregistrement, setEstEnregistrement] = useState(false)
   const [erreurSoumission, setErreurSoumission] = useState('')
+  const [configurationAcces, setConfigurationAcces] = useState({
+    roles: OPTIONS_ROLES_SECOURS,
+    permissions: [],
+  })
 
   useEffect(() => {
     let estActif = true
@@ -89,11 +111,95 @@ function PageModifierUtilisateur() {
     }
   }, [userId])
 
+  useEffect(() => {
+    let estActif = true
+
+    const chargerConfigurationAcces = async () => {
+      const configuration = await serviceGestionAcces.recupererConfiguration()
+
+      if (!estActif) {
+        return
+      }
+
+      const roles = configuration.roles.map((role) => ({
+        code: role.code,
+        libelle: role.libelle,
+        permissions: role.permissions ?? [],
+      }))
+
+      setConfigurationAcces({
+        roles: roles.length > 0 ? roles : OPTIONS_ROLES_SECOURS,
+        permissions: configuration.permissions ?? [],
+      })
+    }
+
+    void chargerConfigurationAcces()
+
+    return () => {
+      estActif = false
+    }
+  }, [])
+
   const mettreAJourChamp = (champ, valeur) => {
     setFormulaire((formulaireCourant) => ({
       ...formulaireCourant,
       [champ]: valeur,
     }))
+  }
+
+  const roleSelectionne =
+    configurationAcces.roles.find((role) => role.code === formulaire.roleCode) ?? null
+
+  const permissionHeriteeDuRole = (permissionCode) =>
+    Array.isArray(roleSelectionne?.permissions) ? roleSelectionne.permissions.includes(permissionCode) : false
+
+  const permissionEffective = (permissionCode) => {
+    const estHeritee = permissionHeriteeDuRole(permissionCode)
+    const estAjoutee = formulaire.accesSpecifiques.ajoutes.includes(permissionCode)
+    const estRetiree = formulaire.accesSpecifiques.retires.includes(permissionCode)
+
+    if (estHeritee) {
+      return !estRetiree
+    }
+
+    return estAjoutee
+  }
+
+  const basculerPermission = (permissionCode) => {
+    setFormulaire((formulaireCourant) => {
+      const roleCourant = configurationAcces.roles.find((role) => role.code === formulaireCourant.roleCode) ?? null
+      const estHeritee = Array.isArray(roleCourant?.permissions)
+        ? roleCourant.permissions.includes(permissionCode)
+        : false
+      const estAjoutee = formulaireCourant.accesSpecifiques.ajoutes.includes(permissionCode)
+      const estRetiree = formulaireCourant.accesSpecifiques.retires.includes(permissionCode)
+      const estActive = estHeritee ? !estRetiree : estAjoutee
+      const ajoutes = new Set(formulaireCourant.accesSpecifiques.ajoutes)
+      const retires = new Set(formulaireCourant.accesSpecifiques.retires)
+
+      if (estHeritee) {
+        if (estActive) {
+          retires.add(permissionCode)
+          ajoutes.delete(permissionCode)
+        } else {
+          retires.delete(permissionCode)
+        }
+      } else if (estActive) {
+        ajoutes.delete(permissionCode)
+        retires.delete(permissionCode)
+      } else {
+        ajoutes.add(permissionCode)
+        retires.delete(permissionCode)
+      }
+
+      return {
+        ...formulaireCourant,
+        accesSpecifiques: {
+          ajoutes: Array.from(ajoutes).sort(),
+          retires: Array.from(retires).sort(),
+        },
+      }
+    })
   }
 
   const enregistrerModifications = async (event) => {
@@ -134,6 +240,7 @@ function PageModifierUtilisateur() {
         adresse: formulaire.adresse || null,
         unite: formulaire.unite || null,
         roleCode: formulaire.roleCode,
+        accesSpecifiques: formulaire.accesSpecifiques,
         actif: formulaire.actif,
         motDePasseInitial: reinitialiserMotDePasse ? formulaire.motDePasseInitial : undefined,
       })
@@ -301,13 +408,38 @@ function PageModifierUtilisateur() {
               <label className="edition-utilisateur__champ">
                 <span>Rôle assigné</span>
                 <select value={formulaire.roleCode} onChange={(event) => mettreAJourChamp('roleCode', event.target.value)}>
-                  <option value="SUPER_ADMIN">Super administrateur</option>
-                  <option value="ADMIN">Administrateur</option>
-                  <option value="MEDECIN">Médecin</option>
-                  <option value="RECEPTION">Réceptionniste</option>
-                  <option value="OBSERVATEUR">Observateur</option>
+                  {configurationAcces.roles.map((role) => (
+                    <option key={role.code} value={role.code}>
+                      {role.libelle}
+                    </option>
+                  ))}
                 </select>
               </label>
+
+              <div className="edition-utilisateur__champ">
+                <span>Permissions spécifiques</span>
+                <div className="gestion-acces__liste-controles">
+                  {configurationAcces.permissions.map((permission) => {
+                    const estActive = permissionEffective(permission.code)
+
+                    return (
+                      <button
+                        key={permission.code}
+                        type="button"
+                        className={
+                          estActive
+                            ? 'gestion-acces__controle-permission gestion-acces__controle-permission--actif'
+                            : 'gestion-acces__controle-permission'
+                        }
+                        onClick={() => basculerPermission(permission.code)}
+                      >
+                        <span>{permission.libelle}</span>
+                        <small>{permission.description}</small>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
               <label className="edition-utilisateur__champ">
                 <span>Service / unité</span>

@@ -2916,3 +2916,357 @@ p {
     overflow-x: auto;
   }
 }
+
+  /* ==========================================================================
+     MODULE RECEPTION — Tableau de bord
+     ========================================================================== */
+
+  .page-reception {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .reception__grille-compteurs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .reception__compteur {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .reception__compteur-info {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .reception__compteur-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--couleur-texte-secondaire);
+  }
+
+  .reception__compteur-valeur {
+    font-size: 2.5rem;
+    font-weight: 900;
+    font-family: 'Manrope', sans-serif;
+    line-height: 1;
+  }
+
+  .reception__compteur-valeur--primaire { color: var(--couleur-primaire); }
+  .reception__compteur-valeur--tertiaire { color: var(--couleur-tertiaire); }
+  .reception__compteur-valeur--danger { color: var(--couleur-erreur); }
+
+  .reception__compteur-icone {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+  }
+
+  .reception__compteur-icone--primaire {
+    background: rgba(0, 103, 132, 0.1);
+    color: var(--couleur-primaire);
+  }
+
+  .reception__compteur-icone--tertiaire {
+    background: rgba(0, 107, 100, 0.1);
+    color: var(--couleur-tertiaire);
+  }
+
+  .reception__compteur-icone--danger {
+    background: rgba(168, 56, 54, 0.1);
+    color: var(--couleur-erreur);
+  }
+
+  .reception__grille-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .carte-action-rapide {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: none;
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--ombre-legere);
+    cursor: pointer;
+    text-align: left;
+    color: var(--couleur-texte-secondaire);
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    width: 100%;
+  }
+
+  .carte-action-rapide:hover { transform: translateY(-2px); }
+  .carte-action-rapide--mere:hover { background: var(--couleur-primaire); color: #f2faff; }
+  .carte-action-rapide--enfant:hover { background: var(--couleur-tertiaire); color: #e2fffa; }
+  .carte-action-rapide--rdv:hover { background: var(--couleur-primaire-dim); color: #f2faff; }
+  .carte-action-rapide--surprise:hover { background: rgba(250, 116, 111, 0.18); color: var(--couleur-erreur); }
+
+  .carte-action-rapide__icone {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .carte-action-rapide--mere .carte-action-rapide__icone {
+    background: rgba(133, 215, 249, 0.3);
+    color: var(--couleur-primaire);
+  }
+
+  .carte-action-rapide--enfant .carte-action-rapide__icone {
+    background: rgba(127, 230, 219, 0.3);
+    color: var(--couleur-tertiaire);
+  }
+
+  .carte-action-rapide--rdv .carte-action-rapide__icone {
+    background: rgba(199, 232, 246, 0.5);
+    color: var(--couleur-secondaire);
+  }
+
+  .carte-action-rapide--surprise .carte-action-rapide__icone {
+    background: rgba(250, 116, 111, 0.2);
+    color: var(--couleur-erreur);
+  }
+
+  .carte-action-rapide:hover .carte-action-rapide__icone {
+    background: rgba(255, 255, 255, 0.22);
+    color: inherit;
+  }
+
+  .carte-action-rapide__label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: inherit;
+  }
+
+  .reception__recherche {
+    position: relative;
+  }
+
+  .reception__recherche-icone {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--couleur-texte-secondaire);
+    font-size: 1.25rem;
+    pointer-events: none;
+  }
+
+  .reception__recherche-champ {
+    width: 100%;
+    padding: 0.95rem 1.25rem 0.95rem 3rem;
+    border: 1px solid rgba(173, 179, 181, 0.25);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #2d3335;
+    outline: none;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+    box-shadow: var(--ombre-legere);
+  }
+
+  .reception__recherche-champ:focus {
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(0, 103, 132, 0.08);
+  }
+
+  .reception__patient-cellule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .reception__patient-info { display: grid; gap: 0.1rem; }
+
+  .reception__patient-nom {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--couleur-primaire-dim);
+  }
+
+  .reception__patient-id {
+    font-size: 0.72rem;
+    color: var(--couleur-texte-secondaire);
+  }
+
+  .reception__heure {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .reception__motif-puce {
+    display: inline-flex;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    background: var(--couleur-surface-moyenne);
+    color: var(--couleur-texte-secondaire);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .reception__lien-tout {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--couleur-primaire);
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+  }
+
+  .reception__lien-tout:hover { background: rgba(0, 103, 132, 0.08); }
+
+  .reception__entete-orientation {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .reception__icone-orientation {
+    font-size: 1.4rem;
+    color: var(--couleur-tertiaire);
+  }
+
+  .reception__titre-orientation {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .reception__grille-orientation {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .carte-orientation {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .carte-orientation:hover { transform: translateY(-2px); }
+
+  .carte-orientation--primaire { background: rgba(0, 103, 132, 0.05); border-color: rgba(0, 103, 132, 0.12); }
+  .carte-orientation--primaire:hover { border-color: rgba(0, 103, 132, 0.35); }
+  .carte-orientation--tertiaire { background: rgba(0, 107, 100, 0.05); border-color: rgba(0, 107, 100, 0.12); }
+  .carte-orientation--tertiaire:hover { border-color: rgba(0, 107, 100, 0.35); }
+  .carte-orientation--secondaire { background: rgba(69, 99, 112, 0.05); border-color: rgba(69, 99, 112, 0.12); }
+  .carte-orientation--secondaire:hover { border-color: rgba(69, 99, 112, 0.35); }
+  .carte-orientation--danger { background: rgba(168, 56, 54, 0.05); border-color: rgba(168, 56, 54, 0.12); }
+  .carte-orientation--danger:hover { border-color: rgba(168, 56, 54, 0.35); }
+  .carte-orientation--ardoise { background: rgba(100, 116, 130, 0.05); border-color: rgba(100, 116, 130, 0.12); }
+  .carte-orientation--ardoise:hover { border-color: rgba(100, 116, 130, 0.35); }
+  .carte-orientation--ambre { background: rgba(180, 83, 9, 0.05); border-color: rgba(180, 83, 9, 0.12); }
+  .carte-orientation--ambre:hover { border-color: rgba(180, 83, 9, 0.35); }
+
+  .carte-orientation__icone {
+    font-size: 1.75rem;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .carte-orientation__icone--primaire { color: var(--couleur-primaire); }
+  .carte-orientation__icone--tertiaire { color: var(--couleur-tertiaire); }
+  .carte-orientation__icone--secondaire { color: var(--couleur-secondaire); }
+  .carte-orientation__icone--danger { color: var(--couleur-erreur); }
+  .carte-orientation__icone--ardoise { color: #64748b; }
+  .carte-orientation__icone--ambre { color: #b45309; }
+
+  .carte-orientation__nom {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 0.2rem;
+  }
+
+  .carte-orientation__description {
+    font-size: 0.75rem;
+    color: var(--couleur-texte-secondaire);
+  }
+
+  @media (max-width: 1280px) {
+    .reception__grille-actions,
+    .reception__grille-orientation {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    .reception__grille-compteurs,
+    .reception__grille-actions,
+    .reception__grille-orientation {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .reception__grille-compteurs,
+    .reception__grille-actions,
+    .reception__grille-orientation {
+      grid-template-columns: 1fr;
+    }
+  }
+/* Champ de formulaire generalise pour les formulaires CPN */
+.cpn-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.83rem;
+}
+
+.cpn-champ > span {
+  font-weight: 600;
+  color: var(--couleur-texte-secondaire);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+}
+
+.cpn-champ > input,
+.cpn-champ > select,
+.cpn-champ > textarea {
+  border: 1px solid #adb3b5;
+  border-radius: 0.65rem;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  color: #2d3335;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cpn-champ > input:focus,
+.cpn-champ > select:focus,
+.cpn-champ > textarea:focus {
+  border-color: #006784;
+  box-shadow: 0 0 0 2px rgba(0, 103, 132, 0.18);
+}

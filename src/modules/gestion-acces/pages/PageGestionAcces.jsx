@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AvatarInitiales from '../../../composants/interface/AvatarInitiales'
 import BadgeEtat from '../../../composants/interface/BadgeEtat'
 import Bouton from '../../../composants/interface/Bouton'
 import Carte from '../../../composants/interface/Carte'
 import CarteIndicateur from '../../../composants/interface/CarteIndicateur'
-import ChampRecherche from '../../../composants/interface/ChampRecherche'
 import TableauDonnees from '../../../composants/interface/TableauDonnees'
 import Alerte from '../../../composants/interface/Alerte'
 import BlocTitrePage from '../../../composants/partages/BlocTitrePage'
@@ -62,16 +62,17 @@ function construireResumePermissions(utilisateur, roles) {
 // les roles, les permissions effectives et la visibilite des menus/routes selon le profil.
 function PageGestionAcces() {
   const { possedePermission, peutAcceder } = useAuthentification()
+  const [searchParams] = useSearchParams()
   const [configuration, setConfiguration] = useState({
     roles: [],
     utilisateurs: [],
     permissions: [],
   })
-  const [recherche, setRecherche] = useState('')
   const [messageAction, setMessageAction] = useState(null)
   const [estChargement, setEstChargement] = useState(true)
   const [roleSelectionneCode, setRoleSelectionneCode] = useState('ADMIN')
   const [utilisateurSelectionneId, setUtilisateurSelectionneId] = useState(null)
+  const recherche = searchParams.get('q') ?? ''
 
   const peutGererUtilisateurs = possedePermission(PERMISSIONS.ADMIN_UTILISATEURS_GERER)
   const peutGererRoles = possedePermission(PERMISSIONS.ADMIN_ROLES_GERER)
@@ -308,15 +309,6 @@ function PageGestionAcces() {
               <Carte
                 titre="Utilisateurs"
                 description="Selectionnez un compte pour ajuster son role, son statut et ses exceptions d acces."
-                actions={
-                  <div className="gestion-acces__actions-entete">
-                    <ChampRecherche
-                      placeholder="Rechercher un utilisateur, un role ou une unite"
-                      value={recherche}
-                      onChange={(event) => setRecherche(event.target.value)}
-                    />
-                  </div>
-                }
               >
                 <div className="gestion-acces__tableau">
                   <TableauDonnees colonnes={colonnes} lignes={utilisateursFiltres} />

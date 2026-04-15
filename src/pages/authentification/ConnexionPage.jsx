@@ -11,7 +11,7 @@ function ConnexionPage() {
 
   const gererSoumission = (event) => {
     event.preventDefault()
-    navigate('/tableau-de-bord')
+    navigate('/reception')
   }
 
   return (
