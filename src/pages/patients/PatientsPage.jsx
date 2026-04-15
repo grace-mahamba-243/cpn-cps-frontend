@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
-import serviceDossiersMeres from '../../services/donnees-simulees/serviceDossiersMeres'
+import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
 
 const TAILLE_PAGE = 8
 

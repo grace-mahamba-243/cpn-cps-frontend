@@ -3235,3 +3235,38 @@ p {
       grid-template-columns: 1fr;
     }
   }
+/* Champ de formulaire generalise pour les formulaires CPN */
+.cpn-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.83rem;
+}
+
+.cpn-champ > span {
+  font-weight: 600;
+  color: var(--couleur-texte-secondaire);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+}
+
+.cpn-champ > input,
+.cpn-champ > select,
+.cpn-champ > textarea {
+  border: 1px solid #adb3b5;
+  border-radius: 0.65rem;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  color: #2d3335;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cpn-champ > input:focus,
+.cpn-champ > select:focus,
+.cpn-champ > textarea:focus {
+  border-color: #006784;
+  box-shadow: 0 0 0 2px rgba(0, 103, 132, 0.18);
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
-import serviceDossiersEnfants from '../../services/donnees-simulees/serviceDossiersEnfants'
+import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
 
 function formaterDate(dateIso) {
   if (!dateIso) {

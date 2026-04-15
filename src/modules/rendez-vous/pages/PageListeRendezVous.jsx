@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
-import serviceRendezVous from '../../../services/donnees-simulees/serviceRendezVous'
+import serviceRendezVous from '../../../services/api/serviceRendezVous'
 
 const TAILLE_PAGE = 8
 const FILTRES_RAPIDES = {
   JOUR: 'jour',
-  DEMAIN: 'demain',
-  SEMAINE: 'semaine',
 }
 
 function normaliserTexte(valeur = '') {
@@ -46,6 +44,10 @@ function classesBadgeStatut(statut) {
 
   if (statutNormalise === 'arrive') {
     return 'bg-tertiary-container/30 text-tertiary-dim'
+  }
+
+  if (statutNormalise === 'termine') {
+    return 'bg-secondary-container/40 text-on-secondary-container'
   }
 
   if (statutNormalise === 'surprise') {
@@ -87,22 +89,9 @@ function creerDateFiltreRapide(filtreRapide) {
     }
   }
 
-  if (filtreRapide === FILTRES_RAPIDES.DEMAIN) {
-    const demain = new Date(aujourdHui)
-    demain.setDate(demain.getDate() + 1)
-
-    return {
-      debut: demain,
-      fin: demain,
-    }
-  }
-
-  const finSemaine = new Date(aujourdHui)
-  finSemaine.setDate(finSemaine.getDate() + 6)
-
   return {
     debut: aujourdHui,
-    fin: finSemaine,
+    fin: aujourdHui,
   }
 }
 
@@ -127,8 +116,6 @@ async function creerRendezVousDepuisAction({ estSurprise }) {
 // Ce composant affiche la liste administrative des rendez-vous pour la reception avec recherche, filtres et actions rapides.
 function PageListeRendezVous() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const rechercheNavbar = normaliserTexte((searchParams.get('q') ?? '').trim())
 
   const [etat, setEtat] = useState({
     chargement: true,
@@ -137,12 +124,21 @@ function PageListeRendezVous() {
   const [messageSucces, setMessageSucces] = useState('')
   const [messageErreur, setMessageErreur] = useState('')
   const [pageCourante, setPageCourante] = useState(1)
+  const [menuOuvertId, setMenuOuvertId] = useState(null)
+  const menuRef = useRef(null)
+
+  // Fermer le menu trois points si on clique en dehors
+  useEffect(() => {
+    function gererClicExterieur(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOuvertId(null)
+      }
+    }
+    document.addEventListener('mousedown', gererClicExterieur)
+    return () => document.removeEventListener('mousedown', gererClicExterieur)
+  }, [])
   const [filtres, setFiltres] = useState({
-    recherche: '',
     date: '',
-    service: '',
-    statut: '',
-    typeRendezVous: '',
     filtreRapide: FILTRES_RAPIDES.JOUR,
   })
 
@@ -185,39 +181,22 @@ function PageListeRendezVous() {
 
   useEffect(() => {
     setPageCourante(1)
-  }, [filtres, rechercheNavbar])
+  }, [filtres])
 
   const rendezVousFiltres = useMemo(() => {
-    const rechercheGlobale = normaliserTexte([rechercheNavbar, filtres.recherche].filter(Boolean).join(' '))
-
     return etat.rendezVous.filter((ligne) => {
-      const dateRendezVous = new Date(ligne.date)
-      dateRendezVous.setHours(0, 0, 0, 0)
-
-      const matchRecherche =
-        !rechercheGlobale ||
-        [ligne.nomPatient, ligne.numeroDossier, ligne.service]
-          .filter(Boolean)
-          .some((valeur) => normaliserTexte(valeur).includes(rechercheGlobale))
-
-      const matchService = !filtres.service || normaliserTexte(ligne.service) === normaliserTexte(filtres.service)
-      const matchStatut = !filtres.statut || normaliserTexte(ligne.statut) === normaliserTexte(filtres.statut)
-      const matchType =
-        !filtres.typeRendezVous ||
-        normaliserTexte(ligne.typeRendezVous) === normaliserTexte(filtres.typeRendezVous)
-
-      const matchDate = !filtres.date || ligne.date === filtres.date
-
-      if (matchDate) {
-        return matchRecherche && matchService && matchStatut && matchType
+      // Si une date specifique est choisie dans le selecteur, elle prime sur le filtre rapide
+      if (filtres.date) {
+        return ligne.date === filtres.date
       }
 
+      // Sinon appliquer le filtre rapide du jour
+      const dateRendezVous = new Date(ligne.date)
+      dateRendezVous.setHours(0, 0, 0, 0)
       const plageRapide = creerDateFiltreRapide(filtres.filtreRapide)
-      const matchFiltreRapide = dateRendezVous >= plageRapide.debut && dateRendezVous <= plageRapide.fin
-
-      return matchRecherche && matchService && matchStatut && matchType && matchFiltreRapide
+      return dateRendezVous >= plageRapide.debut && dateRendezVous <= plageRapide.fin
     })
-  }, [etat.rendezVous, filtres, rechercheNavbar])
+  }, [etat.rendezVous, filtres])
 
   const statistiques = useMemo(() => {
     return rendezVousFiltres.reduce(
@@ -241,18 +220,6 @@ function PageListeRendezVous() {
       },
     )
   }, [rendezVousFiltres])
-
-  const servicesDisponibles = useMemo(() => {
-    return Array.from(new Set(etat.rendezVous.map((ligne) => ligne.service))).sort((a, b) => a.localeCompare(b))
-  }, [etat.rendezVous])
-
-  const statutsDisponibles = useMemo(() => {
-    return Array.from(new Set(etat.rendezVous.map((ligne) => ligne.statut))).sort((a, b) => a.localeCompare(b))
-  }, [etat.rendezVous])
-
-  const typesDisponibles = useMemo(() => {
-    return Array.from(new Set(etat.rendezVous.map((ligne) => ligne.typeRendezVous))).sort((a, b) => a.localeCompare(b))
-  }, [etat.rendezVous])
 
   const totalPages = Math.max(1, Math.ceil(rendezVousFiltres.length / TAILLE_PAGE))
   const pageActive = Math.min(pageCourante, totalPages)
@@ -313,26 +280,17 @@ function PageListeRendezVous() {
     <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-24">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface">Liste des rendez-vous</h1>
-          <p className="mt-2 max-w-3xl text-on-surface-variant">
-            Consultez et organisez les rendez-vous administratifs sans exposition des informations cliniques.
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Gestion des flux</h1>
+          <p className="mt-1 text-on-surface-variant">
+            Supervisez et organisez les consultations de la journée.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full bg-secondary-container px-6 py-3 text-sm font-semibold text-on-secondary-container transition-opacity hover:opacity-90"
-            onClick={() => gererCreation({ estSurprise: true })}
-          >
-            <span className="material-symbols-outlined text-base">add_alert</span>
-            Rendez-vous surprise
-          </button>
-
-          <button
-            type="button"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-            onClick={() => gererCreation({ estSurprise: false })}
+            onClick={() => navigate('/rendez-vous/nouveau')}
           >
             <span className="material-symbols-outlined text-base">add</span>
             Nouveau rendez-vous
@@ -343,69 +301,19 @@ function PageListeRendezVous() {
       {messageSucces ? <Alerte type="succes" titre="Operation réussie">{messageSucces}</Alerte> : null}
       {messageErreur ? <Alerte type="erreur" titre="Attention">{messageErreur}</Alerte> : null}
 
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Seules les donnees administratives sont visibles. Les informations cliniques du service de rendez-vous ne sont pas affichées.
-        </p>
-      </div>
+
 
       <section className="rounded-3xl bg-surface-container-low p-6 shadow-sm">
-        <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-outline-variant/20 pb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <button
             type="button"
-            className={[
-              'rounded-full px-6 py-2 text-sm transition-colors',
-              filtres.filtreRapide === FILTRES_RAPIDES.JOUR
-                ? 'bg-surface-container-lowest font-bold text-primary shadow-sm'
-                : 'font-medium text-on-surface-variant hover:text-on-surface',
-            ].join(' ')}
-            onClick={() => definirFiltre('filtreRapide', FILTRES_RAPIDES.JOUR)}
+            className="rounded-full bg-surface-container-lowest px-6 py-2 text-sm font-bold text-primary shadow-sm"
+            onClick={() => definirFiltre('date', '')}
           >
             Rendez-vous du jour
           </button>
-          <button
-            type="button"
-            className={[
-              'rounded-full px-6 py-2 text-sm transition-colors',
-              filtres.filtreRapide === FILTRES_RAPIDES.DEMAIN
-                ? 'bg-surface-container-lowest font-bold text-primary shadow-sm'
-                : 'font-medium text-on-surface-variant hover:text-on-surface',
-            ].join(' ')}
-            onClick={() => definirFiltre('filtreRapide', FILTRES_RAPIDES.DEMAIN)}
-          >
-            Demain
-          </button>
-          <button
-            type="button"
-            className={[
-              'rounded-full px-6 py-2 text-sm transition-colors',
-              filtres.filtreRapide === FILTRES_RAPIDES.SEMAINE
-                ? 'bg-surface-container-lowest font-bold text-primary shadow-sm'
-                : 'font-medium text-on-surface-variant hover:text-on-surface',
-            ].join(' ')}
-            onClick={() => definirFiltre('filtreRapide', FILTRES_RAPIDES.SEMAINE)}
-          >
-            Cette semaine
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <div className="xl:col-span-2">
-            <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Recherche</label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-              <input
-                type="text"
-                value={filtres.recherche}
-                onChange={(event) => definirFiltre('recherche', event.target.value)}
-                placeholder="Nom, numero dossier, service..."
-                className="w-full rounded-xl border-none bg-surface-container-lowest py-2.5 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-          </div>
-
-          <div>
+          <div className="w-56">
             <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Date</label>
             <input
               type="date"
@@ -413,48 +321,6 @@ function PageListeRendezVous() {
               onChange={(event) => definirFiltre('date', event.target.value)}
               className="w-full rounded-xl border-none bg-surface-container-lowest px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
             />
-          </div>
-
-          <div>
-            <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Service</label>
-            <select
-              value={filtres.service}
-              onChange={(event) => definirFiltre('service', event.target.value)}
-              className="w-full rounded-xl border-none bg-surface-container-lowest px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Tous les services</option>
-              {servicesDisponibles.map((service) => (
-                <option key={service} value={service}>{service}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Statut</label>
-            <select
-              value={filtres.statut}
-              onChange={(event) => definirFiltre('statut', event.target.value)}
-              className="w-full rounded-xl border-none bg-surface-container-lowest px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Tous les statuts</option>
-              {statutsDisponibles.map((statut) => (
-                <option key={statut} value={statut}>{statut}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Type de rendez-vous</label>
-            <select
-              value={filtres.typeRendezVous}
-              onChange={(event) => definirFiltre('typeRendezVous', event.target.value)}
-              className="w-full rounded-xl border-none bg-surface-container-lowest px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Tous les types</option>
-              {typesDisponibles.map((typeRendezVous) => (
-                <option key={typeRendezVous} value={typeRendezVous}>{typeRendezVous}</option>
-              ))}
-            </select>
           </div>
         </div>
       </section>
@@ -481,10 +347,9 @@ function PageListeRendezVous() {
                   <tr className="bg-surface-container-low">
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Date</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Heure</th>
-                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Type patient</th>
-                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Nom patient</th>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Patient</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Service</th>
-                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Type RDV</th>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Type de RDV</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Statut</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Motif</th>
                     <th className="px-6 py-4 text-right text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Actions</th>
@@ -492,23 +357,32 @@ function PageListeRendezVous() {
                 </thead>
 
                 <tbody className="divide-y divide-outline-variant/10">
-                  {rendezVousPage.map((ligne) => (
-                    <tr key={ligne.id} className="transition-colors hover:bg-surface-container-low/30">
+                  {rendezVousPage.map((ligne) => {
+                    const estSurprise = normaliserTexte(ligne.statut) === 'surprise'
+                    const estAnnule = normaliserTexte(ligne.statut) === 'annule'
+                    return (
+                    <tr
+                      key={ligne.id}
+                      className={[
+                        'transition-colors hover:bg-surface-container-low/30',
+                        estSurprise ? 'border-l-4 border-error' : '',
+                        estAnnule ? 'opacity-60' : '',
+                      ].join(' ')}
+                    >
                       <td className="px-6 py-5 text-sm text-on-surface-variant">{formaterDate(ligne.date)}</td>
-                      <td className="px-6 py-5"><span className="text-sm font-bold text-primary">{ligne.heure}</span></td>
                       <td className="px-6 py-5">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${classesBadgeTypePatient(ligne.typePatient)}`}>
-                          {ligne.typePatient}
-                        </span>
+                        <span className={`text-sm font-bold ${estSurprise ? 'text-error' : 'text-primary'}`}>{ligne.heure}</span>
                       </td>
                       <td className="px-6 py-5">
                         <div>
                           <p className="text-sm font-bold text-on-surface">{ligne.nomPatient}</p>
-                          <p className="font-mono text-xs text-primary">{ligne.numeroDossier}</p>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${classesBadgeTypePatient(ligne.typePatient)}`}>
+                            {ligne.typePatient}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-sm font-medium text-on-surface-variant">{ligne.service}</td>
-                      <td className="px-6 py-5 text-sm text-on-surface">{ligne.typeRendezVous}</td>
+                      <td className={`px-6 py-5 text-sm ${estSurprise ? 'font-bold text-error' : 'text-on-surface'}`}>{ligne.typeRendezVous}</td>
                       <td className="px-6 py-5">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${classesBadgeStatut(ligne.statut)}`}>
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -517,29 +391,47 @@ function PageListeRendezVous() {
                       </td>
                       <td className="px-6 py-5 text-sm italic text-on-surface-variant">{ligne.motif}</td>
                       <td className="px-6 py-5">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="relative flex items-center justify-end" ref={menuOuvertId === ligne.id ? menuRef : null}>
+                          {/* Bouton trois points */}
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
-                            onClick={() => navigate(`/rendez-vous/${ligne.id}`)}
+                            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-outline-variant/20"
+                            onClick={() => setMenuOuvertId(menuOuvertId === ligne.id ? null : ligne.id)}
+                            aria-label="Actions"
                           >
-                            <span className="material-symbols-outlined text-sm">visibility</span>
-                            Voir detail
+                            <span className="material-symbols-outlined text-xl">more_vert</span>
                           </button>
 
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-                            onClick={() => gererEnregistrerArrivee(ligne.id)}
-                            disabled={!peutEnregistrerArrivee(ligne.statut)}
-                          >
-                            <span className="material-symbols-outlined text-sm">login</span>
-                            Arrivee
-                          </button>
+                          {/* Menu deroulant */}
+                          {menuOuvertId === ligne.id && (
+                            <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-outline-variant/20 bg-surface-container-lowest py-1 shadow-lg">
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface transition-colors hover:bg-surface-container-low"
+                                onClick={() => { setMenuOuvertId(null); navigate(`/rendez-vous/${ligne.id}`) }}
+                              >
+                                <span className="material-symbols-outlined text-base text-primary">visibility</span>
+                                Voir les détails
+                              </button>
+
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
+                                onClick={() => { setMenuOuvertId(null); gererEnregistrerArrivee(ligne.id) }}
+                                disabled={!peutEnregistrerArrivee(ligne.statut)}
+                              >
+                                <span className="material-symbols-outlined text-base text-tertiary">how_to_reg</span>
+                                <span className={peutEnregistrerArrivee(ligne.statut) ? 'text-on-surface' : 'text-outline'}>
+                                  Confirmer l'arrivée
+                                </span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})
+                  }
                 </tbody>
               </table>
             </div>
@@ -579,15 +471,15 @@ function PageListeRendezVous() {
 
       <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="rounded-xl border-l-4 border-primary bg-primary-container/30 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total filtres</p>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total attendus</p>
           <div className="flex items-baseline gap-2">
             <span className="font-headline text-3xl font-extrabold text-on-primary-container">{statistiques.total}</span>
-            <span className="text-xs font-medium text-primary">rendez-vous</span>
+            <span className="text-xs font-medium text-primary">patients</span>
           </div>
         </div>
 
         <div className="rounded-xl border-l-4 border-tertiary bg-tertiary-container/20 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-container">Arrivees enregistrees</p>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-container">Arrivées enregistrées</p>
           <div className="flex items-baseline gap-2">
             <span className="font-headline text-3xl font-extrabold text-tertiary-dim">{statistiques.arrivees}</span>
             <span className="text-xs font-medium text-tertiary">patients</span>
@@ -595,7 +487,7 @@ function PageListeRendezVous() {
         </div>
 
         <div className="rounded-xl border-l-4 border-error bg-error-container/10 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-error-container">Surprises</p>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-error-container">Urgences journée</p>
           <div className="flex items-baseline gap-2">
             <span className="font-headline text-3xl font-extrabold text-error">{statistiques.surprises}</span>
             <span className="text-xs font-medium text-error-dim">urgences</span>

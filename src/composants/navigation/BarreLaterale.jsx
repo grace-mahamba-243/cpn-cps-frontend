@@ -8,7 +8,7 @@ const LIENS_SIDEBAR_RECEPTION = [
   { path: '/reception', label: 'Tableau de bord', icone: 'dashboard', cheminsActifs: ['/reception'] },
   { path: '/patients', label: 'Meres', icone: 'person', cheminsActifs: ['/patients'] },
   { path: '/enfants', label: 'Enfants', icone: 'child_care', cheminsActifs: ['/enfants'] },
-  { path: '/tableau-de-bord', label: 'Rendez-vous', icone: 'calendar_today', cheminsActifs: ['/tableau-de-bord'] },
+  { path: '/rendez-vous', label: 'Rendez-vous', icone: 'calendar_today', cheminsActifs: ['/rendez-vous'] },
 ]
 
 const LIENS_SIDEBAR_ADMIN = [
@@ -199,7 +199,7 @@ function BarreLaterale() {
                 <NavLink
                   key={lien.path}
                   to={lien.path}
-                  end={lien.path === '/tableau-de-bord'}
+                  end={lien.path === '/reception'}
                   className={({ isActive }) =>
                     isActive ? 'barre-laterale__lien barre-laterale__lien--actif' : 'barre-laterale__lien'
                   }

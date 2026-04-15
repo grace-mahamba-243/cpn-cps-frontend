@@ -1,91 +1,8 @@
 const DELAI_SIMULE_MS = 220
 
-const rendezVousSimules = [
-  {
-    id: 'rdv-001',
-    date: '2026-04-13',
-    heure: '08:30',
-    typePatient: 'Mere',
-    nomPatient: 'Kavira Malulu Clarisse',
-    numeroDossier: '#CPN-2026-1101',
-    service: 'Maternite (CPN)',
-    typeRendezVous: 'Consultation standard',
-    statut: 'Arrive',
-    motif: 'Controle 2e trimestre',
-    creeLe: '2026-04-12T16:10:00.000Z',
-    arriveeEnregistreeLe: '2026-04-13T08:27:00.000Z',
-  },
-  {
-    id: 'rdv-002',
-    date: '2026-04-13',
-    heure: '09:15',
-    typePatient: 'Enfant',
-    nomPatient: 'Bebe de Maman Furaha',
-    numeroDossier: '#CPS-2026-2015',
-    service: 'Pediatrie (CPS)',
-    typeRendezVous: 'Vaccination',
-    statut: 'Prevu',
-    motif: 'Vaccin 3 mois',
-    creeLe: '2026-04-12T17:20:00.000Z',
-    arriveeEnregistreeLe: null,
-  },
-  {
-    id: 'rdv-003',
-    date: '2026-04-13',
-    heure: '09:45',
-    typePatient: 'Mere',
-    nomPatient: 'Kahambu Zawadi Marie',
-    numeroDossier: '#CPN-2026-0972',
-    service: 'Gynecologie',
-    typeRendezVous: 'Urgence / Surprise',
-    statut: 'Surprise',
-    motif: 'Douleurs pelviennes aigues',
-    creeLe: '2026-04-13T09:35:00.000Z',
-    arriveeEnregistreeLe: null,
-  },
-  {
-    id: 'rdv-004',
-    date: '2026-04-13',
-    heure: '10:30',
-    typePatient: 'Enfant',
-    nomPatient: 'Mumbere Akilimali Luc',
-    numeroDossier: '#CPS-2026-1888',
-    service: 'Pediatrie',
-    typeRendezVous: 'Consultation',
-    statut: 'Reprogramme',
-    motif: 'Suivi malnutrition',
-    creeLe: '2026-04-12T12:05:00.000Z',
-    arriveeEnregistreeLe: null,
-  },
-  {
-    id: 'rdv-005',
-    date: '2026-04-13',
-    heure: '11:00',
-    typePatient: 'Mere',
-    nomPatient: 'Masika Bahati Rachel',
-    numeroDossier: '#CPN-2026-1054',
-    service: 'Maternite',
-    typeRendezVous: 'Consultation standard',
-    statut: 'Annule',
-    motif: 'Visite post-natale',
-    creeLe: '2026-04-11T09:45:00.000Z',
-    arriveeEnregistreeLe: null,
-  },
-  {
-    id: 'rdv-006',
-    date: '2026-04-14',
-    heure: '08:00',
-    typePatient: 'Mere',
-    nomPatient: 'Bisimwa Aline Grace',
-    numeroDossier: '#CPN-2026-1180',
-    service: 'Maternite (CPN)',
-    typeRendezVous: 'Suivi',
-    statut: 'Prevu',
-    motif: 'CPN de suivi',
-    creeLe: '2026-04-12T10:12:00.000Z',
-    arriveeEnregistreeLe: null,
-  },
-]
+// Les donnees statiques ont ete supprimees. Ce service est conserve uniquement
+// comme reference de l interface. Toutes les pages utilisent desormais api/serviceRendezVous.js.
+const rendezVousSimules = []
 
 let etatRendezVous = [...rendezVousSimules]
 
@@ -162,6 +79,24 @@ const serviceRendezVous = {
 
     return dupliquer(misAJour)
   },
+
+  // Retourne le nombre de rendez-vous deja enregistres pour un service et une date donnee.
+  // Utilise pour verifier la capacite journaliere avant de bloquer l enregistrement.
+  async compterParServiceEtDate(service, date) {
+    await attendre()
+    return etatRendezVous.filter(
+      (rdv) => normaliserCle(rdv.service) === normaliserCle(service) && rdv.date === date && normaliserCle(rdv.statut) !== 'annule',
+    ).length
+  },
+}
+
+function normaliserCle(valeur = '') {
+  return valeur
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
 }
 
 export default serviceRendezVous

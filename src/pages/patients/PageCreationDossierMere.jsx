@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
-import serviceDossiersMeres from '../../services/donnees-simulees/serviceDossiersMeres'
+import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
 
 function genererNumeroDossier() {
   const suffixe = String(Date.now()).slice(-4)

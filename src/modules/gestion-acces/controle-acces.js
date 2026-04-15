@@ -10,6 +10,8 @@ const PERMISSIONS = Object.freeze({
   PATIENTS_CONSULTER: 'patients.consulter',
   BIBLIOTHEQUE_CONSULTER: 'bibliotheque.consulter',
   RECEPTION_TABLEAU_BORD_CONSULTER: 'reception.tableau_bord.consulter',
+  CPN_CONSULTER: 'cpn.consulter',
+  CPN_GERER: 'cpn.gerer',
   ADMIN_UTILISATEURS_GERER: 'administration.utilisateurs.gerer',
   ADMIN_ROLES_GERER: 'administration.roles.gerer',
   ADMIN_ACCES_GERER: 'administration.acces.gerer',
@@ -39,6 +41,18 @@ const CATALOGUE_PERMISSIONS = Object.freeze([
     'Consulter le tableau de bord reception',
     'Autorise l acces a la vue d accueil de la reception et des rendez-vous.',
     'Reception',
+  ),
+  creerPermission(
+    PERMISSIONS.CPN_CONSULTER,
+    'Consulter les dossiers CPN',
+    'Permet d acceder a la liste et au detail des dossiers de consultation prenatale.',
+    'Soins',
+  ),
+  creerPermission(
+    PERMISSIONS.CPN_GERER,
+    'Gerer les dossiers CPN',
+    'Permet d ouvrir, modifier et enregistrer les contacts et examens CPN.',
+    'Soins',
   ),
   creerPermission(
     PERMISSIONS.ADMIN_UTILISATEURS_GERER,
@@ -92,6 +106,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
       PERMISSIONS.BIBLIOTHEQUE_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
     ],
   },
   {
@@ -102,6 +118,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
     permissions: [
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
     ],
   },
   {
@@ -112,6 +130,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
     permissions: [
       PERMISSIONS.TABLEAU_BORD_CONSULTER,
       PERMISSIONS.PATIENTS_CONSULTER,
+      PERMISSIONS.CPN_CONSULTER,
+      PERMISSIONS.CPN_GERER,
     ],
   },
   {

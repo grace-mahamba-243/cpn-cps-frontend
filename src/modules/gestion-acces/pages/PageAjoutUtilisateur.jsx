@@ -1,14 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import Bouton from '../../../composants/interface/Bouton'
 import serviceUtilisateurs from '../../../services/api/serviceUtilisateurs'
-import { ROLES_PAR_DEFAUT } from '../controle-acces'
 
-const ROLES_CREATION_UTILISATEUR = ROLES_PAR_DEFAUT.map((role) => ({
-  code: role.code,
-  libelle: role.libelle,
-}))
+const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
 const ETAT_INITIAL_FORMULAIRE = {
   nomComplet: '',
@@ -22,12 +18,28 @@ const ETAT_INITIAL_FORMULAIRE = {
 }
 
 // Ce composant affiche le formulaire principal de creation d utilisateur et envoie
-// les informations minimales au backend users, avec un fallback local si necessaire.
+// les informations minimales au backend users, avec les roles charges depuis l API.
 function PageAjoutUtilisateur() {
   const navigate = useNavigate()
   const [formulaire, setFormulaire] = useState(ETAT_INITIAL_FORMULAIRE)
   const [erreur, setErreur] = useState('')
   const [estEnregistrement, setEstEnregistrement] = useState(false)
+  const [roles, setRoles] = useState([])
+  const [chargementRoles, setChargementRoles] = useState(true)
+
+  useEffect(() => {
+    fetch(`${URL_API}/roles`)
+      .then((r) => r.json())
+      .then((corps) => {
+        const liste = Array.isArray(corps?.roles) ? corps.roles : []
+        setRoles(liste)
+        if (liste.length > 0) {
+          setFormulaire((f) => ({ ...f, roleCode: liste[0].code }))
+        }
+      })
+      .catch(() => setRoles([]))
+      .finally(() => setChargementRoles(false))
+  }, [])
 
   const mettreAJourChamp = (champ, valeur) => {
     setFormulaire((formulaireCourant) => ({
@@ -163,8 +175,10 @@ function PageAjoutUtilisateur() {
           <div className="ajout-utilisateur__grille">
             <label className="ajout-utilisateur__champ">
               <span>Rôle</span>
-              <select value={formulaire.roleCode} onChange={(event) => mettreAJourChamp('roleCode', event.target.value)}>
-                {ROLES_CREATION_UTILISATEUR.map((role) => (
+              <select value={formulaire.roleCode} onChange={(event) => mettreAJourChamp('roleCode', event.target.value)} disabled={chargementRoles}>
+                {chargementRoles ? (
+                  <option value="">Chargement des rôles...</option>
+                ) : roles.map((role) => (
                   <option key={role.code} value={role.code}>
                     {role.libelle}
                   </option>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
-import serviceDossiersEnfants from '../../services/donnees-simulees/serviceDossiersEnfants'
+import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
 
 function genererNumeroFiche() {
   const suffixe = String(Date.now()).slice(-4)
