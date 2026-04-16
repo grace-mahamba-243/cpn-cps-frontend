@@ -130,7 +130,6 @@ function PageTableauDeBordReception() {
           <span className="text-left text-sm font-bold">Nouveau rendez-vous</span>
         </button>
 
-
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-slate-50 bg-white shadow-sm shadow-slate-200/50">

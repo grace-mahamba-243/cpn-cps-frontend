@@ -69,8 +69,15 @@ const ETAT_INITIAL_FORMULAIRE = {
   adresseUrgence: '',
 }
 
+const REGEX_NOM = /^[a-zA-ZÀ-ÿ\s\-']+$/
+const REGEX_TELEPHONE = /^[+0-9]{9,15}$/
+const AGE_MERE_MIN = 10
+const AGE_MERE_MAX = 60
+
 function validerFormulaire(formulaire) {
   const erreurs = {}
+  const aujourdHui = new Date()
+  aujourdHui.setHours(0, 0, 0, 0)
 
   if (!formulaire.numeroDossier.trim()) {
     erreurs.numeroDossier = 'Le numéro dossier est obligatoire.'
@@ -80,44 +87,92 @@ function validerFormulaire(formulaire) {
     erreurs.dateEnregistrement = 'La date d enregistrement est obligatoire.'
   }
 
+  // --- Nom, postnom, prénom ---
   if (!formulaire.nom.trim()) {
     erreurs.nom = 'Le nom est obligatoire.'
+  } else if (formulaire.nom.trim().length < 2) {
+    erreurs.nom = 'Le nom doit contenir au moins 2 caractères.'
+  } else if (!REGEX_NOM.test(formulaire.nom.trim())) {
+    erreurs.nom = 'Le nom ne doit contenir que des lettres, espaces ou tirets.'
   }
 
   if (!formulaire.postnom.trim()) {
     erreurs.postnom = 'Le postnom est obligatoire.'
+  } else if (formulaire.postnom.trim().length < 2) {
+    erreurs.postnom = 'Le postnom doit contenir au moins 2 caractères.'
+  } else if (!REGEX_NOM.test(formulaire.postnom.trim())) {
+    erreurs.postnom = 'Le postnom ne doit contenir que des lettres, espaces ou tirets.'
   }
 
   if (!formulaire.prenom.trim()) {
     erreurs.prenom = 'Le prénom est obligatoire.'
+  } else if (formulaire.prenom.trim().length < 2) {
+    erreurs.prenom = 'Le prénom doit contenir au moins 2 caractères.'
+  } else if (!REGEX_NOM.test(formulaire.prenom.trim())) {
+    erreurs.prenom = 'Le prénom ne doit contenir que des lettres, espaces ou tirets.'
   }
 
+  // --- Date de naissance et âge ---
   if (!formulaire.dateNaissance) {
     erreurs.dateNaissance = 'La date de naissance est obligatoire.'
+  } else {
+    const naissance = new Date(formulaire.dateNaissance)
+    naissance.setHours(0, 0, 0, 0)
+
+    if (naissance > aujourdHui) {
+      erreurs.dateNaissance = 'La date de naissance ne peut pas être dans le futur.'
+    } else {
+      const age = Number(formulaire.age)
+      if (age < AGE_MERE_MIN) {
+        erreurs.dateNaissance = `L'âge minimum pour un enregistrement est de ${AGE_MERE_MIN} ans.`
+      } else if (age > AGE_MERE_MAX) {
+        erreurs.dateNaissance = `L'âge maximum autorisé est de ${AGE_MERE_MAX} ans.`
+      }
+
+      if (formulaire.dateEnregistrement) {
+        const dateEnreg = new Date(formulaire.dateEnregistrement)
+        dateEnreg.setHours(0, 0, 0, 0)
+        if (naissance >= dateEnreg) {
+          erreurs.dateNaissance = 'La date de naissance doit être antérieure à la date d enregistrement.'
+        }
+      }
+    }
   }
 
+  // --- Coordonnées ---
   if (!formulaire.adresse.trim()) {
     erreurs.adresse = 'L adresse est obligatoire.'
+  } else if (formulaire.adresse.trim().length < 5) {
+    erreurs.adresse = 'L adresse doit contenir au moins 5 caractères.'
   }
 
   if (!formulaire.telephone.trim()) {
     erreurs.telephone = 'Le téléphone est obligatoire.'
+  } else if (!REGEX_TELEPHONE.test(formulaire.telephone.trim())) {
+    erreurs.telephone = 'Numéro invalide — min. 9 chiffres, chiffres et + uniquement.'
   }
 
   if (!formulaire.etatMatrimonial.trim()) {
     erreurs.etatMatrimonial = 'L état matrimonial est obligatoire.'
   }
 
+  // --- Contact d urgence ---
   if (!formulaire.personneUrgence.trim()) {
     erreurs.personneUrgence = 'La personne à contacter est obligatoire.'
+  } else if (formulaire.personneUrgence.trim().length < 2) {
+    erreurs.personneUrgence = 'Le nom du contact doit contenir au moins 2 caractères.'
   }
 
   if (!formulaire.telephoneUrgence.trim()) {
     erreurs.telephoneUrgence = 'Le téléphone du contact d urgence est obligatoire.'
+  } else if (!REGEX_TELEPHONE.test(formulaire.telephoneUrgence.trim())) {
+    erreurs.telephoneUrgence = 'Numéro invalide — min. 9 chiffres, chiffres et + uniquement.'
   }
 
   if (!formulaire.adresseUrgence.trim()) {
     erreurs.adresseUrgence = 'L adresse du contact d urgence est obligatoire.'
+  } else if (formulaire.adresseUrgence.trim().length < 5) {
+    erreurs.adresseUrgence = 'L adresse doit contenir au moins 5 caractères.'
   }
 
   return erreurs
@@ -134,7 +189,7 @@ function ChampFormulaire({
 }) {
   return (
     <label className={[ 'flex flex-col gap-2', className ].filter(Boolean).join(' ')}>
-      <span className="text-sm font-bold text-on-surface">
+      <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
         {label}
         {obligatoire ? <span className="ml-1 text-error">*</span> : null}
       </span>
@@ -301,8 +356,13 @@ function PageCreationDossierMere() {
           numeroDossier: formulaire.numeroDossier,
         },
       })
-    } catch {
-      setMessageErreur('L enregistrement a échoué. Veuillez réessayer.')
+    } catch (erreur) {
+      const messageServeur = erreur?.message ?? ''
+      if (messageServeur.toLowerCase().includes('existe deja') || messageServeur.toLowerCase().includes('deja utilise')) {
+        setMessageErreur(messageServeur)
+      } else {
+        setMessageErreur('L enregistrement a échoué. Veuillez réessayer.')
+      }
       setEstEnregistrement(false)
       return
     }
@@ -353,11 +413,10 @@ function PageCreationDossierMere() {
       ) : null}
 
       <form className="space-y-6" onSubmit={enregistrerDossier}>
-        <section className="relative overflow-hidden rounded-xl bg-surface-container-low p-6">
-          <div className="absolute left-0 top-0 h-full w-1.5 bg-tertiary" />
-          <div className="mb-4 flex items-center gap-2">
+        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-tertiary">fingerprint</span>
-            <h3 className="text-2xl font-bold text-on-surface">1. Identité</h3>
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">1. Identité</h3>
           </div>
           <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-4 lg:grid-cols-6">
             <ChampFormulaire champ="numeroDossier" label="Numéro de dossier" obligatoire erreur={erreurs.numeroDossier} aide="Généré automatiquement par le système." className="md:col-span-2">
@@ -381,7 +440,7 @@ function PageCreationDossierMere() {
                 value={formulaire.dateEnregistrement}
                 disabled
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none disabled:cursor-not-allowed disabled:opacity-80',
                   erreurs.dateEnregistrement ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -393,7 +452,7 @@ function PageCreationDossierMere() {
                 value={formulaire.dateNaissance}
                 onChange={(event) => mettreAJourChamp('dateNaissance', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.dateNaissance ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -405,7 +464,7 @@ function PageCreationDossierMere() {
                 value={formulaire.nom}
                 onChange={(event) => mettreAJourChamp('nom', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.nom ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -417,7 +476,7 @@ function PageCreationDossierMere() {
                 value={formulaire.postnom}
                 onChange={(event) => mettreAJourChamp('postnom', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.postnom ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -429,7 +488,7 @@ function PageCreationDossierMere() {
                 value={formulaire.prenom}
                 onChange={(event) => mettreAJourChamp('prenom', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.prenom ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -438,11 +497,10 @@ function PageCreationDossierMere() {
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="relative overflow-hidden rounded-xl bg-surface-container-low p-6">
-            <div className="absolute left-0 top-0 h-full w-1.5 bg-primary" />
-            <div className="mb-4 flex items-center gap-2">
+          <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+            <div className="mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">location_on</span>
-              <h3 className="text-2xl font-bold text-on-surface">2. Coordonnées</h3>
+              <h3 className="text-lg font-bold tracking-tight text-on-surface">2. Coordonnées</h3>
             </div>
 
             <div className="space-y-4">
@@ -452,7 +510,7 @@ function PageCreationDossierMere() {
                   value={formulaire.adresse}
                   onChange={(event) => mettreAJourChamp('adresse', event.target.value)}
                   className={[
-                    'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                    'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                     erreurs.adresse ? 'ring-2 ring-error/20' : '',
                   ].join(' ')}
                 />
@@ -465,7 +523,7 @@ function PageCreationDossierMere() {
                     value={formulaire.telephone}
                     onChange={(event) => mettreAJourChamp('telephone', event.target.value)}
                     className={[
-                      'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                      'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                       erreurs.telephone ? 'ring-2 ring-error/20' : '',
                     ].join(' ')}
                   />
@@ -476,7 +534,7 @@ function PageCreationDossierMere() {
                     value={formulaire.etatMatrimonial}
                     onChange={(event) => mettreAJourChamp('etatMatrimonial', event.target.value)}
                     className={[
-                      'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                      'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                       erreurs.etatMatrimonial ? 'ring-2 ring-error/20' : '',
                     ].join(' ')}
                   >
@@ -492,11 +550,10 @@ function PageCreationDossierMere() {
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-xl bg-surface-container-low p-6">
-            <div className="absolute left-0 top-0 h-full w-1.5 bg-secondary" />
-            <div className="mb-4 flex items-center gap-2">
+          <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+            <div className="mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary">group</span>
-              <h3 className="text-2xl font-bold text-on-surface">3. Partenaire & Occupations</h3>
+              <h3 className="text-lg font-bold tracking-tight text-on-surface">3. Partenaire &amp; Occupations</h3>
             </div>
 
             <div className="space-y-4">
@@ -505,7 +562,7 @@ function PageCreationDossierMere() {
                   type="text"
                   value={formulaire.nomPartenaire}
                   onChange={(event) => mettreAJourChamp('nomPartenaire', event.target.value)}
-                  className="w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </ChampFormulaire>
 
@@ -515,7 +572,7 @@ function PageCreationDossierMere() {
                     type="text"
                     value={formulaire.occupationFemme}
                     onChange={(event) => mettreAJourChamp('occupationFemme', event.target.value)}
-                    className="w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </ChampFormulaire>
 
@@ -524,7 +581,7 @@ function PageCreationDossierMere() {
                     type="text"
                     value={formulaire.occupationHomme}
                     onChange={(event) => mettreAJourChamp('occupationHomme', event.target.value)}
-                    className="w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </ChampFormulaire>
               </div>
@@ -532,11 +589,10 @@ function PageCreationDossierMere() {
           </section>
         </div>
 
-        <section className="relative overflow-hidden rounded-xl bg-surface-container-low p-6">
-          <div className="absolute left-0 top-0 h-full w-1.5 bg-error" />
-          <div className="mb-4 flex items-center gap-2">
+        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-error">emergency</span>
-            <h3 className="text-2xl font-bold text-on-surface">4. Contact d urgence</h3>
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">4. Contact d'urgence</h3>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
@@ -546,7 +602,7 @@ function PageCreationDossierMere() {
                 value={formulaire.personneUrgence}
                 onChange={(event) => mettreAJourChamp('personneUrgence', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.personneUrgence ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -558,7 +614,7 @@ function PageCreationDossierMere() {
                 value={formulaire.telephoneUrgence}
                 onChange={(event) => mettreAJourChamp('telephoneUrgence', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.telephoneUrgence ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />
@@ -570,7 +626,7 @@ function PageCreationDossierMere() {
                 value={formulaire.adresseUrgence}
                 onChange={(event) => mettreAJourChamp('adresseUrgence', event.target.value)}
                 className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest p-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
+                  'w-full rounded-lg border-none bg-surface-container p-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20',
                   erreurs.adresseUrgence ? 'ring-2 ring-error/20' : '',
                 ].join(' ')}
               />

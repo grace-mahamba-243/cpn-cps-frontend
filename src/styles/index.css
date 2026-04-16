@@ -164,9 +164,8 @@ p {
 .barre-laterale {
   position: sticky;
   top: 0;
-  align-self: stretch;
-  height: 100%;
-  min-height: 100dvh;
+  align-self: start;
+  height: 100dvh;
   width: 13.75rem;
   display: flex;
   flex-direction: column;
@@ -175,7 +174,7 @@ p {
   padding: 0;
   background: #f8fafc;
   border-right: none;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 50;
 }
 
@@ -187,6 +186,8 @@ p {
 
 .barre-laterale__bloc {
   padding: 1rem 1rem 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .barre-laterale__bas {

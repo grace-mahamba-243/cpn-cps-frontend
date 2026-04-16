@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
@@ -150,13 +150,6 @@ function EnfantsPage() {
           {messageSucces}
         </Alerte>
       ) : null}
-
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Cette page reste strictement administrative. Aucun accès aux données cliniques de suivi enfant, nutrition ou vaccination n est proposé ici.
-        </p>
-      </div>
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 flex items-center justify-between rounded-xl bg-primary-container/30 p-5">

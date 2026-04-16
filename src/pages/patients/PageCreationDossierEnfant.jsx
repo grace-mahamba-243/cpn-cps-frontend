@@ -29,7 +29,7 @@ const ETAT_INITIAL = {
 function Champ({ label, obligatoire = false, erreur, children }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-sm font-bold text-on-surface">
+      <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
         {label}
         {obligatoire ? <span className="ml-1 text-error">*</span> : null}
       </span>
@@ -39,26 +39,76 @@ function Champ({ label, obligatoire = false, erreur, children }) {
   )
 }
 
+const REGEX_NOM = /^[a-zA-ZÀ-ÿ\s\-']+$/
+const REGEX_TELEPHONE = /^[+0-9]{9,15}$/
+const AGE_ENFANT_MAX_MOIS = 59
+
 function valider(formulaire) {
   const erreurs = {}
+  const aujourdHui = new Date()
+  aujourdHui.setHours(0, 0, 0, 0)
 
+  // --- Nom, postnom ---
   if (!formulaire.nom.trim()) {
     erreurs.nom = 'Le nom de l enfant est obligatoire.'
+  } else if (formulaire.nom.trim().length < 2) {
+    erreurs.nom = 'Le nom doit contenir au moins 2 caractères.'
+  } else if (!REGEX_NOM.test(formulaire.nom.trim())) {
+    erreurs.nom = 'Le nom ne doit contenir que des lettres, espaces ou tirets.'
   }
+
   if (!formulaire.postnom.trim()) {
     erreurs.postnom = 'Le postnom de l enfant est obligatoire.'
+  } else if (formulaire.postnom.trim().length < 2) {
+    erreurs.postnom = 'Le postnom doit contenir au moins 2 caractères.'
+  } else if (!REGEX_NOM.test(formulaire.postnom.trim())) {
+    erreurs.postnom = 'Le postnom ne doit contenir que des lettres, espaces ou tirets.'
   }
+
   if (!formulaire.sexe) {
     erreurs.sexe = 'Le sexe est obligatoire.'
   }
+
+  // --- Date de naissance ---
   if (!formulaire.dateNaissance) {
     erreurs.dateNaissance = 'La date de naissance est obligatoire.'
+  } else {
+    const naissance = new Date(formulaire.dateNaissance)
+    naissance.setHours(0, 0, 0, 0)
+
+    if (naissance > aujourdHui) {
+      erreurs.dateNaissance = 'La date de naissance ne peut pas être dans le futur.'
+    } else {
+      const ageMois =
+        (aujourdHui.getFullYear() - naissance.getFullYear()) * 12 +
+        (aujourdHui.getMonth() - naissance.getMonth()) -
+        (aujourdHui.getDate() < naissance.getDate() ? 1 : 0)
+      if (ageMois > AGE_ENFANT_MAX_MOIS) {
+        erreurs.dateNaissance = `L'âge maximum pour un dossier enfant est de ${AGE_ENFANT_MAX_MOIS} mois.`
+      }
+
+      if (formulaire.dateEnregistrement) {
+        const dateEnreg = new Date(formulaire.dateEnregistrement)
+        dateEnreg.setHours(0, 0, 0, 0)
+        if (naissance > dateEnreg) {
+          erreurs.dateNaissance = 'La date de naissance doit être antérieure à la date d enregistrement.'
+        }
+      }
+    }
   }
+
+  // --- Responsable ---
   if (!formulaire.nomMere.trim()) {
     erreurs.nomMere = 'Le nom de la mère est obligatoire.'
+  } else if (formulaire.nomMere.trim().length < 2) {
+    erreurs.nomMere = 'Le nom de la mère doit contenir au moins 2 caractères.'
   }
+
+  // --- Téléphone ---
   if (!formulaire.telephone.trim()) {
     erreurs.telephone = 'Le téléphone est obligatoire.'
+  } else if (!REGEX_TELEPHONE.test(formulaire.telephone.trim())) {
+    erreurs.telephone = 'Numéro invalide — min. 9 chiffres, chiffres et + uniquement.'
   }
 
   return erreurs
@@ -116,8 +166,13 @@ function PageCreationDossierEnfant() {
           messageSucces: `Le dossier administratif de ${nomComplet} a été créé avec succès.`,
         },
       })
-    } catch {
-      setMessageErreur('L enregistrement a échoué. Veuillez réessayer.')
+    } catch (erreur) {
+      const messageServeur = erreur?.message ?? ''
+      if (messageServeur.toLowerCase().includes('existe deja') || messageServeur.toLowerCase().includes('deja utilise')) {
+        setMessageErreur(messageServeur)
+      } else {
+        setMessageErreur('L enregistrement a échoué. Veuillez réessayer.')
+      }
       setEstEnregistrement(false)
       return
     }
@@ -152,18 +207,11 @@ function PageCreationDossierEnfant() {
         </Alerte>
       ) : null}
 
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Ce formulaire est limité au dossier administratif enfant. Aucune donnée clinique de suivi, nutrition ou vaccination n est saisie ici.
-        </p>
-      </div>
-
       <form className="space-y-6" onSubmit={enregistrer}>
-        <section className="rounded-xl bg-surface-container-low p-6">
-          <div className="mb-4 flex items-center gap-2">
+        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-tertiary">badge</span>
-            <h3 className="text-2xl font-bold text-on-surface">Identité de l enfant</h3>
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">Identité de l'enfant</h3>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -173,7 +221,7 @@ function PageCreationDossierEnfant() {
                 value={formulaire.numeroFiche}
                 readOnly
                 disabled
-                className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm font-semibold outline-none disabled:cursor-not-allowed"
+                className="w-full rounded-lg border-none bg-surface-container p-3 text-sm font-semibold outline-none disabled:cursor-not-allowed"
               />
             </Champ>
 
@@ -183,26 +231,26 @@ function PageCreationDossierEnfant() {
                 value={formulaire.dateEnregistrement}
                 readOnly
                 disabled
-                className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none disabled:cursor-not-allowed"
+                className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none disabled:cursor-not-allowed"
               />
             </Champ>
 
             <div className="hidden lg:block" />
 
             <Champ label="Nom" obligatoire erreur={erreurs.nom}>
-              <input type="text" value={formulaire.nom} onChange={(event) => mettreAJourChamp('nom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.nom} onChange={(event) => mettreAJourChamp('nom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Postnom" obligatoire erreur={erreurs.postnom}>
-              <input type="text" value={formulaire.postnom} onChange={(event) => mettreAJourChamp('postnom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.postnom} onChange={(event) => mettreAJourChamp('postnom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Prénom">
-              <input type="text" value={formulaire.prenom} onChange={(event) => mettreAJourChamp('prenom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.prenom} onChange={(event) => mettreAJourChamp('prenom', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Sexe" obligatoire erreur={erreurs.sexe}>
-              <select value={formulaire.sexe} onChange={(event) => mettreAJourChamp('sexe', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+              <select value={formulaire.sexe} onChange={(event) => mettreAJourChamp('sexe', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
                 <option value="">Sélectionner</option>
                 <option value="F">F</option>
                 <option value="M">M</option>
@@ -210,32 +258,32 @@ function PageCreationDossierEnfant() {
             </Champ>
 
             <Champ label="Date de naissance" obligatoire erreur={erreurs.dateNaissance}>
-              <input type="date" value={formulaire.dateNaissance} onChange={(event) => mettreAJourChamp('dateNaissance', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="date" value={formulaire.dateNaissance} onChange={(event) => mettreAJourChamp('dateNaissance', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
           </div>
         </section>
 
-        <section className="rounded-xl bg-surface-container-low p-6">
-          <div className="mb-4 flex items-center gap-2">
+        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">family_restroom</span>
-            <h3 className="text-2xl font-bold text-on-surface">Responsables</h3>
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">Responsables</h3>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Champ label="Nom de la mère" obligatoire erreur={erreurs.nomMere}>
-              <input type="text" value={formulaire.nomMere} onChange={(event) => mettreAJourChamp('nomMere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.nomMere} onChange={(event) => mettreAJourChamp('nomMere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Nom du père">
-              <input type="text" value={formulaire.nomPere} onChange={(event) => mettreAJourChamp('nomPere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.nomPere} onChange={(event) => mettreAJourChamp('nomPere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Téléphone" obligatoire erreur={erreurs.telephone}>
-              <input type="tel" value={formulaire.telephone} onChange={(event) => mettreAJourChamp('telephone', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="tel" value={formulaire.telephone} onChange={(event) => mettreAJourChamp('telephone', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
 
             <Champ label="Adresse">
-              <input type="text" value={formulaire.adresse} onChange={(event) => mettreAJourChamp('adresse', event.target.value)} className="w-full rounded-lg border-none bg-surface-container-lowest p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" value={formulaire.adresse} onChange={(event) => mettreAJourChamp('adresse', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
             </Champ>
           </div>
         </section>

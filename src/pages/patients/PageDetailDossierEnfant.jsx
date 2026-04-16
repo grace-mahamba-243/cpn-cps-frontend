@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
+import serviceRendezVous from '../../services/api/serviceRendezVous'
 
 function formaterDate(dateIso) {
   if (!dateIso) {
@@ -19,11 +20,13 @@ function formaterDate(dateIso) {
   }
 }
 
-function LigneInfo({ label, valeur }) {
+function ChampLecture({ label, valeur, principal }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-surface-container-lowest px-4 py-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-on-surface">{valeur || 'Non renseigné'}</p>
+    <div className="flex flex-col">
+      <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
+      <div className={`rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${principal ? 'text-primary' : 'text-on-surface'}`}>
+        {valeur || <span className="font-normal italic text-on-surface-variant/60">Non renseigné</span>}
+      </div>
     </div>
   )
 }
@@ -37,6 +40,7 @@ function PageDetailDossierEnfant() {
     chargement: true,
     dossier: null,
   })
+  const [historiqueRdv, setHistoriqueRdv] = useState([])
 
   useEffect(() => {
     let estActif = true
@@ -52,6 +56,12 @@ function PageDetailDossierEnfant() {
         chargement: false,
         dossier,
       })
+
+      if (dossier?.numeroFiche) {
+        serviceRendezVous.recupererHistoriqueParDossier(dossier.numeroFiche)
+          .then(setHistoriqueRdv)
+          .catch(() => {})
+      }
     }
 
     void chargerDossier()
@@ -117,39 +127,80 @@ function PageDetailDossierEnfant() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Cette page expose seulement les informations administratives de l enfant. Aucun accès clinique vers suivi enfant, nutrition ou vaccination n est présent.
-        </p>
-      </div>
-
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Identité</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LigneInfo label="Nom" valeur={dossier.nom} />
-          <LigneInfo label="Postnom" valeur={dossier.postnom} />
-          <LigneInfo label="Prénom" valeur={dossier.prenom} />
-          <LigneInfo label="Sexe" valeur={dossier.sexe} />
-          <LigneInfo label="Date de naissance" valeur={formaterDate(dossier.dateNaissance)} />
-          <LigneInfo label="Date d enregistrement" valeur={formaterDate(dossier.dateEnregistrement)} />
+      <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">child_care</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Identité</h4>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+          <ChampLecture label="Nom" valeur={dossier.nom} />
+          <ChampLecture label="Postnom" valeur={dossier.postnom} />
+          <ChampLecture label="Prénom" valeur={dossier.prenom} />
+          <ChampLecture label="Sexe" valeur={dossier.sexe} />
+          <ChampLecture label="Date de naissance" valeur={formaterDate(dossier.dateNaissance)} />
+          <ChampLecture label="Date d'enregistrement" valeur={formaterDate(dossier.dateEnregistrement)} />
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Responsables</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LigneInfo label="Nom de la mère" valeur={dossier.nomMere} />
-          <LigneInfo label="Nom du père" valeur={dossier.nomPere} />
-          <LigneInfo label="Téléphone" valeur={dossier.telephone} />
+      <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">group</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Responsables</h4>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+          <ChampLecture label="Nom de la mère" valeur={dossier.nomMere} />
+          <ChampLecture label="Nom du père" valeur={dossier.nomPere} />
+          <ChampLecture label="Téléphone" valeur={dossier.telephone} />
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Coordonnées</h2>
-        <div className="grid grid-cols-1 gap-4">
-          <LigneInfo label="Adresse" valeur={dossier.adresse} />
+      <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">location_on</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Coordonnées</h4>
         </div>
+        <ChampLecture label="Adresse" valeur={dossier.adresse} />
+      </section>
+
+      <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">calendar_month</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Historique des rendez-vous</h4>
+        </div>
+        {historiqueRdv.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">Aucun rendez-vous enregistré pour ce dossier.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-outline-variant/20 text-left">
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Date</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Heure</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Service</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Statut</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Motif</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {historiqueRdv.map((rdv) => (
+                  <tr
+                    key={rdv.id}
+                    className="cursor-pointer transition-colors hover:bg-surface-container-low/30"
+                    onClick={() => navigate(`/rendez-vous/${rdv.id}`)}
+                  >
+                    <td className="py-3 pr-6 text-on-surface-variant">{rdv.date ? new Intl.DateTimeFormat('fr-FR').format(new Date(rdv.date)) : '—'}</td>
+                    <td className="py-3 pr-6 font-bold text-primary">{rdv.heure ?? '—'}</td>
+                    <td className="py-3 pr-6 text-on-surface-variant">{rdv.service ?? '—'}</td>
+                    <td className="py-3 pr-6">
+                      <span className="rounded-full bg-surface-container px-2.5 py-1 text-xs font-semibold text-on-surface">{rdv.statut ?? '—'}</span>
+                    </td>
+                    <td className="py-3 text-on-surface-variant">{rdv.motif ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   )

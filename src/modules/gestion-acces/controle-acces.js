@@ -12,6 +12,8 @@ const PERMISSIONS = Object.freeze({
   RECEPTION_TABLEAU_BORD_CONSULTER: 'reception.tableau_bord.consulter',
   CPN_CONSULTER: 'cpn.consulter',
   CPN_GERER: 'cpn.gerer',
+  LABORATOIRE_CONSULTER: 'laboratoire.consulter',
+  LABORATOIRE_GERER: 'laboratoire.gerer',
   ADMIN_UTILISATEURS_GERER: 'administration.utilisateurs.gerer',
   ADMIN_ROLES_GERER: 'administration.roles.gerer',
   ADMIN_ACCES_GERER: 'administration.acces.gerer',
@@ -53,6 +55,18 @@ const CATALOGUE_PERMISSIONS = Object.freeze([
     'Gerer les dossiers CPN',
     'Permet d ouvrir, modifier et enregistrer les contacts et examens CPN.',
     'Soins',
+  ),
+  creerPermission(
+    PERMISSIONS.LABORATOIRE_CONSULTER,
+    'Consulter le laboratoire',
+    'Permet de voir les demandes d examens envoyees depuis les modules cliniques.',
+    'Laboratoire',
+  ),
+  creerPermission(
+    PERMISSIONS.LABORATOIRE_GERER,
+    'Gerer les examens de laboratoire',
+    'Permet de prendre en charge, saisir et envoyer les resultats d examens.',
+    'Laboratoire',
   ),
   creerPermission(
     PERMISSIONS.ADMIN_UTILISATEURS_GERER,
@@ -135,6 +149,18 @@ const ROLES_PAR_DEFAUT = Object.freeze([
     ],
   },
   {
+    code: 'LABORANTIN',
+    libelle: 'Laborantin',
+    description: 'Acces dedie aux demandes d examens, saisie et envoi des resultats.',
+    estSysteme: true,
+    permissions: [
+      PERMISSIONS.TABLEAU_BORD_CONSULTER,
+      PERMISSIONS.PATIENTS_CONSULTER,
+      PERMISSIONS.LABORATOIRE_CONSULTER,
+      PERMISSIONS.LABORATOIRE_GERER,
+    ],
+  },
+  {
     code: 'RECEPTION',
     libelle: 'Reception',
     description: 'Acces centré sur l accueil et la consultation rapide des dossiers.',
@@ -170,6 +196,9 @@ const ALIAS_CODES_ROLE = Object.freeze({
   RECEPTIONISTE: 'RECEPTION',
   RECEPTIONNIST: 'RECEPTION',
   ACCUEIL: 'RECEPTION',
+  LABORANTIN: 'LABORANTIN',
+  LABORANTINE: 'LABORANTIN',
+  LABO: 'LABORANTIN',
 })
 
 function normaliserCodeRole(role) {

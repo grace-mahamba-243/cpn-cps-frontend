@@ -23,6 +23,7 @@ import PageAjoutUtilisateur from '../../modules/gestion-acces/pages/PageAjoutUti
 import PageDetailUtilisateur from '../../modules/gestion-acces/pages/PageDetailUtilisateur'
 import PageModifierUtilisateur from '../../modules/gestion-acces/pages/PageModifierUtilisateur'
 import PageTableauDeBordReception from '../../modules/reception/pages/PageTableauDeBordReception'
+import PageEnregistrementArrivee from '../../modules/rendez-vous/pages/PageEnregistrementArrivee'
 import PageListeRendezVous from '../../modules/rendez-vous/pages/PageListeRendezVous'
 import PageDetailRendezVous from '../../modules/rendez-vous/pages/PageDetailRendezVous'
 import PageCreationRendezVous from '../../modules/rendez-vous/pages/PageCreationRendezVous'
@@ -31,6 +32,13 @@ import PageOuvertureCpn from '../../modules/cpn/pages/PageOuvertureCpn'
 import PageDetailDossierCpn from '../../modules/cpn/pages/PageDetailDossierCpn'
 import PageNouveauContactCpn from '../../modules/cpn/pages/PageNouveauContactCpn'
 import PageDetailContactCpn from '../../modules/cpn/pages/PageDetailContactCpn'
+import PageInfoAdministrativePatiente from '../../modules/cpn/pages/PageInfoAdministrativePatiente'
+import PageDossierOuvertureCpn from '../../modules/cpn/pages/PageDossierOuvertureCpn'
+import PageListeContactsCpn from '../../modules/cpn/pages/PageListeContactsCpn'
+import PageExamensCpn from '../../modules/cpn/pages/PageExamensCpn'
+import PageJournalActivites from '../../modules/administration/pages/PageJournalActivites'
+import PageListeDemandesLaboratoire from '../../modules/laboratoire/pages/PageListeDemandesLaboratoire'
+import PageDetailDemandeLaboratoire from '../../modules/laboratoire/pages/PageDetailDemandeLaboratoire'
 import { routesAdministration, routesPrivees } from './registreRoutes'
 
 const composantsRoutesPrivees = {
@@ -43,14 +51,20 @@ const composantsRoutesPrivees = {
   '/enfants/nouveau': <PageCreationDossierEnfant />,
   '/enfants/:enfantId': <PageDetailDossierEnfant />,
   '/reception': <PageTableauDeBordReception />,
+  '/reception/arrivee': <PageEnregistrementArrivee />,
   '/rendez-vous': <PageListeRendezVous />,
   '/rendez-vous/nouveau': <PageCreationRendezVous />,
   '/rendez-vous/:rendezVousId': <PageDetailRendezVous />,
   '/cpn': <PageListeDossiersCpn />,
   '/cpn/nouveau': <PageOuvertureCpn />,
   '/cpn/:dossierId': <PageDetailDossierCpn />,
+  '/cpn/:dossierId/contacts': <PageListeContactsCpn />,
   '/cpn/:dossierId/contacts/nouveau': <PageNouveauContactCpn />,
   '/cpn/:dossierId/contacts/:contactId': <PageDetailContactCpn />,
+  '/cpn/:dossierId/contacts/:contactId/modifier': <PageNouveauContactCpn />,
+  '/cpn/:dossierId/examens': <PageExamensCpn />,
+  '/cpn/:dossierId/info-administrative': <PageInfoAdministrativePatiente />,
+  '/cpn/:dossierId/dossier-ouverture': <PageDossierOuvertureCpn />,
   '/admin/utilisateurs': <PageListeUtilisateurs />,
   '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
   '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,
@@ -58,6 +72,9 @@ const composantsRoutesPrivees = {
   '/admin/roles-acces': <PageListeRoles />,
   '/admin/roles-acces/nouveau': <PageAjoutRole />,
   '/admin/roles-acces/:roleCode': <PageDetailRole />,
+  '/admin/journal': <PageJournalActivites />,
+  '/laboratoire': <PageListeDemandesLaboratoire />,
+  '/laboratoire/:examenId': <PageDetailDemandeLaboratoire />,
 }
 
 // Ce composant centralise le routage de l'application et applique les protections

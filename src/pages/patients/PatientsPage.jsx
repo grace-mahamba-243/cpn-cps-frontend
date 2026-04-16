@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
@@ -129,13 +129,6 @@ function PatientsPage() {
         </Alerte>
       ) : null}
 
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Cette page est strictement administrative. Aucune donnée clinique n est affichée ni accessible depuis cette liste.
-        </p>
-      </div>
-
       {/* Champ de recherche rapide supprimé à la demande */}
 
       <div className="rounded-xl bg-surface-container-lowest shadow-sm">
@@ -162,7 +155,6 @@ function PatientsPage() {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Nom complet</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Âge</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Téléphone</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Adresse</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Enregistrement</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Action</th>
                   </tr>
@@ -182,7 +174,6 @@ function PatientsPage() {
                       <td className="px-6 py-6 font-bold text-on-surface">{construireNomComplet(mere)}</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.age} ans</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.telephone}</td>
-                      <td className="px-6 py-6 text-on-surface-variant">{mere.adresse}</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.dateEnregistrement}</td>
                       <td className="px-6 py-6">
                         <button

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 
 // Ce composant affiche le formulaire de connexion avec les champs, les messages d'erreur
 // et le bouton de soumission relies a la logique de la page par les props.
@@ -87,7 +87,7 @@ function FormulaireConnexion({
         </div>
 
         {messageErreur ? (
-          <div className="flex w-full items-center gap-3 rounded-r-lg border-l-4 border-error bg-error-container/10 p-4 text-sm font-medium text-error">
+          <div className="flex w-full items-center gap-3 rounded-r-lg border-l-4 border-outline-variant/40 bg-error-container/10 p-4 text-sm font-medium text-error">
             <span className="material-symbols-outlined shrink-0">error</span>
             <span>{messageErreur}</span>
           </div>
@@ -105,7 +105,7 @@ function FormulaireConnexion({
 
           {enChargement ? (
             <div className="flex items-center justify-center gap-2 py-2 text-sm text-on-surface-variant">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-outline-variant/50 border-t-transparent" />
               <span>Verification des acces...</span>
             </div>
           ) : null}
