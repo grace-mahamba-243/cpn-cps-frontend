@@ -11,15 +11,19 @@ async function lireCorpsJson(reponse) {
   }
 }
 
-function creerErreurApi(message) {
+function creerErreurApi(message, statut, corps) {
   const erreur = new Error(message)
   erreur.estErreurApi = true
+  erreur.statut = statut
+  erreur.corps = corps
   return erreur
 }
 
 function construireMessageErreur(reponse, corps) {
-  if (typeof corps?.message === 'string') return corps.message
-  if (Array.isArray(corps?.message)) return corps.message.join(' ')
+  const msg = corps?.message
+  if (typeof msg === 'string') return msg
+  if (typeof msg === 'object' && msg?.message) return msg.message
+  if (Array.isArray(msg)) return msg.join(' ')
   if (reponse.status === 404) return 'Ressource introuvable.'
   if (reponse.status >= 500) return 'Le service CPN est indisponible.'
   return 'Une erreur est survenue.'
@@ -32,7 +36,7 @@ async function appelerApi(url, options = {}) {
   })
   const corps = await lireCorpsJson(reponse)
   if (!reponse.ok) {
-    throw creerErreurApi(construireMessageErreur(reponse, corps))
+    throw creerErreurApi(construireMessageErreur(reponse, corps), reponse.status, corps)
   }
   return corps
 }
@@ -90,6 +94,18 @@ const serviceCpn = {
     return corps?.contact ?? corps
   },
 
+  async analyserContact(dossierId, donnees) {
+    // Filtrer les valeurs nulles/undefined pour éviter les erreurs de validation côté backend
+    const donneesPropres = Object.fromEntries(
+      Object.entries(donnees).filter(([, v]) => v != null),
+    )
+    const corps = await appelerApi(`${URL_API}/cpn/${dossierId}/contacts/analyser`, {
+      method: 'POST',
+      body: JSON.stringify(donneesPropres),
+    })
+    return corps
+  },
+
   // --- Examens ---
 
   async listerExamens(dossierId) {
@@ -107,6 +123,15 @@ const serviceCpn = {
 
   async enregistrerResultatExamen(dossierId, examenId, donnees) {
     const corps = await appelerApi(`${URL_API}/cpn/${dossierId}/examens/${examenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(donnees),
+    })
+    return corps?.examen ?? corps
+  },
+
+  // Saisir l'interprétation d'une échographie (patiente revient avec ses images)
+  async entrerInterpretationEchographie(dossierId, examenId, donnees) {
+    const corps = await appelerApi(`${URL_API}/cpn/${dossierId}/examens/${examenId}/interpretation`, {
       method: 'PATCH',
       body: JSON.stringify(donnees),
     })

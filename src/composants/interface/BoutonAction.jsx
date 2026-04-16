@@ -1,4 +1,4 @@
-export default function BoutonAction({ 
+﻿export default function BoutonAction({ 
     icone, 
     texte, 
     type = "button", 
@@ -24,7 +24,7 @@ export default function BoutonAction({
             
             {enChargement && (
                 <div className="flex items-center justify-center gap-2 text-on-surface-variant text-sm py-2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-outline-variant/50 border-t-transparent rounded-full animate-spin"></div>
                     {texteChargement}
                 </div>
             )}

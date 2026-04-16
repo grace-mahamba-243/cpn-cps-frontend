@@ -45,8 +45,6 @@ function obtenirClassesStatut(statut) {
       return `${base} bg-error-container text-on-error-container`
     case 'reprogramme':
       return `${base} bg-secondary-container text-on-secondary-container`
-    case 'surprise':
-      return `${base} bg-secondary-container text-on-secondary-container`
     default:
       return `${base} bg-surface-container text-on-surface-variant`
   }
@@ -60,9 +58,36 @@ function obtenirIconeStatut(statut) {
     case 'termine': return 'task_alt'
     case 'annule': return 'cancel'
     case 'reprogramme': return 'event_repeat'
-    case 'surprise': return 'bolt'
     default: return 'help_outline'
   }
+}
+
+/* ── Champ lecture seule (même style que PageDossierOuvertureCpn) ── */
+function ChampLecture({ label, valeur, principal, couleur }) {
+  const cls = couleur ?? (principal ? 'text-primary' : 'text-on-surface')
+  return (
+    <div className="flex flex-col">
+      <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
+      <div className={`rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${cls}`}>
+        {(valeur !== null && valeur !== undefined && valeur !== '')
+          ? valeur
+          : <span className="font-normal italic text-on-surface-variant/60">Non renseigné</span>}
+      </div>
+    </div>
+  )
+}
+
+/* ── Section détail (style border-l-4) ── */
+function SectionDetail({ icone, couleurIcone = 'text-primary', titre, children }) {
+  return (
+    <div className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+      <div className="mb-6 flex items-center gap-2">
+        <span className={`material-symbols-outlined ${couleurIcone}`} style={{ fontVariationSettings: "'FILL' 1" }}>{icone}</span>
+        <h4 className="text-lg font-bold tracking-tight text-on-surface">{titre}</h4>
+      </div>
+      {children}
+    </div>
+  )
 }
 
 // Ce composant affiche le detail complet d un rendez-vous avec le nouveau design :
@@ -351,110 +376,39 @@ function PageDetailRendezVous() {
           </section>
 
           {/* Informations detaillees */}
-          <section className="bg-surface-container-lowest p-10 rounded-2xl shadow-sm border border-outline-variant/20">
-            <div className="flex items-center gap-3 mb-10 pb-4 border-b border-outline-variant/10">
-              <span className="material-symbols-outlined text-primary text-3xl">event_note</span>
-              <h3 className="text-2xl font-bold">Informations detaillees</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-12 gap-x-16">
-
-              {/* Colonne gauche */}
-              <div className="space-y-10">
-                {/* Service */}
-                <div className="flex items-start gap-5">
-                  <div className="bg-primary/10 p-4 rounded-2xl text-primary flex-shrink-0">
-                    <span className="material-symbols-outlined text-2xl">medical_services</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Service medical</p>
-                    <p className="text-xl font-bold text-on-surface">{rdv.service || 'Non renseigne'}</p>
-                  </div>
-                </div>
-
-                {/* Date et heure */}
-                <div className="flex items-start gap-5">
-                  <div className="bg-primary/10 p-4 rounded-2xl text-primary flex-shrink-0">
-                    <span className="material-symbols-outlined text-2xl">calendar_month</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Date & Heure</p>
-                    <p className="text-xl font-bold text-on-surface capitalize">{formaterDate(rdv.date)}</p>
-                    {rdv.heure && (
-                      <p className="text-primary font-bold text-lg">{rdv.heure}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Type de visite */}
-                <div className="flex items-start gap-5">
-                  <div className="bg-primary/10 p-4 rounded-2xl text-primary flex-shrink-0">
-                    <span className="material-symbols-outlined text-2xl">category</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Type de visite</p>
-                    <p className="text-xl font-bold text-on-surface">
-                      {rdv.typeRendezVous === 'Surprise' ? 'Visite non planifiee' : 'Visite planifiee'}
-                    </p>
-                    <p className="text-sm text-on-surface-variant">{rdv.typeRendezVous}</p>
-                  </div>
-                </div>
-
-                {/* Enregistre par */}
-                {rdv.creePar && (
-                  <div className="flex items-start gap-5">
-                    <div className="bg-primary/10 p-4 rounded-2xl text-primary flex-shrink-0">
-                      <span className="material-symbols-outlined text-2xl">person</span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Enregistre par</p>
-                      <p className="text-xl font-bold text-on-surface">{rdv.creePar}</p>
-                      {rdv.creeLe && (
-                        <p className="text-sm text-on-surface-variant">{formaterDateHeure(rdv.creeLe)}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+          <SectionDetail icone="event_note" couleurIcone="text-primary" titre="Informations détaillées">
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+                <ChampLecture label="Service médical" valeur={rdv.service} />
+                <ChampLecture label="Date" valeur={formaterDate(rdv.date)} principal />
+                <ChampLecture label="Heure" valeur={rdv.heure} principal />
               </div>
-
-              {/* Colonne droite */}
-              <div className="space-y-10">
-                {/* Motif */}
-                <div className="flex items-start gap-5">
-                  <div className="bg-primary/10 p-4 rounded-2xl text-primary flex-shrink-0">
-                    <span className="material-symbols-outlined text-2xl">psychiatry</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Motif du rendez-vous</p>
-                    <p className="text-xl font-bold text-on-surface">{rdv.motif || 'Non renseigne'}</p>
-                  </div>
-                </div>
-
-                {/* Observations */}
-                <div className="bg-surface-container p-6 rounded-2xl border border-outline-variant/10">
-                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Observations</p>
-                  {rdv.observations ? (
-                    <p className="text-base text-on-surface leading-relaxed font-medium">{rdv.observations}</p>
-                  ) : (
-                    <p className="text-base text-on-surface-variant italic">Aucune observation enregistree.</p>
-                  )}
-                </div>
-
-                {/* Date de derniere mise a jour (si reprogramme ou annule) */}
-                {rdv.misAJourLe && rdv.creeLe !== rdv.misAJourLe && (
-                  <div className="flex items-start gap-5">
-                    <div className="bg-secondary/10 p-4 rounded-2xl text-secondary flex-shrink-0">
-                      <span className="material-symbols-outlined text-2xl">update</span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Derniere mise a jour</p>
-                      <p className="text-base font-semibold text-on-surface">{formaterDateHeure(rdv.misAJourLe)}</p>
-                    </div>
-                  </div>
-                )}
+              <hr className="border-surface-container-high" />
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+                <ChampLecture label="Motif" valeur={rdv.motif} />
+                <ChampLecture label="Type de visite" valeur="Visite planifiée" />
+                {rdv.creePar && <ChampLecture label="Enregistré par" valeur={rdv.creePar} />}
               </div>
+              {rdv.observations && (
+                <>
+                  <hr className="border-surface-container-high" />
+                  <div className="flex flex-col">
+                    <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Observations</span>
+                    <div className="rounded-lg bg-surface-container px-3 py-3 text-sm text-on-surface leading-relaxed">{rdv.observations}</div>
+                  </div>
+                </>
+              )}
+              {rdv.misAJourLe && rdv.creeLe !== rdv.misAJourLe && (
+                <>
+                  <hr className="border-surface-container-high" />
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+                    {rdv.creeLe && <ChampLecture label="Créé le" valeur={formaterDateHeure(rdv.creeLe)} />}
+                    <ChampLecture label="Dernière mise à jour" valeur={formaterDateHeure(rdv.misAJourLe)} />
+                  </div>
+                </>
+              )}
             </div>
-          </section>
+          </SectionDetail>
 
         </div>
       </div>

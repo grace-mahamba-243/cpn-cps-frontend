@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
@@ -50,10 +51,6 @@ function classesBadgeStatut(statut) {
     return 'bg-secondary-container/40 text-on-secondary-container'
   }
 
-  if (statutNormalise === 'surprise') {
-    return 'bg-error-container text-on-error-container'
-  }
-
   if (statutNormalise === 'annule') {
     return 'bg-outline-variant/20 text-outline'
   }
@@ -95,24 +92,6 @@ function creerDateFiltreRapide(filtreRapide) {
   }
 }
 
-async function creerRendezVousDepuisAction({ estSurprise }) {
-  const maintenant = new Date()
-  const date = dateIsoLocale(maintenant)
-  const heure = `${String(maintenant.getHours()).padStart(2, '0')}:${String(maintenant.getMinutes()).padStart(2, '0')}`
-
-  return serviceRendezVous.creer({
-    date,
-    heure,
-    typePatient: estSurprise ? 'Mere' : 'Enfant',
-    nomPatient: estSurprise ? 'Patiente sans rendez-vous' : 'Patient a confirmer',
-    numeroDossier: estSurprise ? '#CPN-EN-ATTENTE' : '#DOSSIER-A-CONFIRMER',
-    service: estSurprise ? 'Gynecologie' : 'Pediatrie (CPS)',
-    typeRendezVous: estSurprise ? 'Urgence / Surprise' : 'Consultation',
-    statut: estSurprise ? 'Surprise' : 'Prevu',
-    motif: estSurprise ? 'Accueil non planifie' : 'Nouveau rendez-vous reception',
-  })
-}
-
 // Ce composant affiche la liste administrative des rendez-vous pour la reception avec recherche, filtres et actions rapides.
 function PageListeRendezVous() {
   const navigate = useNavigate()
@@ -125,6 +104,7 @@ function PageListeRendezVous() {
   const [messageErreur, setMessageErreur] = useState('')
   const [pageCourante, setPageCourante] = useState(1)
   const [menuOuvertId, setMenuOuvertId] = useState(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
   const menuRef = useRef(null)
 
   // Fermer le menu trois points si on clique en dehors
@@ -203,10 +183,6 @@ function PageListeRendezVous() {
       (accumulateur, ligne) => {
         accumulateur.total += 1
 
-        if (normaliserTexte(ligne.statut) === 'surprise') {
-          accumulateur.surprises += 1
-        }
-
         if (normaliserTexte(ligne.statut) === 'arrive') {
           accumulateur.arrivees += 1
         }
@@ -215,7 +191,6 @@ function PageListeRendezVous() {
       },
       {
         total: 0,
-        surprises: 0,
         arrivees: 0,
       },
     )
@@ -226,32 +201,20 @@ function PageListeRendezVous() {
   const debut = (pageActive - 1) * TAILLE_PAGE
   const rendezVousPage = rendezVousFiltres.slice(debut, debut + TAILLE_PAGE)
 
+  const gererClicMenu = (ligneId, event) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    setMenuPosition({
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+    })
+    setMenuOuvertId(menuOuvertId === ligneId ? null : ligneId)
+  }
+
   const definirFiltre = (champ, valeur) => {
     setFiltres((courant) => ({
       ...courant,
       [champ]: valeur,
     }))
-  }
-
-  const gererCreation = async ({ estSurprise }) => {
-    try {
-      const cree = await creerRendezVousDepuisAction({ estSurprise })
-
-      setEtat((courant) => ({
-        ...courant,
-        rendezVous: [cree, ...courant.rendezVous],
-      }))
-
-      setMessageErreur('')
-      setMessageSucces(
-        estSurprise
-          ? 'Rendez-vous surprise ajouté avec succès.'
-          : 'Nouveau rendez-vous ajouté avec succès.',
-      )
-    } catch {
-      setMessageErreur('La création du rendez-vous a échoué. Veuillez réessayer.')
-      setMessageSucces('')
-    }
   }
 
   const gererEnregistrerArrivee = async (rendezVousId) => {
@@ -358,20 +321,18 @@ function PageListeRendezVous() {
 
                 <tbody className="divide-y divide-outline-variant/10">
                   {rendezVousPage.map((ligne) => {
-                    const estSurprise = normaliserTexte(ligne.statut) === 'surprise'
                     const estAnnule = normaliserTexte(ligne.statut) === 'annule'
                     return (
                     <tr
                       key={ligne.id}
                       className={[
                         'transition-colors hover:bg-surface-container-low/30',
-                        estSurprise ? 'border-l-4 border-error' : '',
                         estAnnule ? 'opacity-60' : '',
                       ].join(' ')}
                     >
                       <td className="px-6 py-5 text-sm text-on-surface-variant">{formaterDate(ligne.date)}</td>
                       <td className="px-6 py-5">
-                        <span className={`text-sm font-bold ${estSurprise ? 'text-error' : 'text-primary'}`}>{ligne.heure}</span>
+                        <span className="text-sm font-bold text-primary">{ligne.heure}</span>
                       </td>
                       <td className="px-6 py-5">
                         <div>
@@ -382,29 +343,38 @@ function PageListeRendezVous() {
                         </div>
                       </td>
                       <td className="px-6 py-5 text-sm font-medium text-on-surface-variant">{ligne.service}</td>
-                      <td className={`px-6 py-5 text-sm ${estSurprise ? 'font-bold text-error' : 'text-on-surface'}`}>{ligne.typeRendezVous}</td>
+                      <td className="px-6 py-5 text-sm text-on-surface-variant">Consultation</td>
                       <td className="px-6 py-5">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${classesBadgeStatut(ligne.statut)}`}>
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           {ligne.statut}
                         </span>
+                        {ligne.arriveeEnregistreeLe && normaliserTexte(ligne.statut) === 'arrive' && (
+                          <p className="mt-1 text-[10px] text-on-surface-variant">
+                            {new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(ligne.arriveeEnregistreeLe))}
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-5 text-sm italic text-on-surface-variant">{ligne.motif}</td>
                       <td className="px-6 py-5">
-                        <div className="relative flex items-center justify-end" ref={menuOuvertId === ligne.id ? menuRef : null}>
+                        <div className="flex items-center justify-end">
                           {/* Bouton trois points */}
                           <button
                             type="button"
                             className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-outline-variant/20"
-                            onClick={() => setMenuOuvertId(menuOuvertId === ligne.id ? null : ligne.id)}
+                            onClick={(event) => gererClicMenu(ligne.id, event)}
                             aria-label="Actions"
                           >
                             <span className="material-symbols-outlined text-xl">more_vert</span>
                           </button>
 
-                          {/* Menu deroulant */}
-                          {menuOuvertId === ligne.id && (
-                            <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-outline-variant/20 bg-surface-container-lowest py-1 shadow-lg">
+                          {/* Menu deroulant via portal pour eviter le clipping du overflow-x-auto */}
+                          {menuOuvertId === ligne.id && createPortal(
+                            <div
+                              ref={menuRef}
+                              style={{ position: 'fixed', top: menuPosition.top, right: menuPosition.right, zIndex: 9999 }}
+                              className="w-52 rounded-xl border border-outline-variant/20 bg-surface-container-lowest py-1 shadow-lg"
+                            >
                               <button
                                 type="button"
                                 className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface transition-colors hover:bg-surface-container-low"
@@ -425,7 +395,8 @@ function PageListeRendezVous() {
                                   Confirmer l'arrivée
                                 </span>
                               </button>
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </td>
@@ -469,8 +440,8 @@ function PageListeRendezVous() {
         )}
       </section>
 
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="rounded-xl border-l-4 border-primary bg-primary-container/30 p-6">
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="rounded-xl border-l-4 border-outline-variant/40 bg-primary-container/30 p-6">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total attendus</p>
           <div className="flex items-baseline gap-2">
             <span className="font-headline text-3xl font-extrabold text-on-primary-container">{statistiques.total}</span>
@@ -478,19 +449,11 @@ function PageListeRendezVous() {
           </div>
         </div>
 
-        <div className="rounded-xl border-l-4 border-tertiary bg-tertiary-container/20 p-6">
+        <div className="rounded-xl border-l-4 border-outline-variant/40 bg-tertiary-container/20 p-6">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-container">Arrivées enregistrées</p>
           <div className="flex items-baseline gap-2">
             <span className="font-headline text-3xl font-extrabold text-tertiary-dim">{statistiques.arrivees}</span>
             <span className="text-xs font-medium text-tertiary">patients</span>
-          </div>
-        </div>
-
-        <div className="rounded-xl border-l-4 border-error bg-error-container/10 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-error-container">Urgences journée</p>
-          <div className="flex items-baseline gap-2">
-            <span className="font-headline text-3xl font-extrabold text-error">{statistiques.surprises}</span>
-            <span className="text-xs font-medium text-error-dim">urgences</span>
           </div>
         </div>
       </section>
