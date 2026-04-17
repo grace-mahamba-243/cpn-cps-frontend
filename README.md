@@ -123,19 +123,14 @@ Le système est structuré en plusieurs niveaux :
 
 - Authentification
 - Gestion des rôles et accès
-- Réception
-- Rendez-vous
+- Réception et Rendez-vous
 - CPN
 - Accouchement
 - CPS femme
-- Dossier enfant
-- Suivi enfant
-- Nutrition
-- Vaccination
+- Dossier enfant(Suivi enfant ,Nutrition,Vaccination)
 - Laboratoire
-- Pharmacie
 - Impression
-- Administration
+
 
 ---
 
@@ -169,12 +164,12 @@ src/
 │   ├── cps-femme/
 │   ├── dossier-enfant/
 │   ├── suivi-enfant/
-│   ├── nutrition/
-│   ├── vaccination/
 │   ├── laboratoire/
-│   ├── pharmacie/
 │   ├── impression/
-│   └── administration/
+│  
+│   
+│   
+│
 │
 ├── services/
 │   ├── api/
