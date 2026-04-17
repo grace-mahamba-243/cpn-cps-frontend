@@ -12,6 +12,8 @@ const PERMISSIONS = Object.freeze({
   RECEPTION_TABLEAU_BORD_CONSULTER: 'reception.tableau_bord.consulter',
   CPN_CONSULTER: 'cpn.consulter',
   CPN_GERER: 'cpn.gerer',
+  ACCOUCHEMENT_CONSULTER: 'accouchement.consulter',
+  ACCOUCHEMENT_GERER: 'accouchement.gerer',
   LABORATOIRE_CONSULTER: 'laboratoire.consulter',
   LABORATOIRE_GERER: 'laboratoire.gerer',
   ADMIN_UTILISATEURS_GERER: 'administration.utilisateurs.gerer',
@@ -54,6 +56,18 @@ const CATALOGUE_PERMISSIONS = Object.freeze([
     PERMISSIONS.CPN_GERER,
     'Gerer les dossiers CPN',
     'Permet d ouvrir, modifier et enregistrer les contacts et examens CPN.',
+    'Soins',
+  ),
+  creerPermission(
+    PERMISSIONS.ACCOUCHEMENT_CONSULTER,
+    'Consulter les accouchements',
+    'Permet d afficher la liste et le detail des accouchements enregistres.',
+    'Soins',
+  ),
+  creerPermission(
+    PERMISSIONS.ACCOUCHEMENT_GERER,
+    'Gerer les accouchements',
+    'Permet de rechercher une mere et d enregistrer un nouvel accouchement.',
     'Soins',
   ),
   creerPermission(
@@ -122,6 +136,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.BIBLIOTHEQUE_CONSULTER,
       PERMISSIONS.CPN_CONSULTER,
       PERMISSIONS.CPN_GERER,
+      PERMISSIONS.ACCOUCHEMENT_CONSULTER,
+      PERMISSIONS.ACCOUCHEMENT_GERER,
     ],
   },
   {
@@ -134,6 +150,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.PATIENTS_CONSULTER,
       PERMISSIONS.CPN_CONSULTER,
       PERMISSIONS.CPN_GERER,
+      PERMISSIONS.ACCOUCHEMENT_CONSULTER,
+      PERMISSIONS.ACCOUCHEMENT_GERER,
     ],
   },
   {
@@ -146,6 +164,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.PATIENTS_CONSULTER,
       PERMISSIONS.CPN_CONSULTER,
       PERMISSIONS.CPN_GERER,
+      PERMISSIONS.ACCOUCHEMENT_CONSULTER,
+      PERMISSIONS.ACCOUCHEMENT_GERER,
     ],
   },
   {
