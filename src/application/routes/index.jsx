@@ -36,6 +36,9 @@ import PageInfoAdministrativePatiente from '../../modules/cpn/pages/PageInfoAdmi
 import PageDossierOuvertureCpn from '../../modules/cpn/pages/PageDossierOuvertureCpn'
 import PageListeContactsCpn from '../../modules/cpn/pages/PageListeContactsCpn'
 import PageExamensCpn from '../../modules/cpn/pages/PageExamensCpn'
+import PageListeAccouchements from '../../modules/accouchement/pages/PageListeAccouchements'
+import PageNouvelAccouchement from '../../modules/accouchement/pages/PageNouvelAccouchement'
+import PageDetailAccouchement from '../../modules/accouchement/pages/PageDetailAccouchement'
 import PageJournalActivites from '../../modules/administration/pages/PageJournalActivites'
 import PageListeDemandesLaboratoire from '../../modules/laboratoire/pages/PageListeDemandesLaboratoire'
 import PageDetailDemandeLaboratoire from '../../modules/laboratoire/pages/PageDetailDemandeLaboratoire'
@@ -65,6 +68,9 @@ const composantsRoutesPrivees = {
   '/cpn/:dossierId/examens': <PageExamensCpn />,
   '/cpn/:dossierId/info-administrative': <PageInfoAdministrativePatiente />,
   '/cpn/:dossierId/dossier-ouverture': <PageDossierOuvertureCpn />,
+  '/accouchements': <PageListeAccouchements />,
+  '/accouchements/nouveau': <PageNouvelAccouchement />,
+  '/accouchements/:accouchementId': <PageDetailAccouchement />,
   '/admin/utilisateurs': <PageListeUtilisateurs />,
   '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
   '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,
