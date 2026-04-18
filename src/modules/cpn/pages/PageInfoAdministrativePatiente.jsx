@@ -54,7 +54,7 @@ function PageInfoAdministrativePatiente() {
           <span className="material-symbols-outlined text-error">error</span>
           <p>Dossier introuvable.</p>
         </div>
-        <button type="button" onClick={() => navigate(`/cpn/${dossierId}`)} className="mt-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-6 py-3 text-sm font-bold text-on-surface">
+        <button type="button" onClick={() => navigate(-1)} className="mt-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-6 py-3 text-sm font-bold text-on-surface">
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Retour au dossier CPN
         </button>
@@ -73,7 +73,7 @@ function PageInfoAdministrativePatiente() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(`/cpn/${dossierId}`)}
+            onClick={() => navigate(-1)}
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface"
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -83,9 +83,19 @@ function PageInfoAdministrativePatiente() {
           <p className="mt-2 text-on-surface-variant">{nomComplet}</p>
         </div>
 
-        <div className="rounded-2xl bg-primary px-5 py-4 text-on-primary shadow-lg shadow-primary/20">
-          <p className="text-xs uppercase tracking-[0.16em] text-on-primary/80">Numéro dossier</p>
-          <p className="mt-1 text-lg font-black">{p?.numeroDossier ?? '—'}</p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-full border border-outline-variant px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">print</span>
+            Imprimer
+          </button>
+          <div className="rounded-2xl bg-primary px-5 py-4 text-on-primary shadow-lg shadow-primary/20">
+            <p className="text-xs uppercase tracking-[0.16em] text-on-primary/80">Numéro dossier</p>
+            <p className="mt-1 text-lg font-black">{p?.numeroDossier ?? '—'}</p>
+          </div>
         </div>
       </div>
 

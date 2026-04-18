@@ -14,6 +14,8 @@ const PERMISSIONS = Object.freeze({
   CPN_GERER: 'cpn.gerer',
   ACCOUCHEMENT_CONSULTER: 'accouchement.consulter',
   ACCOUCHEMENT_GERER: 'accouchement.gerer',
+  CPS_FEMME_CONSULTER: 'cps_femme.consulter',
+  CPS_FEMME_GERER: 'cps_femme.gerer',
   LABORATOIRE_CONSULTER: 'laboratoire.consulter',
   LABORATOIRE_GERER: 'laboratoire.gerer',
   ADMIN_UTILISATEURS_GERER: 'administration.utilisateurs.gerer',
@@ -138,6 +140,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.CPN_GERER,
       PERMISSIONS.ACCOUCHEMENT_CONSULTER,
       PERMISSIONS.ACCOUCHEMENT_GERER,
+      PERMISSIONS.CPS_FEMME_CONSULTER,
+      PERMISSIONS.CPS_FEMME_GERER,
     ],
   },
   {
@@ -152,6 +156,8 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.CPN_GERER,
       PERMISSIONS.ACCOUCHEMENT_CONSULTER,
       PERMISSIONS.ACCOUCHEMENT_GERER,
+      PERMISSIONS.CPS_FEMME_CONSULTER,
+      PERMISSIONS.CPS_FEMME_GERER,
     ],
   },
   {
@@ -166,6 +172,7 @@ const ROLES_PAR_DEFAUT = Object.freeze([
       PERMISSIONS.CPN_GERER,
       PERMISSIONS.ACCOUCHEMENT_CONSULTER,
       PERMISSIONS.ACCOUCHEMENT_GERER,
+      PERMISSIONS.CPS_FEMME_CONSULTER,
     ],
   },
   {

@@ -11,7 +11,10 @@ const STYLES_IMPRESSION = `
   #racine-application, main, .contenu-principal, .layout-prive { background: #fff !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
   @page { margin: 15mm 12mm; size: A4 portrait; }
 
-  /* Par défaut tout masqué */
+  /* Masquer tout le contenu de la page par défaut */
+  #contenu-page-contact { display: none !important; }
+
+  /* Par défaut zones d'impression masquées */
   #zone-impression-contact,
   #zone-impression-examens,
   #zone-impression-medicaments,
@@ -136,7 +139,7 @@ function PageDetailContactCpn() {
 
   const today = new Date().toISOString().split('T')[0]
   const jourCreation = contact.creeLe ? new Date(contact.creeLe).toISOString().split('T')[0] : null
-  const modificationAutorisee = jourCreation === today
+  const modificationAutorisee = jourCreation === today && dossier?.statut === 'OUVERT' && !location.state?.fromHistorique
 
   const imprimerSection = (classeBody) => {
     setMenuImpressionOuvert(false)
@@ -161,9 +164,9 @@ function PageDetailContactCpn() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
-
-      <button
-        onClick={() => navigate(`/cpn/${dossierId}/contacts`)}
+      <div id="contenu-page-contact">
+        <button
+        onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -220,27 +223,15 @@ function PageDetailContactCpn() {
                   <span className="material-symbols-outlined text-base text-primary">description</span>
                   Contact complet
                 </button>
-                <button
-                  onClick={() => imprimerSection('print-dossier')}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container"
-                >
-                  <span className="material-symbols-outlined text-base text-tertiary">folder_open</span>
-                  Fiche initiale CPN
-                </button>
-                <button
-                  onClick={() => imprimerSection('print-examens')}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container"
-                >
-                  <span className="material-symbols-outlined text-base text-secondary">biotech</span>
-                  Examens demandés
-                </button>
-                <button
-                  onClick={() => imprimerSection('print-medicaments')}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container"
-                >
-                  <span className="material-symbols-outlined text-base text-error">medication</span>
-                  Médicaments
-                </button>
+                {(medicamentsAffichage.length > 0 || decisionAffichage) && (
+                  <button
+                    onClick={() => imprimerSection('print-medicaments')}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container"
+                  >
+                    <span className="material-symbols-outlined text-base text-error">medication</span>
+                    Médicaments
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -388,6 +379,7 @@ function PageDetailContactCpn() {
       )}
 
       {/* Zones imprimables — invisibles à l'écran */}
+      </div>{/* fin contenu-page-contact */}
       <ZoneImpressionContact
         contact={contact}
         dossier={dossier}

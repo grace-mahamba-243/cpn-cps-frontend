@@ -107,7 +107,7 @@ function PanneauInterpretation({ examen, dossierId, contacts, onTermine, onAnnul
 }
 
 // ── Carte examen ──────────────────────────────────────────────────────────────
-function CarteExamen({ examen, dossierId, contacts, onRecharger }) {
+function CarteExamen({ examen, dossierId, contacts, onRecharger, dossierStatut }) {
   const [panneauOuvert, setPanneauOuvert] = useState(false)
 
   const estEcho = examen.typeExamen === 'ECHOGRAPHIE'
@@ -171,7 +171,7 @@ function CarteExamen({ examen, dossierId, contacts, onRecharger }) {
         {/* Badge + action */}
         <div className="flex flex-shrink-0 flex-col items-end gap-2">
           <BadgeStatut statut={examen.statut} typeExamen={examen.typeExamen} />
-          {estEcho && enAttente && (
+          {estEcho && enAttente && dossierStatut === 'OUVERT' && (
             <button
               onClick={() => setPanneauOuvert((v) => !v)}
               className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
@@ -307,7 +307,7 @@ function PageExamensCpn() {
 
       {/* Bouton retour */}
       <button
-        onClick={() => navigate(`/cpn/${dossierId}`)}
+        onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -383,6 +383,7 @@ function PageExamensCpn() {
               dossierId={dossierId}
               contacts={dossier?.contacts ?? []}
               onRecharger={charger}
+              dossierStatut={dossier?.statut}
             />
           ))}
         </div>
