@@ -1,17 +1,21 @@
-// Ce composant permet d'ouvrir un dossier CPS Femme : recherche de la mere puis saisie de l'accouchement et du dossier postnatal.
-import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// Ce composant permet d'ouvrir un dossier CPS Femme : recherche de la mere, détection automatique du dossier CPN associé, puis saisie de l'accouchement.
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
+import serviceCpn from '../../../services/api/serviceCpn'
 
 const aujourd_hui = new Date().toISOString().split('T')[0]
 
 function PageOuvertureCpsFemme() {
   const navigate = useNavigate()
-  const [etape, setEtape] = useState(1) // 1 = recherche mere | 2 = formulaire
+  const location = useLocation()
+  const patientePreselectionnee = location.state?.patientePreselectionnee ?? null
+
+  const [etape, setEtape] = useState(patientePreselectionnee ? 2 : 1)
   const [termeRecherche, setTermeRecherche] = useState('')
   const [resultats, setResultats] = useState([])
   const [chargementRecherche, setChargementRecherche] = useState(false)
-  const [patienteSelectionnee, setPatienteSelectionnee] = useState(null)
+  const [patienteSelectionnee, setPatienteSelectionnee] = useState(patientePreselectionnee)
   const timerRef = useRef(null)
 
   const [formulaire, setFormulaire] = useState({
@@ -36,6 +40,21 @@ function PageOuvertureCpsFemme() {
   })
 
   const [envoi, setEnvoi] = useState({ chargement: false, erreur: null })
+  const [chargementSelection, setChargementSelection] = useState(false)
+  const [dossierCpnDetecte, setDossierCpnDetecte] = useState(null)
+
+  // Si patiente pré-sélectionnée depuis le profil : vérifier si elle a un dossier OUVERT
+  useEffect(() => {
+    if (!patientePreselectionnee) return
+    serviceCpsFemme.dossierParPatienteId(patientePreselectionnee.id)
+      .then((existant) => {
+        if (existant && existant.statut === 'OUVERT') {
+          navigate(`/cps-femme/${existant.id}`, { replace: true })
+        }
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const gererRecherche = (valeur) => {
     setTermeRecherche(valeur)
@@ -55,7 +74,7 @@ function PageOuvertureCpsFemme() {
   }
 
   const selectionnerPatiente = async (p) => {
-    setChargement(true)
+    setChargementSelection(true)
     try {
       // Vérifier si un dossier CPS ouvert existe déjà pour cette patiente
       const existant = await serviceCpsFemme.dossierParPatienteId(p.id)
@@ -64,10 +83,32 @@ function PageOuvertureCpsFemme() {
         return
       }
     } catch {
-      // Si l'appel échoue, on continue l'ouverture normalement
-    } finally {
-      setChargement(false)
+      // Si l'appel échoue, continuer normalement
     }
+
+    // Détecter si la patiente a un dossier CPN associable
+    try {
+      const cpn = await serviceCpn.dossierParPatienteId(p.id)
+      if (cpn) {
+        setDossierCpnDetecte(cpn)
+        // Pré-remplir les données maternelles depuis le CPN
+        setFormulaire((f) => ({
+          ...f,
+          gestite: cpn.gestite ?? f.gestite,
+          parite: cpn.parite ?? f.parite,
+          groupeSanguin: cpn.groupeSanguin ?? f.groupeSanguin,
+          rhesus: cpn.rhesus ?? f.rhesus,
+          vihStatut: cpn.vihStatut ?? f.vihStatut,
+        }))
+      } else {
+        setDossierCpnDetecte(null)
+      }
+    } catch {
+      setDossierCpnDetecte(null)
+    } finally {
+      setChargementSelection(false)
+    }
+
     setPatienteSelectionnee(p)
     setTermeRecherche('')
     setResultats([])
@@ -83,6 +124,7 @@ function PageOuvertureCpsFemme() {
       const donnees = {
         patienteId: patienteSelectionnee.id,
         typeAccouchementEntree: formulaire.typeAccouchementEntree,
+        dossierCpnId: formulaire.typeAccouchementEntree === 'INTERNE' && dossierCpnDetecte ? dossierCpnDetecte.id : undefined,
         dateOuverture: formulaire.dateOuverture,
         dateAccouchement: formulaire.dateAccouchement,
         modeAccouchement: formulaire.modeAccouchement,
@@ -113,7 +155,7 @@ function PageOuvertureCpsFemme() {
     return (
       <div className="flex flex-col gap-6 max-w-2xl mx-auto">
         <button
-          onClick={() => navigate('/cps-femme')}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-on-surface w-fit"
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -140,10 +182,10 @@ function PageOuvertureCpsFemme() {
             />
           </div>
 
-          {chargementRecherche && (
+          {(chargementRecherche || chargementSelection) && (
             <div className="flex items-center gap-2 text-sm text-on-surface-variant px-1">
               <span className="material-symbols-outlined animate-spin text-base">refresh</span>
-              Recherche…
+              {chargementSelection ? 'Vérification en cours…' : 'Recherche…'}
             </div>
           )}
 
@@ -200,6 +242,52 @@ function PageOuvertureCpsFemme() {
           <p className="text-xs font-mono text-primary">{patienteSelectionnee?.numeroDossier}</p>
         </div>
       </div>
+
+      {/* ── Résumé CPN (si dossier INTERNE avec CPN détecté) ── */}
+      {dossierCpnDetecte && formulaire.typeAccouchementEntree === 'INTERNE' && (
+        <div className="rounded-2xl bg-secondary/5 border border-secondary/20 p-5 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>pregnant_woman</span>
+              <p className="text-sm font-bold text-secondary uppercase tracking-wide">Dossier CPN associé automatiquement</p>
+            </div>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              dossierCpnDetecte.statut === 'CLOS' ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-secondary/10 text-secondary'
+            }`}>{dossierCpnDetecte.statut}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <div>
+              <p className="text-xs text-on-surface-variant">N° CPN</p>
+              <p className="font-mono font-medium text-on-surface">{dossierCpnDetecte.numeroDossierCpn ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-on-surface-variant">DPA</p>
+              <p className="font-medium text-on-surface">{dossierCpnDetecte.dateProbableAccouchement ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-on-surface-variant">Gestité / Parité</p>
+              <p className="font-medium text-on-surface">G{dossierCpnDetecte.gestite ?? '?'} / P{dossierCpnDetecte.parite ?? '?'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-on-surface-variant">Contacts CPN</p>
+              <p className="font-medium text-on-surface">{dossierCpnDetecte.contacts?.length ?? 0} contact(s)</p>
+            </div>
+            {dossierCpnDetecte.groupeSanguin && (
+              <div>
+                <p className="text-xs text-on-surface-variant">Groupe / Rhésus</p>
+                <p className="font-medium text-on-surface">{dossierCpnDetecte.groupeSanguin} {dossierCpnDetecte.rhesus}</p>
+              </div>
+            )}
+            {dossierCpnDetecte.vihStatut && (
+              <div>
+                <p className="text-xs text-on-surface-variant">VIH</p>
+                <p className="font-medium text-on-surface">{dossierCpnDetecte.vihStatut}</p>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-secondary/70">Les données maternelles ont été pré-remplies depuis ce dossier CPN.</p>
+        </div>
+      )}
 
       {/* ── Section accouchement ── */}
       <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
@@ -361,8 +449,9 @@ function PageOuvertureCpsFemme() {
       )}
 
       <div className="flex gap-3 justify-end">
-        <button type="button" onClick={() => navigate('/cps-femme')}
-          className="rounded-full border border-outline-variant px-5 py-2.5 text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+        <button type="button" onClick={() => navigate(-1)}
+          className="flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container-lowest px-5 py-2.5 text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+          <span className="material-symbols-outlined text-base">arrow_back</span>
           Annuler
         </button>
         <button type="button" onClick={() => window.print()}

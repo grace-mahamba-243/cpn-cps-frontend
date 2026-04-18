@@ -132,7 +132,8 @@ function PageDetailVisiteCps() {
 
   const today = new Date().toISOString().split('T')[0]
   const jourCreation = visite.creeLe ? new Date(visite.creeLe).toISOString().split('T')[0] : null
-  const modificationAutorisee = jourCreation === today
+  const fromHistorique = location.state?.fromHistorique ?? false
+  const modificationAutorisee = jourCreation === today && !fromHistorique
 
   const imprimerSection = (classeBody) => {
     setMenuImpressionOuvert(false)
@@ -147,7 +148,7 @@ function PageDetailVisiteCps() {
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <div id="contenu-page-visite">
         <button
-          onClick={() => navigate(`/cps-femme/${dossierId}`)}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
         >
           <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -220,21 +221,14 @@ function PageDetailVisiteCps() {
           </div>
         </div>
 
-        {/* Badge état général */}
-        {visite.etatGeneral && (
-          <div className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${visite.etatGeneral === 'BON' ? 'bg-primary/10 text-primary' : visite.etatGeneral === 'PASSABLE' ? 'bg-tertiary/10 text-tertiary' : 'bg-error-container text-on-error-container'}`}>
-            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>health_and_safety</span>
-            État général : {visite.etatGeneral}
-          </div>
-        )}
-
         {/* 1. Constantes vitales */}
+        <div className="mt-8" />
         <SectionDetail icone="monitor_heart" couleurIcone="text-tertiary" titre="1. Constantes vitales"
           enfants={
             <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
-              <ChampLecture label="Poids maternel" valeur={fmt(visite.poidsMatenel, ' kg')} />
-              <ChampLecture label="TA systolique" valeur={visite.tensionArterielleSystemique ? `${visite.tensionArterielleSystemique} / ${visite.tensionArterielleDiastolique ?? '—'} mmHg` : ''} />
-              <ChampLecture label="Température" valeur={fmt(visite.temperatureCelsius, ' °C')} />
+              <ChampLecture label="Poids maternel" valeur={fmt(visite.poids, ' kg')} />
+              <ChampLecture label="TA systolique" valeur={visite.tensionSystolique ? `${visite.tensionSystolique} / ${visite.tensionDiastolique ?? '—'} mmHg` : ''} />
+              <ChampLecture label="Température" valeur={fmt(visite.temperature, ' °C')} />
               <ChampLecture label="Fréquence cardiaque" valeur={fmt(visite.frequenceCardiaque, ' bpm')} />
               <ChampLecture label="Périmètre brachial" valeur={fmt(visite.perimetreBrachial, ' cm')} />
             </div>
@@ -242,6 +236,7 @@ function PageDetailVisiteCps() {
         />
 
         {/* 2. Examen postnatal */}
+        <div className="mt-8" />
         <SectionDetail icone="pregnant_woman" couleurIcone="text-secondary" titre="2. Examen postnatal"
           enfants={
             <div className="space-y-5">
@@ -264,8 +259,9 @@ function PageDetailVisiteCps() {
         />
 
         {/* 3. Contraception */}
+        <div className="mt-8" />
         {(visite.contraceptionDiscutee !== undefined || visite.methodeContraceptive) && (
-          <SectionDetail icone="family_planning" couleurIcone="text-primary" titre="3. Contraception"
+          <SectionDetail icone="vaccines" couleurIcone="text-primary" titre="3. Contraception"
             enfants={
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
                 <TuileBool label="Contraception discutée" valeur={visite.contraceptionDiscutee} couleurVrai="text-tertiary" couleurFaux="text-on-surface" />
@@ -389,9 +385,9 @@ function ZoneImpressionVisite({ visite, dossier }) {
         </div>
       </div>
       {section('1. Constantes vitales', [
-        ligne('Poids maternel', visite.poidsMatenel != null ? `${visite.poidsMatenel} kg` : null),
-        ligne('Tension artérielle', visite.tensionArterielleSystemique != null ? `${visite.tensionArterielleSystemique} / ${visite.tensionArterielleDiastolique ?? '—'} mmHg` : null),
-        ligne('Température', visite.temperatureCelsius != null ? `${visite.temperatureCelsius} °C` : null),
+        ligne('Poids maternel', visite.poids != null ? `${visite.poids} kg` : null),
+        ligne('Tension artérielle', visite.tensionSystolique != null ? `${visite.tensionSystolique} / ${visite.tensionDiastolique ?? '—'} mmHg` : null),
+        ligne('Température', visite.temperature != null ? `${visite.temperature} °C` : null),
         ligne('Fréquence cardiaque', visite.frequenceCardiaque != null ? `${visite.frequenceCardiaque} bpm` : null),
         ligne('Périmètre brachial', visite.perimetreBrachial != null ? `${visite.perimetreBrachial} cm` : null),
         ligne('État général', visite.etatGeneral),

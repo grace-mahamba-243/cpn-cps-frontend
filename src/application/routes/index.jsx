@@ -43,8 +43,12 @@ import PageDetailAccouchement from '../../modules/accouchement/pages/PageDetailA
 import PageListeDossiersCpsFemme from '../../modules/cps-femme/pages/PageListeDossiersCpsFemme'
 import PageOuvertureCpsFemme from '../../modules/cps-femme/pages/PageOuvertureCpsFemme'
 import PageDetailDossierCpsFemme from '../../modules/cps-femme/pages/PageDetailDossierCpsFemme'
+import PageInfoAccouchementCps from '../../modules/cps-femme/pages/PageInfoAccouchementCps'
+import PageListeVisitesCps from '../../modules/cps-femme/pages/PageListeVisitesCps'
 import PageNouvelleVisiteCps from '../../modules/cps-femme/pages/PageNouvelleVisiteCps'
 import PageDetailVisiteCps from '../../modules/cps-femme/pages/PageDetailVisiteCps'
+import PageExamensCpsFemme from '../../modules/cps-femme/pages/PageExamensCpsFemme'
+import PageHistoriqueCpsFemme from '../../modules/cps-femme/pages/PageHistoriqueCpsFemme'
 import PageJournalActivites from '../../modules/administration/pages/PageJournalActivites'
 import PageListeDemandesLaboratoire from '../../modules/laboratoire/pages/PageListeDemandesLaboratoire'
 import PageDetailDemandeLaboratoire from '../../modules/laboratoire/pages/PageDetailDemandeLaboratoire'
@@ -81,8 +85,12 @@ const composantsRoutesPrivees = {
   '/cps-femme': <PageListeDossiersCpsFemme />,
   '/cps-femme/nouveau': <PageOuvertureCpsFemme />,
   '/cps-femme/:dossierId': <PageDetailDossierCpsFemme />,
+  '/cps-femme/:dossierId/accouchement': <PageInfoAccouchementCps />,
+  '/cps-femme/:dossierId/visites': <PageListeVisitesCps />,
   '/cps-femme/:dossierId/visites/nouvelle': <PageNouvelleVisiteCps />,
   '/cps-femme/:dossierId/visites/:visiteId': <PageDetailVisiteCps />,
+  '/cps-femme/:dossierId/examens': <PageExamensCpsFemme />,
+  '/cps-femme/historique/:patienteId': <PageHistoriqueCpsFemme />,
   '/admin/utilisateurs': <PageListeUtilisateurs />,
   '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
   '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,

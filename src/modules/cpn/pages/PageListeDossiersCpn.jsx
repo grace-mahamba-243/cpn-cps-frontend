@@ -281,7 +281,7 @@ function PageListeDossiersCpn() {
 
       {/* File d'attente */}
       {onglet === 'attente' && (
-        <div>
+        <div style={{ width: '50%', margin: '0 auto' }}>
           {chargementArrivees ? (
             <div className="flex items-center gap-2 py-6 text-sm text-on-surface-variant">
               <span className="material-symbols-outlined animate-spin text-base">refresh</span>

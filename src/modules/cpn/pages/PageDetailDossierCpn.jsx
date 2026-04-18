@@ -333,7 +333,7 @@ function PageDetailDossierCpn() {
               {/* Libellé / motif */}
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-on-surface">
-                  Libellé de clôture <span className="text-error">*</span>
+                  Libellé de clôture
                 </label>
                 <textarea
                   className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"

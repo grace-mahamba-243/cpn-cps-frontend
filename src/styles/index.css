@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+html {
+  font-size: 75%;
+}
+
+/* Maintenir la taille originale de la barre latérale malgré le zoom global */
+.barre-laterale {
+  font-size: 87.5%; /* 87.5% × 80% = 70% — conserve l'échelle d'origine */
+}
+
 @theme {
   --color-surface-container-high: #e5e9eb;
   --color-surface-container-lowest: #ffffff;
@@ -103,7 +112,7 @@ body {
   margin: 0;
   color: #2d3335;
   background: transparent;
-  zoom: 80%;
+  zoom: 100%;
 }
 
 button,

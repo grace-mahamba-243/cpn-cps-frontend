@@ -56,6 +56,12 @@ const serviceCpsFemme = {
     return Array.isArray(corps?.dossiers) ? corps.dossiers : []
   },
 
+  // Recupere tous les dossiers CPS d une patiente par son id
+  async listerDossiersParPatiente(patienteId) {
+    const corps = await appelerApi(`${URL_API}/cps-femme?patienteId=${encodeURIComponent(patienteId)}`)
+    return Array.isArray(corps?.dossiers) ? corps.dossiers : []
+  },
+
   // Recupere le detail d un dossier CPS par son id
   async obtenirDossier(id) {
     const corps = await appelerApi(`${URL_API}/cps-femme/${id}`)
@@ -134,6 +140,33 @@ const serviceCpsFemme = {
       body: JSON.stringify(donnees),
     })
     return corps?.enfant ?? null
+  },
+
+  // Analyse IA d'une visite postnatale CPS
+  async analyserVisite(dossierId, donnees) {
+    const donneesPropres = Object.fromEntries(
+      Object.entries(donnees).filter(([, v]) => v != null),
+    )
+    const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/visites/analyser`, {
+      method: 'POST',
+      body: JSON.stringify(donneesPropres),
+    })
+    return corps
+  },
+
+  // Retourne les examens liés au dossier CPN associé à ce CPS
+  async listerExamens(dossierId) {
+    const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`)
+    return Array.isArray(corps?.examens) ? corps.examens : []
+  },
+
+  // Demande un nouvel examen pour ce dossier CPS
+  async demanderExamen(dossierId, donnees) {
+    const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`, {
+      method: 'POST',
+      body: JSON.stringify(donnees),
+    })
+    return corps?.examen ?? corps
   },
 }
 

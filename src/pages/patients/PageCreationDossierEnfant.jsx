@@ -31,7 +31,7 @@ function Champ({ label, obligatoire = false, erreur, children }) {
     <label className="flex flex-col gap-2">
       <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
         {label}
-        {obligatoire ? <span className="ml-1 text-error">*</span> : null}
+        null
       </span>
       {children}
       {erreur ? <span className="text-xs font-semibold text-error">{erreur}</span> : null}

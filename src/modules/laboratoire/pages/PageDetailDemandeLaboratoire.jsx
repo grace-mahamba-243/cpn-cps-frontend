@@ -294,7 +294,7 @@ function PageDetailDemandeLaboratoire() {
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-                Résultat <span className="text-error">*</span>
+                Résultat
               </label>
               <textarea
                 value={resultat}

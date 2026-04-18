@@ -37,7 +37,7 @@ function Champ({ label, children, obligatoire }) {
   return (
     <div>
       <label className="block text-sm font-medium text-on-surface-variant mb-1">
-        {label} {obligatoire && <span className="text-error">*</span>}
+        {label}
       </label>
       {children}
     </div>

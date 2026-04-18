@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
 import serviceRendezVous from '../../services/api/serviceRendezVous'
-import serviceCpn from '../../services/api/serviceCpn'
 
 function formaterDate(dateIso) {
   if (!dateIso) {
@@ -42,8 +41,6 @@ function PageDetailDossierMere() {
     dossier: null,
   })
   const [historiqueRdv, setHistoriqueRdv] = useState([])
-  const [dossierCpnActif, setDossierCpnActif] = useState(undefined) // undefined = chargement, null = aucun
-  const [historiqueGrossesses, setHistoriqueGrossesses] = useState([])
 
   useEffect(() => {
     let estActif = true
@@ -65,16 +62,6 @@ function PageDetailDossierMere() {
           .then(setHistoriqueRdv)
           .catch(() => {})
       }
-
-      // Charger les dossiers CPN liés à cette patiente
-      serviceCpn.listerDossiersParPatiente(mereId).then((dossiers) => {
-        const actif = dossiers.find((d) => d.statut === 'OUVERT') ?? null
-        const clos = dossiers.filter((d) => d.statut === 'CLOS').sort((a, b) => new Date(b.dateCloture) - new Date(a.dateCloture))
-        setDossierCpnActif(actif)
-        setHistoriqueGrossesses(clos)
-      }).catch(() => {
-        setDossierCpnActif(null)
-      })
     }
 
     void chargerDossier()
@@ -105,7 +92,7 @@ function PageDetailDossierMere() {
         <button
           type="button"
           className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-6 py-3 text-sm font-bold text-on-surface"
-          onClick={() => navigate('/patients')}
+          onClick={() => navigate(-1)}
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Retour à la liste
@@ -124,7 +111,7 @@ function PageDetailDossierMere() {
           <button
             type="button"
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface"
-            onClick={() => navigate('/patients')}
+            onClick={() => navigate(-1)}
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Retour à la liste
@@ -201,127 +188,6 @@ function PageDetailDossierMere() {
         </div>
         <hr className="my-6 border-surface-container-high" />
         <ChampLecture label="Adresse du contact" valeur={dossier.adresseUrgence} />
-      </section>
-
-      {/* ── Section CPN ── */}
-      <section className="rounded-xl border-l-4 border-primary/40 bg-surface-container-lowest p-8 shadow-sm">
-        <div className="mb-5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">pregnant_woman</span>
-            <h4 className="text-lg font-bold tracking-tight text-on-surface">Consultation Prénatale (CPN)</h4>
-          </div>
-          {dossierCpnActif && (
-            <span className="rounded-full bg-tertiary-container px-3 py-1 text-xs font-bold text-on-tertiary-container">
-              En cours · {dossierCpnActif.numeroDossierCpn}
-            </span>
-          )}
-        </div>
-
-        {dossierCpnActif === undefined ? (
-          <p className="text-sm text-on-surface-variant italic">Chargement...</p>
-
-        ) : dossierCpnActif ? (
-          /* ── Dossier actif : 3 cartes raccourcis ── */
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {/* Dossier d'ouverture */}
-            <button
-              onClick={() => navigate(`/cpn/${dossierCpnActif.id}/dossier-ouverture`)}
-              className="flex items-center gap-4 rounded-xl border border-outline-variant/30 bg-surface px-5 py-4 text-left transition-colors hover:bg-primary/5 hover:border-primary/30"
-            >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary-container/30 text-primary">
-                <span className="material-symbols-outlined text-xl">folder_open</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-on-surface text-sm">Dossier d'ouverture</p>
-                <p className="text-xs text-on-surface-variant">Informations initiales</p>
-              </div>
-              <span className="material-symbols-outlined ml-auto text-on-surface-variant/40 text-lg">chevron_right</span>
-            </button>
-
-            {/* Contacts CPN */}
-            <button
-              onClick={() => navigate(`/cpn/${dossierCpnActif.id}/contacts`)}
-              className="flex items-center gap-4 rounded-xl border border-outline-variant/30 bg-surface px-5 py-4 text-left transition-colors hover:bg-tertiary/5 hover:border-tertiary/30"
-            >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-tertiary-container/30 text-tertiary">
-                <span className="material-symbols-outlined text-xl">calendar_month</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-on-surface text-sm">Contacts CPN</p>
-                <p className="text-xs text-on-surface-variant">
-                  {dossierCpnActif.nombreContacts
-                    ? `${dossierCpnActif.nombreContacts} contact${dossierCpnActif.nombreContacts > 1 ? 's' : ''}`
-                    : 'Aucun contact'}
-                </p>
-              </div>
-              <span className="material-symbols-outlined ml-auto text-on-surface-variant/40 text-lg">chevron_right</span>
-            </button>
-
-            {/* Examens */}
-            <button
-              onClick={() => navigate(`/cpn/${dossierCpnActif.id}/examens`)}
-              className="flex items-center gap-4 rounded-xl border border-outline-variant/30 bg-surface px-5 py-4 text-left transition-colors hover:bg-surface-container hover:border-outline-variant/60"
-            >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant">
-                <span className="material-symbols-outlined text-xl">biotech</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-on-surface text-sm">Examens</p>
-                <p className="text-xs text-on-surface-variant">Biologiques & Échographies</p>
-              </div>
-              <span className="material-symbols-outlined ml-auto text-on-surface-variant/40 text-lg">chevron_right</span>
-            </button>
-          </div>
-
-        ) : (
-          /* ── Aucun dossier actif : historique + nouveau ── */
-          <div className="space-y-4">
-            {/* Bouton nouveau dossier : uniquement si aucun dossier OUVERT n'existe */}
-            <button
-              onClick={() => navigate('/cpn/nouveau', { state: { patientePreselectionnee: { id: dossier.id, nomComplet: nomComplet, numeroDossier: dossier.numeroDossier } } })}
-              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-opacity"
-            >
-              <span className="material-symbols-outlined text-base">add_circle</span>
-              Nouveau dossier CPN
-            </button>
-
-            {/* Historique grossesses */}
-            {historiqueGrossesses.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center gap-2 pb-2">
-                  <span className="material-symbols-outlined text-base text-on-surface-variant">history</span>
-                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                    Historique des grossesses ({historiqueGrossesses.length})
-                  </p>
-                </div>
-                {historiqueGrossesses.map((dos, index) => (
-                  <button
-                    key={dos.id}
-                    onClick={() => navigate(`/cpn/${dos.id}`, { state: { fromHistorique: true } })}
-                    className="flex w-full items-center gap-4 rounded-xl bg-surface-container/50 px-5 py-3.5 text-left transition-colors hover:bg-surface-container"
-                  >
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-outline-variant/20 text-xs font-black text-on-surface-variant">
-                      G{historiqueGrossesses.length - index}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-on-surface text-sm">{dos.numeroDossierCpn}</p>
-                      <p className="text-xs text-on-surface-variant">
-                        Ouvert le {formaterDate(dos.creeLe ?? dos.dateOuverture)}
-                        {dos.dateCloture ? ` · Clos le ${formaterDate(dos.dateCloture)}` : ''}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-surface-container-high px-2.5 py-1 text-[11px] font-semibold text-on-surface-variant">Clos</span>
-                    <span className="material-symbols-outlined text-on-surface-variant/50 text-lg">chevron_right</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {historiqueGrossesses.length === 0 && (
-              <p className="text-sm text-on-surface-variant">Aucun dossier CPN pour cette patiente.</p>
-            )}
-          </div>
-        )}
       </section>
 
       <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
