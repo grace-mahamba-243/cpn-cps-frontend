@@ -1,12 +1,13 @@
 // Page affichant l'historique de tous les contacts CPN d'un dossier en pleine page.
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpn from '../../../services/api/serviceCpn'
 import SectionContacts from '../composants/SectionContacts'
 
 function PageListeContactsCpn() {
   const { dossierId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [chargement, setChargement] = useState(true)
   const [dossier, setDossier] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -37,7 +38,7 @@ function PageListeContactsCpn() {
           <span className="material-symbols-outlined text-error">error</span>
           <p>{erreur || 'Dossier introuvable.'}</p>
         </div>
-        <button type="button" onClick={() => navigate(`/cpn/${dossierId}`)}
+        <button type="button" onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest px-6 py-3 text-sm font-bold text-on-surface shadow-sm">
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Retour au dossier CPN
@@ -51,7 +52,7 @@ function PageListeContactsCpn() {
 
       {/* En-tête */}
       <div className="flex items-start gap-4">
-        <button type="button" onClick={() => navigate(`/cpn/${dossierId}`)}
+        <button type="button" onClick={() => navigate(-1)}
           className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors">
           <span className="material-symbols-outlined text-base">arrow_back</span>
         </button>
@@ -75,6 +76,7 @@ function PageListeContactsCpn() {
         dossierId={dossierId}
         contacts={dossier.contacts}
         statut={dossier.statut}
+        fromHistorique={!!location.state?.fromHistorique}
       />
     </div>
   )

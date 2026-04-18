@@ -68,7 +68,7 @@ function ChampLecture({ label, valeur, principal, couleur }) {
   return (
     <div className="flex flex-col">
       <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
-      <div className={`rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${cls}`}>
+      <div className={`rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${cls} w-full`}>
         {(valeur !== null && valeur !== undefined && valeur !== '')
           ? valeur
           : <span className="font-normal italic text-on-surface-variant/60">Non renseigné</span>}
@@ -223,6 +223,10 @@ function PageDetailRendezVous() {
         </Alerte>
       )}
 
+      {/* Grille principale - tout le contenu centré à la même largeur */}
+      <div className="flex justify-center">
+        <div className="w-[40%] space-y-6">
+
       {/* Barre d actions (visible si non annule et non termine) */}
       {!estAnnule && !estTermine && (
         <section className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-sm">
@@ -342,11 +346,7 @@ function PageDetailRendezVous() {
         </section>
       )}
 
-      {/* Grille principale */}
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 space-y-6">
-
-          {/* Apercu patient */}
+      {/* Apercu patient */}
           <section className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-wrap justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               {/* Avatar initiales */}
@@ -376,15 +376,16 @@ function PageDetailRendezVous() {
           </section>
 
           {/* Informations detaillees */}
+          <div>
           <SectionDetail icone="event_note" couleurIcone="text-primary" titre="Informations détaillées">
             <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5">
                 <ChampLecture label="Service médical" valeur={rdv.service} />
                 <ChampLecture label="Date" valeur={formaterDate(rdv.date)} principal />
                 <ChampLecture label="Heure" valeur={rdv.heure} principal />
               </div>
               <hr className="border-surface-container-high" />
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5">
                 <ChampLecture label="Motif" valeur={rdv.motif} />
                 <ChampLecture label="Type de visite" valeur="Visite planifiée" />
                 {rdv.creePar && <ChampLecture label="Enregistré par" valeur={rdv.creePar} />}
@@ -409,6 +410,7 @@ function PageDetailRendezVous() {
               )}
             </div>
           </SectionDetail>
+          </div>
 
         </div>
       </div>

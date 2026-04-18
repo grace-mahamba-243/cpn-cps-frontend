@@ -337,9 +337,6 @@ function PageListeRendezVous() {
                       <td className="px-6 py-5">
                         <div>
                           <p className="text-sm font-bold text-on-surface">{ligne.nomPatient}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${classesBadgeTypePatient(ligne.typePatient)}`}>
-                            {ligne.typePatient}
-                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-sm font-medium text-on-surface-variant">{ligne.service}</td>
@@ -349,11 +346,7 @@ function PageListeRendezVous() {
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           {ligne.statut}
                         </span>
-                        {ligne.arriveeEnregistreeLe && normaliserTexte(ligne.statut) === 'arrive' && (
-                          <p className="mt-1 text-[10px] text-on-surface-variant">
-                            {new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(ligne.arriveeEnregistreeLe))}
-                          </p>
-                        )}
+                
                       </td>
                       <td className="px-6 py-5 text-sm italic text-on-surface-variant">{ligne.motif}</td>
                       <td className="px-6 py-5">

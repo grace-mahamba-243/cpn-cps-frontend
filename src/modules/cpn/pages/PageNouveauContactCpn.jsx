@@ -63,7 +63,13 @@ function PageNouveauContactCpn() {
   const [nouvelExamen, setNouvelExamen] = useState(EXAMEN_VIDE())
 
   useEffect(() => {
-    serviceCpn.obtenirDossier(dossierId).then(setDossier).catch(() => {})
+    serviceCpn.obtenirDossier(dossierId).then((d) => {
+      setDossier(d)
+      // Bloquer l'accès si le dossier est clos
+      if (d?.statut === 'CLOS') {
+        navigate(`/cpn/${dossierId}`, { replace: true })
+      }
+    }).catch(() => {})
     // En mode edition, charger le contact existant pour pre-remplir le formulaire
     // Charger les examens existants pour détecter les doublons (mode édition et création)
     serviceCpn.listerExamens(dossierId).then((liste) => setExamensExistants(liste)).catch(() => {})

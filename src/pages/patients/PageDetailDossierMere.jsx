@@ -92,7 +92,7 @@ function PageDetailDossierMere() {
         <button
           type="button"
           className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-6 py-3 text-sm font-bold text-on-surface"
-          onClick={() => navigate('/patients')}
+          onClick={() => navigate(-1)}
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Retour à la liste
@@ -111,7 +111,7 @@ function PageDetailDossierMere() {
           <button
             type="button"
             className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface"
-            onClick={() => navigate('/patients')}
+            onClick={() => navigate(-1)}
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Retour à la liste

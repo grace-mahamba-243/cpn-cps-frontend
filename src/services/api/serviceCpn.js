@@ -50,6 +50,17 @@ const serviceCpn = {
     return Array.isArray(corps?.dossiers) ? corps.dossiers : []
   },
 
+  async dossierParPatienteId(patienteId) {
+    const corps = await appelerApi(`${URL_API}/cpn?patienteId=${encodeURIComponent(patienteId)}`)
+    const liste = Array.isArray(corps?.dossiers) ? corps.dossiers : []
+    return liste[0] ?? null // retourne le dossier le plus récent ou null
+  },
+
+  async listerDossiersParPatiente(patienteId) {
+    const corps = await appelerApi(`${URL_API}/cpn?patienteId=${encodeURIComponent(patienteId)}`)
+    return Array.isArray(corps?.dossiers) ? corps.dossiers : []
+  },
+
   async obtenirDossier(dossierId) {
     const corps = await appelerApi(`${URL_API}/cpn/${dossierId}`)
     return corps?.dossier ?? null

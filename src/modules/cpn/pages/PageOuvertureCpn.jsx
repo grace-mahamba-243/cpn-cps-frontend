@@ -533,11 +533,13 @@ function PageOuvertureCpn() {
   const { utilisateurConnecte } = useAuthentification()
   const modeEdition = location.state?.modeEdition === true
   const dossierExistant = location.state?.dossierExistant ?? null
+  const patientePreselectionnee = location.state?.patientePreselectionnee ?? null
 
-  // En mode edition : on saute directement a l etape 2 avec les donnees existantes
-  const [etape, setEtape] = useState(modeEdition ? 2 : 1)
+  // En mode edition ou pré-sélection : on saute directement a l etape 2
+  const [etape, setEtape] = useState(modeEdition || patientePreselectionnee ? 2 : 1)
   const [patiente, setPatiente] = useState(() => {
     if (modeEdition && dossierExistant?.patiente) return dossierExistant.patiente
+    if (patientePreselectionnee) return patientePreselectionnee
     return null
   })
   const [formulaire, setFormulaire] = useState(() => {
@@ -576,6 +578,18 @@ function PageOuvertureCpn() {
   const [erreur, setErreur] = useState('')
   const [enregistrement, setEnregistrement] = useState(false)
   const [chargementAuto, setChargementAuto] = useState(false)
+  const [dossierDejaExistant, setDossierDejaExistant] = useState(null)
+
+  // Vérifier si la patiente pré-sélectionnée a déjà un dossier → rediriger vers son profil
+  useEffect(() => {
+    if (!patientePreselectionnee) return
+    serviceCpn.dossierParPatienteId(patientePreselectionnee.id)
+      .then((existant) => {
+        if (existant && existant.statut === 'OUVERT') navigate(`/cpn/${existant.id}`, { replace: true })
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Pré-sélection automatique depuis les params URL (?refDossier= ou ?nom=)
   useEffect(() => {
@@ -602,10 +616,19 @@ function PageOuvertureCpn() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const selectionnerPatiente = (p) => {
+  const selectionnerPatiente = async (p) => {
     setPatiente(p)
-    setEtape(2)
     setErreur('')
+    setDossierDejaExistant(null)
+    // Vérifier si la patiente a déjà un dossier CPN (peu importe le statut) — si oui, rediriger vers son profil
+    try {
+      const existant = await serviceCpn.dossierParPatienteId(p.id)
+      if (existant && existant.statut === 'OUVERT') {
+        navigate(`/cpn/${existant.id}`, { replace: true })
+        return
+      }
+    } catch { /* ignorer les erreurs de vérification */ }
+    setEtape(2)
     // Pré-cocher automatiquement les facteurs de risque liés à l'âge
     const statut = statutAgeMaternel(p.dateNaissance)
     if (statut.id === 'primipare_jeune' || statut.id === 'age_maternel_risque') {
@@ -618,6 +641,7 @@ function PageOuvertureCpn() {
     setEtape(1)
     setFormulaire(ETAT_INITIAL_FORM)
     setErreur('')
+    setDossierDejaExistant(null)
   }
 
   const majChamp = (champ, valeur) => {
@@ -663,6 +687,11 @@ function PageOuvertureCpn() {
         navigate(`/cpn/${rep.id}`, { replace: true, state: { messageSucces: 'Dossier CPN ouvert avec succès.' } })
       }
     } catch (ex) {
+      // Dossier actif déjà existant → rediriger vers le profil de la patiente
+      if (ex.statut === 409 && ex.corps?.dossierId) {
+        navigate(`/cpn/${ex.corps.dossierId}`, { replace: true })
+        return
+      }
       setErreur(ex.message)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } finally {

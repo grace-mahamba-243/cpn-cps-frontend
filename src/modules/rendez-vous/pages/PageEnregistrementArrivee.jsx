@@ -73,7 +73,7 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
 
       <div className="relative" ref={rechercheRef}>
         <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-          Nom ou numero de dossier <span className="text-error">*</span>
+          Nom ou numero de dossier
         </label>
         <div className="relative group">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
@@ -309,7 +309,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
         {/* Service */}
         <div>
           <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-            Service de destination <span className="text-error">*</span>
+            Service de destination
           </label>
           <select
             value={service}
@@ -327,7 +327,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
         {/* Motif */}
         <div>
           <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-            Motif de la visite <span className="text-error">*</span>
+            Motif de la visite
           </label>
           <input
             type="text"

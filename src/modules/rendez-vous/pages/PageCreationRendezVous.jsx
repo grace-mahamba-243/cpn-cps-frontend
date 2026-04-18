@@ -257,7 +257,7 @@ function PageCreationRendezVous() {
               {/* Recherche de dossier */}
               <div className="relative">
                 <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-                  Dossier concerne <span className="text-error">*</span>
+                  Dossier concerne
                 </label>
 
                 {formulaire.dossierSelectionne ? (
@@ -344,7 +344,7 @@ function PageCreationRendezVous() {
 
               <div>
                 <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-                  Service concerne <span className="text-error">*</span>
+                  Service concerne
                 </label>
                 <select
                   value={formulaire.service}
@@ -364,7 +364,7 @@ function PageCreationRendezVous() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-                    Date <span className="text-error">*</span>
+                    Date
                   </label>
                   <input
                     type="date"
@@ -376,7 +376,7 @@ function PageCreationRendezVous() {
 
                 <div>
                   <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-                    Heure <span className="text-error">*</span>
+                    Heure
                   </label>
                   <input
                     type="time"
@@ -397,7 +397,7 @@ function PageCreationRendezVous() {
 
               <div>
                 <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-                  Motif du rendez-vous <span className="text-error">*</span>
+                  Motif du rendez-vous
                 </label>
                 <input
                   type="text"

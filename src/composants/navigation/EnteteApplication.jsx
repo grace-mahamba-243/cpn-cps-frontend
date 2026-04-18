@@ -66,16 +66,9 @@ function EnteteApplication() {
   return (
     <header className="entete-application">
       <div className="entete-application__recherche">
-        <span className="material-symbols-outlined entete-application__recherche-icone" aria-hidden="true">
-          search
+        <span className="text-lg font-bold text-on-surface" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          {contenu?.titre ?? ''}
         </span>
-        <input
-          type="text"
-          className="entete-application__recherche-champ"
-          value={valeurRecherche}
-          placeholder={contenu ? `Rechercher dans ${contenu.label.toLowerCase()}...` : 'Rechercher un dossier...'}
-          onChange={gererChangementRecherche}
-        />
       </div>
 
       <div className="entete-application__actions">
