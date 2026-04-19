@@ -110,17 +110,6 @@ function PageTableauDeBordReception() {
 
         <button
           type="button"
-          className="group flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm shadow-slate-200/50 transition-all duration-200 hover:bg-tertiary hover:text-white"
-          onClick={() => navigate('/enfants/nouveau')}
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-tertiary-container text-tertiary transition-colors group-hover:bg-white/20 group-hover:text-white">
-            <span className="material-symbols-outlined text-2xl">child_care</span>
-          </div>
-          <span className="text-left text-sm font-bold">Nouvel enfant</span>
-        </button>
-
-        <button
-          type="button"
           className="group flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm shadow-slate-200/50 transition-all duration-200 hover:bg-primary-dim hover:text-white"
           onClick={() => navigate('/rendez-vous/nouveau')}
         >

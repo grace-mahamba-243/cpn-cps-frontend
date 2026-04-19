@@ -111,14 +111,16 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
         {menuOuvert && recherche.trim().length >= 2 && dossiersFiltres.length === 0 && !enChargement && (
           <div className="absolute z-50 mt-1 w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-4 py-3 shadow-xl">
             <p className="text-sm text-on-surface-variant mb-3">Aucun dossier trouvé pour cette recherche.</p>
+            {typePatient === 'Mere' && (
             <button
               type="button"
               onClick={() => onCreerDossier(typePatient)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
             >
               <span className="material-symbols-outlined text-base">person_add</span>
-              Creer un nouveau dossier {typePatient === 'Mere' ? 'mere' : 'enfant'}
+              Creer un nouveau dossier mere
             </button>
+            )}
           </div>
         )}
       </div>
@@ -584,7 +586,7 @@ function PageEnregistrementArrivee() {
               menuOuvert={menuOuvert}
               setMenuOuvert={setMenuOuvert}
               enChargement={enChargementDossiers}
-              onCreerDossier={(type) => navigate(type === 'Mere' ? '/patients/nouveau' : '/enfants/nouveau')}
+              onCreerDossier={(type) => type === 'Mere' ? navigate('/patients/nouveau') : undefined}
             />
           )}
 

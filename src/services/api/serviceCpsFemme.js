@@ -154,19 +154,33 @@ const serviceCpsFemme = {
     return corps
   },
 
-  // Retourne les examens liés au dossier CPN associé à ce CPS
+  // Retourne les examens biologiques / échographies du dossier CPS Femme
   async listerExamens(dossierId) {
     const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`)
-    return Array.isArray(corps?.examens) ? corps.examens : []
+    return Array.isArray(corps) ? corps : (Array.isArray(corps?.examens) ? corps.examens : [])
   },
 
-  // Demande un nouvel examen pour ce dossier CPS
+  // Demande un nouvel examen pour ce dossier CPS Femme
   async demanderExamen(dossierId, donnees) {
     const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`, {
       method: 'POST',
       body: JSON.stringify(donnees),
     })
     return corps?.examen ?? corps
+  },
+
+  // Enregistre un résultat ou interprétation pour un examen CPS Femme
+  async enregistrerResultat(dossierId, examenId, donnees) {
+    const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens/${examenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(donnees),
+    })
+    return corps?.examen ?? corps
+  },
+
+  // Alias pour interprétation échographie
+  async entrerInterpretation(dossierId, examenId, donnees) {
+    return this.enregistrerResultat(dossierId, examenId, { interpretation: donnees.interpretation, statut: 'RESULTAT_RECU' })
   },
 }
 

@@ -62,6 +62,12 @@ const serviceAccouchement = {
     return corps?.accouchement ?? null
   },
 
+  // Recupere les dossiers CPN ouverts d une patiente pour le lien accouchement
+  async listerDossiersCpnPatiente(patienteId) {
+    const corps = await appelerApi(`${URL_API}/cpn?patienteId=${encodeURIComponent(patienteId)}&statut=OUVERT`)
+    return Array.isArray(corps?.dossiers) ? corps.dossiers : []
+  },
+
   // Enregistre un nouvel accouchement
   async enregistrerAccouchement(donnees) {
     const corps = await appelerApi(`${URL_API}/accouchements`, {

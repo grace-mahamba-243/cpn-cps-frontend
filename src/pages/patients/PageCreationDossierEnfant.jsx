@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
 
@@ -43,7 +43,7 @@ const REGEX_NOM = /^[a-zA-ZÀ-ÿ\s\-']+$/
 const REGEX_TELEPHONE = /^[+0-9]{9,15}$/
 const AGE_ENFANT_MAX_MOIS = 59
 
-function valider(formulaire) {
+function valider(formulaire, options = {}) {
   const erreurs = {}
   const aujourdHui = new Date()
   aujourdHui.setHours(0, 0, 0, 0)
@@ -97,28 +97,41 @@ function valider(formulaire) {
     }
   }
 
-  // --- Responsable ---
-  if (!formulaire.nomMere.trim()) {
-    erreurs.nomMere = 'Le nom de la mère est obligatoire.'
-  } else if (formulaire.nomMere.trim().length < 2) {
-    erreurs.nomMere = 'Le nom de la mère doit contenir au moins 2 caractères.'
-  }
+  // --- Responsable (seulement si pas depuis un accouchement) ---
+  if (!options?.depuisAccouchement) {
+    if (!formulaire.nomMere.trim()) {
+      erreurs.nomMere = 'Le nom de la mère est obligatoire.'
+    } else if (formulaire.nomMere.trim().length < 2) {
+      erreurs.nomMere = 'Le nom de la mère doit contenir au moins 2 caractères.'
+    }
 
-  // --- Téléphone ---
-  if (!formulaire.telephone.trim()) {
-    erreurs.telephone = 'Le téléphone est obligatoire.'
-  } else if (!REGEX_TELEPHONE.test(formulaire.telephone.trim())) {
-    erreurs.telephone = 'Numéro invalide — min. 9 chiffres, chiffres et + uniquement.'
+    if (!formulaire.telephone.trim()) {
+      erreurs.telephone = 'Le téléphone est obligatoire.'
+    } else if (!REGEX_TELEPHONE.test(formulaire.telephone.trim())) {
+      erreurs.telephone = 'Numéro invalide — min. 9 chiffres, chiffres et + uniquement.'
+    }
   }
 
   return erreurs
 }
 
 // Ce composant permet à la réception de créer un dossier administratif enfant.
-// Il reste limité aux informations d'identification et de contact, sans données cliniques.
+// Quand on vient d'un accouchement, la section Responsables est masquée et pré-remplie depuis la mère.
 function PageCreationDossierEnfant() {
   const navigate = useNavigate()
-  const [formulaire, setFormulaire] = useState(ETAT_INITIAL)
+  const { state: locationState } = useLocation()
+
+  // Contexte accouchement — héritage automatique de la mère
+  const depuisAccouchement = !!(locationState?.accouchementId)
+  const mereNomHerite = locationState?.mereNom ?? ''
+  const mereIdHerite = locationState?.mereId ?? null
+  const accouchementId = locationState?.accouchementId ?? null
+
+  const [formulaire, setFormulaire] = useState(() => ({
+    ...ETAT_INITIAL,
+    nomMere: mereNomHerite,
+    dateNaissance: depuisAccouchement ? dateDuJourIso() : '',
+  }))
   const [erreurs, setErreurs] = useState({})
   const [messageErreur, setMessageErreur] = useState('')
   const [estEnregistrement, setEstEnregistrement] = useState(false)
@@ -147,7 +160,7 @@ function PageCreationDossierEnfant() {
   const enregistrer = async (event) => {
     event.preventDefault()
 
-    const erreursTrouvees = valider(formulaire)
+    const erreursTrouvees = valider(formulaire, { depuisAccouchement })
     setErreurs(erreursTrouvees)
 
     if (Object.keys(erreursTrouvees).length > 0) {
@@ -158,14 +171,20 @@ function PageCreationDossierEnfant() {
     setEstEnregistrement(true)
 
     try {
-      await serviceDossiersEnfants.creer(formulaire)
+      const { numeroFiche, ...reste } = formulaire
+      const payload = { ...reste, numeroDossier: numeroFiche }
+      if (mereIdHerite) payload.mereId = mereIdHerite
+      if (accouchementId) payload.accouchementId = accouchementId
+      await serviceDossiersEnfants.creer(payload)
 
-      navigate('/enfants', {
+      const retour = accouchementId ? `/accouchements/${accouchementId}` : '/enfants'
+      navigate(retour, {
         replace: true,
         state: {
           messageSucces: `Le dossier administratif de ${nomComplet} a été créé avec succès.`,
         },
       })
+      return
     } catch (erreur) {
       const messageServeur = erreur?.message ?? ''
       if (messageServeur.toLowerCase().includes('existe deja') || messageServeur.toLowerCase().includes('deja utilise')) {
@@ -263,30 +282,41 @@ function PageCreationDossierEnfant() {
           </div>
         </section>
 
-        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
-          <div className="mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">family_restroom</span>
-            <h3 className="text-lg font-bold tracking-tight text-on-surface">Responsables</h3>
-          </div>
+        {/* Section Responsables — masquée si on vient d'un accouchement (héritage auto depuis la mère) */}
+        {depuisAccouchement ? (
+          <section className="rounded-xl border-l-4 border-primary/30 bg-primary/5 p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>family_restroom</span>
+              <p className="text-sm font-semibold text-primary">Responsables hérités de l'accouchement</p>
+            </div>
+            <p className="mt-1 text-xs text-on-surface-variant">Mère : <span className="font-semibold text-on-surface">{mereNomHerite || '—'}</span> — Les informations de contact seront complétées depuis le dossier de la mère.</p>
+          </section>
+        ) : (
+          <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">family_restroom</span>
+              <h3 className="text-lg font-bold tracking-tight text-on-surface">Responsables</h3>
+            </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Champ label="Nom de la mère" obligatoire erreur={erreurs.nomMere}>
-              <input type="text" value={formulaire.nomMere} onChange={(event) => mettreAJourChamp('nomMere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-            </Champ>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Champ label="Nom de la mère" obligatoire erreur={erreurs.nomMere}>
+                <input type="text" value={formulaire.nomMere} onChange={(event) => mettreAJourChamp('nomMere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </Champ>
 
-            <Champ label="Nom du père">
-              <input type="text" value={formulaire.nomPere} onChange={(event) => mettreAJourChamp('nomPere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-            </Champ>
+              <Champ label="Nom du père">
+                <input type="text" value={formulaire.nomPere} onChange={(event) => mettreAJourChamp('nomPere', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </Champ>
 
-            <Champ label="Téléphone" obligatoire erreur={erreurs.telephone}>
-              <input type="tel" value={formulaire.telephone} onChange={(event) => mettreAJourChamp('telephone', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-            </Champ>
+              <Champ label="Téléphone" obligatoire erreur={erreurs.telephone}>
+                <input type="tel" value={formulaire.telephone} onChange={(event) => mettreAJourChamp('telephone', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </Champ>
 
-            <Champ label="Adresse">
-              <input type="text" value={formulaire.adresse} onChange={(event) => mettreAJourChamp('adresse', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-            </Champ>
-          </div>
-        </section>
+              <Champ label="Adresse">
+                <input type="text" value={formulaire.adresse} onChange={(event) => mettreAJourChamp('adresse', event.target.value)} className="w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </Champ>
+            </div>
+          </section>
+        )}
 
         <div className="flex justify-end gap-4 border-t border-surface-container-high pt-4">
           <button type="button" className="rounded-full px-8 py-2.5 text-sm font-semibold text-on-surface-variant transition-all hover:bg-surface-container-highest" onClick={() => navigate('/enfants')} disabled={estEnregistrement}>
