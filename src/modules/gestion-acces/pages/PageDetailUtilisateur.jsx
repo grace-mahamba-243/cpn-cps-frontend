@@ -399,36 +399,6 @@ function PageDetailUtilisateur() {
             </div>
           </section>
 
-          <section className="detail-utilisateur__carte">
-            <div className="detail-utilisateur__carte-entete">
-              <div className="detail-utilisateur__icone-bloc detail-utilisateur__icone-bloc--secondaire">
-                <span className="material-symbols-outlined">key</span>
-              </div>
-              <h3>Permissions et accès</h3>
-            </div>
-
-            <div className="detail-utilisateur__permissions">
-              {permissionsAffichees.map((permission) => (
-                <div
-                  key={permission.code}
-                  className={
-                    permission.estAutorisee
-                      ? 'detail-utilisateur__permission'
-                      : 'detail-utilisateur__permission detail-utilisateur__permission--inactive'
-                  }
-                >
-                  <div>
-                    <span className="material-symbols-outlined">admin_panel_settings</span>
-                    <span>{permission.libelle}</span>
-                  </div>
-
-                  <span className="material-symbols-outlined">
-                    {permission.estAutorisee ? 'check_circle' : 'cancel'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
         <aside className="detail-utilisateur__colonne-secondaire">

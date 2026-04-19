@@ -74,24 +74,14 @@ function PageTableauDeBordReception() {
         <h2 className="font-headline text-2xl font-bold text-slate-900">Réception</h2>
       </div>
 
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="flex items-center justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+      <section className="w-[50%] grid grid-cols-1 gap-6">
+        <div className="w-[50%] flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
           <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">Rendez-vous du jour</p>
-            <h3 className="text-4xl font-black text-primary">{estChargement ? '—' : totalDuJour}</h3>
+            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Rendez-vous du jour</p>
+            <h3 className="text-xl font-black text-primary">{estChargement ? '—' : totalDuJour}</h3>
           </div>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <span className="material-symbols-outlined text-3xl">event_note</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">Arrivées enregistrées</p>
-            <h3 className="text-4xl font-black text-tertiary">{estChargement ? '—' : String(totalArrives).padStart(2, '0')}</h3>
-          </div>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-tertiary/10 text-tertiary">
-            <span className="material-symbols-outlined text-3xl">how_to_reg</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="material-symbols-outlined text-base">event_note</span>
           </div>
         </div>
       </section>
@@ -121,7 +111,7 @@ function PageTableauDeBordReception() {
 
       </section>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-50 bg-white shadow-sm shadow-slate-200/50">
+      <section className="w-[97%] overflow-hidden rounded-3xl border border-slate-50 bg-white shadow-sm shadow-slate-200/50">
         <div className="flex items-center justify-between border-b border-slate-50 px-6 py-5">
           <h3 className="flex items-center gap-2 text-lg font-bold text-on-surface">
             <span className="material-symbols-outlined text-primary">groups</span>

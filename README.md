@@ -1,186 +1,142 @@
-# Frontend - Application de suivi de la CPN et de la CPS
-## Cas du Centre de Santé Himbi
+﻿# CPN-CPS Frontend — Centre de Santé Afia Himbi
 
-## Présentation
-
-Ce dépôt contient le **frontend** de l’application de suivi de la **Consultation Prénatale (CPN)** et de la **Consultation Postnatale / Postpartum (CPS)** du **Centre de Santé Himbi**.
-
-L’objectif du frontend est de fournir une interface claire, moderne et structurée pour accompagner le parcours de la mère et de l’enfant au sein du centre de santé, depuis l’accueil jusqu’au suivi postnatal, clinique et vaccinal.
-
-Le projet est conçu de manière **modulaire**, avec une approche **frontend d’abord**, afin de stabiliser les parcours utilisateur, les pages, les formulaires, les composants et les maquettes avant l’intégration complète avec le backend.
+Interface web du système de gestion des consultations prénatales (CPN) et des consultations post-natales (CPS) du Centre de Santé Afia Himbi.
 
 ---
 
 ## Contexte du projet
 
-Ce projet s’appuie sur une **descente terrain** réalisée au **Centre de Santé Himbi**.
+Ce projet est issu d'une **descente terrain** au Centre de Santé Afia Himbi. L'application accompagne le parcours complet de la mère et de l'enfant, depuis l'accueil jusqu'au suivi postnatal.
 
-### Éléments métier déjà validés
+### Logique métier du parcours clinique
 
-- La **CPN** est réalisée par **l’infirmier ou la sage-femme**
-- La **CPS femme** est réalisée par **le médecin**
-- La **vaccination enfant** est réalisée par **le médecin**
-- La **réceptionniste** gère :
-  - l’accueil
-  - la recherche du dossier
-  - l’enregistrement administratif
-  - la gestion des rendez-vous
-  - l’orientation
+**Femme → Grossesse → CPN → Accouchement → CPS femme + Dossier enfant → Suivi enfant + Vaccination**
+
+### Règles métier validées sur le terrain
+
+- La **CPN** est réalisée par l'infirmier ou la sage-femme
+- La **CPS femme** est réalisée par le médecin selon le rythme **6h · 6 jours · 6 semaines**
+- La **vaccination enfant** est réalisée par le médecin
+- Le **suivi de l'enfant** continue jusqu'à **59 mois**
+- La **réceptionniste** gère l'accueil, la recherche de dossier, l'enregistrement, les rendez-vous et l'orientation
+- Une femme peut venir en CPS même si elle n'a **pas fait sa CPN** au centre ou **n'a pas accouché** au centre
+- Les rendez-vous **planifiés, surprise et annulés** sont gérés ; les annulés sont conservés dans l'historique
+- Il n'y a **pas d'échographie sur place**
 - Il existe un **laboratoire** et une **pharmacie**
-- Il n’y a **pas d’échographie sur place**
-- La **CPS femme** suit la logique :
-  - **6 heures**
-  - **6 jours**
-  - **6 semaines**
-- Le suivi de l’enfant continue jusqu’à **59 mois**
-- Les **rendez-vous planifiés**, **surprise** et **annulés** doivent être gérés
-- Les rendez-vous annulés doivent être conservés dans l’**historique**
-- L’impression du rapport clinique de la mère ou de l’enfant se fait chez **le médecin**
-- Une femme peut venir en **CPS** même si elle n’a pas fait sa **CPN** au centre ou n’a pas accouché au centre
+
+### Organisation fonctionnelle
+
+| Niveau | Modules |
+|---|---|
+| **Socle** | Authentification · Gestion des accès · Réception · Rendez-vous |
+| **Cœur mère** | CPN · Accouchement · CPS femme |
+| **Cœur enfant** | CPS enfant · Dossier enfant |
+| **Support** | Laboratoire · Administration |
 
 ---
 
-## Logique générale du système
+## Technologies
 
-Le parcours métier global retenu est :
-
-**Femme → Grossesse → CPN → Accouchement / Issue de grossesse → CPS femme + Dossier enfant → Suivi enfant + Vaccination**
-
-Cette logique guide l’organisation des modules, des pages et des flux utilisateur du frontend.
-
----
-
-## Objectifs du frontend
-
-Le frontend doit permettre de :
-
-- proposer une interface claire et professionnelle
-- guider les utilisateurs selon leur rôle
-- faciliter la saisie des données administratives et médicales
-- structurer les parcours de la mère et de l’enfant
-- gérer les formulaires, tableaux, historiques et fiches de détail
-- préparer une intégration fluide avec le backend FastAPI
+| Outil | Version |
+|---|---|
+| React | 19 |
+| React Router DOM | 7 |
+| Vite | 8 |
+| Tailwind CSS | 4 |
 
 ---
 
-## Stack technique
+## Prérequis
 
-- **React**
-- **Vite**
-- **React Router**
-- **CSS** (ou autre système de style retenu ensuite)
-- **Données simulées** au début pour construire les interfaces avant l’intégration API
+- Node.js >= 18
+- Le backend (`cpn-cps-nestjs`) doit être en cours d'exécution sur le port `3000`
 
 ---
 
-## Méthode de travail
+## Installation et démarrage
 
-Le frontend est construit **module par module** selon la méthode suivante :
+```bash
+# Installer les dépendances
+npm install
 
-1. **Module**
-2. **Analyse métier**
-3. **Flux utilisateur**
-4. **Pages**
-5. **Composants**
-6. **Routes**
-7. **Maquette**
-8. **Issues**
+# Démarrer en mode développement
+npm run dev
 
-Cette méthode permet de construire chaque partie du système de façon cohérente, progressive et professionnelle.
+# Construire pour la production
+npm run build
 
----
+# Prévisualiser le build de production
+npm run preview
+```
 
-## Organisation fonctionnelle
-
-Le système est structuré en plusieurs niveaux :
-
-### Niveau 1 : Socle
-- Authentification
-- Gestion des rôles et accès
-- Réception
-- Rendez-vous
-
-### Niveau 2 : Cœur métier mère
-- CPN
-- Accouchement / issue de grossesse
-- CPS femme
-
-### Niveau 3 : Cœur métier enfant
-- Dossier enfant
-- Suivi clinique enfant
-- Nutrition
-- Vaccination
-
-### Niveau 4 : Services de support
-- Laboratoire
-- Pharmacie
-- Impression
-- Administration
-
----
-
-## Modules frontend prévus
-
-- Authentification
-- Gestion des rôles et accès
-- Réception
-- Rendez-vous
-- CPN
-- Accouchement
-- CPS femme
-- Dossier enfant
-- Suivi enfant
-- Nutrition
-- Vaccination
-- Laboratoire
-- Pharmacie
-- Impression
-- Administration
+L'application sera accessible sur `http://localhost:5173`.
 
 ---
 
 ## Structure du projet
 
-```bash
+```
 src/
-│
-├── application/
-│   ├── routes/
-│   ├── layouts/
-│   └── fournisseurs/
-│
-├── composants/
-│   ├── interface/
-│   ├── navigation/
-│   └── partages/
-│
-├── pages/
-│   ├── authentification/
-│   ├── tableau-de-bord/
-│   └── erreurs/
-│
-├── modules/
-│   ├── authentification/
-│   ├── gestion-acces/
-│   ├── reception/
-│   ├── rendez-vous/
-│   ├── cpn/
-│   ├── accouchement/
-│   ├── cps-femme/
-│   ├── dossier-enfant/
-│   ├── suivi-enfant/
-│   ├── nutrition/
-│   ├── vaccination/
-│   ├── laboratoire/
-│   ├── pharmacie/
-│   ├── impression/
-│   └── administration/
-│
-├── services/
-│   ├── api/
-│   └── donnees-simulees/
-│
-├── constantes/
-├── utilitaires/
-├── ressources/
-└── styles/
+ application/
+    layouts/               # Gabarits des pages (public / privé)
+    routes/                # Configuration du routage et protection des routes
+ composants/
+    interface/             # Composants UI réutilisables (Bouton, Carte, Tableau, Alerte...)
+    navigation/            # Barre latérale et entête de l'application
+    partages/              # Composants partagés (Chargement, EtatVide, BlocTitrePage...)
+ modules/
+    accouchement/          # Enregistrement et suivi des accouchements
+    administration/        # Journal des activités cliniques
+    authentification/      # Connexion, déconnexion, gestion de session
+    cpn/                   # Consultations prénatales (dossier, contacts, examens)
+    cps-enfant/            # Consultations post-natales enfant (dossier, visites, examens)
+    cps-femme/             # Consultations post-natales femme (dossier, visites, examens)
+    dossier-enfant/        # Dossier médical de l'enfant (suivis, nutrition, vaccinations)
+    gestion-acces/         # Gestion des utilisateurs et des rôles
+    laboratoire/           # Demandes et résultats de laboratoire
+    reception/             # Tableau de bord réception et enregistrement des arrivées
+    rendez-vous/           # Création, liste et suivi des rendez-vous
+    tableau-bord-clinique/ # File d'attente générale
+ pages/
+    bibliotheque-composants/ # Démonstration des composants UI
+    erreurs/               # Pages 403, 404
+    patients/              # Enregistrement et fiches des patients
+ services/
+    api/                   # Appels vers l'API backend (un fichier par module)
+ styles/                    # Styles globaux
+```
+
+---
+
+## Modules fonctionnels
+
+| Module | Rôle |
+|---|---|
+| **Authentification** | Connexion / déconnexion, gestion du token JWT |
+| **Réception** | Tableau de bord réception et enregistrement des arrivées |
+| **Rendez-vous** | Création, liste et suivi des rendez-vous |
+| **Tableau de bord clinique** | File d'attente générale |
+| **CPN** | Consultations prénatales (dossier, contacts, examens, historique) |
+| **CPS Femme** | Consultations post-natales mère — rythme 6h · 6j · 6sem |
+| **CPS Enfant** | Consultations post-natales enfant (dossier, visites, examens) |
+| **Accouchement** | Enregistrement et suivi des accouchements |
+| **Dossier Enfant** | Dossier médical de l'enfant (suivis, nutrition, vaccinations, examens) |
+| **Laboratoire** | Demandes et résultats de laboratoire |
+| **Gestion des accès** | Gestion des utilisateurs et des rôles |
+| **Administration** | Journal des activités cliniques |
+
+---
+
+## Assistant clinique IA
+
+L'application intègre un assistant clinique basé sur l'API **OpenAI** dans deux modules :
+
+| Module | Usage |
+|---|---|
+| **CPN** | Analyse automatique des données de la consultation prénatale et suggestions cliniques |
+| **CPS Femme** | Analyse des visites post-natales et recommandations de suivi |
+
+L'assistant reçoit les données cliniques saisies dans le formulaire et retourne une analyse structurée affichée directement dans l'interface. Il est adapté au contexte d'une maternité à Goma, RDC.
+
+---
+

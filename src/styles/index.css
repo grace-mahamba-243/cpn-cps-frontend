@@ -100,6 +100,20 @@ html {
 
 * {
   box-sizing: border-box;
+  box-shadow: none !important;
+}
+
+/* Suppression des bordures colorées (border-l-4, border-primary, etc.) */
+[class*="border-l-"],
+[class*="border-r-"],
+[class*="border-t-"],
+[class*="border-b-"],
+[class*="border-primary"],
+[class*="border-secondary"],
+[class*="border-tertiary"],
+[class*="border-error"],
+[class*="border-outline"] {
+  border-color: transparent !important;
 }
 
 html,
@@ -404,7 +418,7 @@ p {
 
 .entete-application__recherche-champ {
   width: 100%;
-  border: none;
+  border: 1px solid #dfeaee;
   border-radius: 999px;
   padding: 0.78rem 1rem 0.78rem 2.6rem;
   background: rgba(241, 245, 249, 0.75);
@@ -709,7 +723,7 @@ p {
 .champ-recherche__controle {
   width: 100%;
   padding: 0.95rem 1rem 0.95rem 3rem;
-  border: 1px solid rgba(173, 179, 181, 0.25);
+  border: 1px solid #dfeaee;
   border-radius: 1rem;
   background: #ffffff;
 }
@@ -1359,7 +1373,7 @@ p {
 .utilisateurs-admin__filtres-champs select {
   min-width: 12rem;
   padding: 0.95rem 1rem;
-  border: 1px solid rgba(173, 179, 181, 0.2);
+  border: 1px solid #dfeaee;
   border-radius: 0.9rem;
   background: #ffffff;
   color: var(--couleur-texte-secondaire);
@@ -3088,7 +3102,7 @@ p {
   .reception__recherche-champ {
     width: 100%;
     padding: 0.95rem 1.25rem 0.95rem 3rem;
-    border: 1px solid rgba(173, 179, 181, 0.25);
+    border: 1px solid #dfeaee;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.94);
     color: #2d3335;

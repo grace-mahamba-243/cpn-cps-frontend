@@ -233,22 +233,6 @@ function PatientsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="relative overflow-hidden rounded-xl bg-primary p-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dim opacity-100" />
-          <div className="relative z-10">
-            <span className="material-symbols-outlined mb-4 block text-primary-container">group_add</span>
-            <div className="text-3xl font-extrabold text-on-primary">{nouveauxDossiers}</div>
-            <div className="text-sm uppercase tracking-widest text-on-primary/80">Nouveaux dossiers</div>
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-secondary-container p-6">
-          <span className="material-symbols-outlined mb-4 block text-secondary">event_note</span>
-          <div className="text-3xl font-extrabold text-on-secondary-container">{totalDossiers}</div>
-          <div className="text-sm uppercase tracking-widest text-on-secondary-container/80">Total dossiers actifs</div>
-        </div>
-      </div>
     </div>
   )
 }

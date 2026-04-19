@@ -264,6 +264,24 @@ function PageListeRendezVous() {
       {messageSucces ? <Alerte type="succes" titre="Operation réussie">{messageSucces}</Alerte> : null}
       {messageErreur ? <Alerte type="erreur" titre="Attention">{messageErreur}</Alerte> : null}
 
+      <div className="w-[50%] flex gap-4">
+        <div className="w-[50%] rounded-xl border-l-4 border-outline-variant/40 p-3" style={{ backgroundColor: '#f0f9fc' }}>
+          <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total attendus</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-extrabold text-on-primary-container">{statistiques.total}</span>
+            <span className="text-[10px] font-medium text-primary">patients</span>
+          </div>
+        </div>
+
+        <div className="w-[50%] rounded-xl border-l-4 border-outline-variant/40 p-3" style={{ backgroundColor: '#f0f9fc' }}>
+          <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-container">Arrivées enregistrées</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-extrabold text-tertiary-dim">{statistiques.arrivees}</span>
+            <span className="text-[10px] font-medium text-tertiary">patients</span>
+          </div>
+        </div>
+      </div>
+
 
 
       <section className="rounded-3xl bg-surface-container-low p-6 shadow-sm">
@@ -433,23 +451,7 @@ function PageListeRendezVous() {
         )}
       </section>
 
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-xl border-l-4 border-outline-variant/40 bg-primary-container/30 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total attendus</p>
-          <div className="flex items-baseline gap-2">
-            <span className="font-headline text-3xl font-extrabold text-on-primary-container">{statistiques.total}</span>
-            <span className="text-xs font-medium text-primary">patients</span>
-          </div>
-        </div>
 
-        <div className="rounded-xl border-l-4 border-outline-variant/40 bg-tertiary-container/20 p-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-on-tertiary-container">Arrivées enregistrées</p>
-          <div className="flex items-baseline gap-2">
-            <span className="font-headline text-3xl font-extrabold text-tertiary-dim">{statistiques.arrivees}</span>
-            <span className="text-xs font-medium text-tertiary">patients</span>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

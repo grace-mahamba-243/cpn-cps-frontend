@@ -42,10 +42,17 @@ function PageAjoutUtilisateur() {
   }, [])
 
   const mettreAJourChamp = (champ, valeur) => {
-    setFormulaire((formulaireCourant) => ({
-      ...formulaireCourant,
-      [champ]: valeur,
-    }))
+    setFormulaire((formulaireCourant) => {
+      const miseAJour = { ...formulaireCourant, [champ]: valeur }
+      // Génère automatiquement le mot de passe au format prenom@himbi
+      if (champ === 'nomComplet') {
+        const prenom = valeur.trim().split(/\s+/)[0].toLowerCase()
+        const motDePasse = prenom ? `${prenom}@himbi` : ''
+        miseAJour.motDePasseInitial = motDePasse
+        miseAJour.confirmationMotDePasse = motDePasse
+      }
+      return miseAJour
+    })
   }
 
   const enregistrerUtilisateur = async (event) => {
@@ -189,8 +196,8 @@ function PageAjoutUtilisateur() {
             <label className="ajout-utilisateur__champ">
               <span>Mot de passe initial</span>
               <input
-                type="password"
-                placeholder="••••••••"
+                type="text"
+                placeholder="ex: grace@himbi"
                 value={formulaire.motDePasseInitial}
                 onChange={(event) => mettreAJourChamp('motDePasseInitial', event.target.value)}
               />
@@ -227,8 +234,8 @@ function PageAjoutUtilisateur() {
             <label className="ajout-utilisateur__champ">
               <span>Confirmer le mot de passe</span>
               <input
-                type="password"
-                placeholder="••••••••"
+                type="text"
+                placeholder="ex: grace@himbi"
                 value={formulaire.confirmationMotDePasse}
                 onChange={(event) => mettreAJourChamp('confirmationMotDePasse', event.target.value)}
               />

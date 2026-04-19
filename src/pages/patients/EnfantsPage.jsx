@@ -61,7 +61,7 @@ function EnfantsPage() {
 
   const [filtres, setFiltres] = useState({
     rechercheRapide: '',
-    numeroFiche: '',
+    numeroDossier: '',
     nomEnfant: '',
     nomMere: '',
     nomPere: '',
@@ -105,11 +105,11 @@ function EnfantsPage() {
       const nomComplet = construireNomEnfant(enfant)
       const matchGlobal =
         !rechercheGlobale ||
-        [enfant.numeroFiche, nomComplet, enfant.nomMere, enfant.nomPere, enfant.telephone]
+        [enfant.numeroDossier, nomComplet, enfant.nomMere, enfant.nomPere, enfant.telephone]
           .filter(Boolean)
           .some((valeur) => normaliserTexte(valeur).includes(rechercheGlobale))
 
-      const matchNumero = !filtres.numeroFiche || normaliserTexte(enfant.numeroFiche).includes(normaliserTexte(filtres.numeroFiche))
+      const matchNumero = !filtres.numeroDossier || normaliserTexte(enfant.numeroDossier).includes(normaliserTexte(filtres.numeroDossier))
       const matchNomEnfant = !filtres.nomEnfant || normaliserTexte(nomComplet).includes(normaliserTexte(filtres.nomEnfant))
       const matchNomMere = !filtres.nomMere || normaliserTexte(enfant.nomMere).includes(normaliserTexte(filtres.nomMere))
       const matchNomPere = !filtres.nomPere || normaliserTexte(enfant.nomPere).includes(normaliserTexte(filtres.nomPere))
@@ -143,17 +143,6 @@ function EnfantsPage() {
         </Alerte>
       ) : null}
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 flex items-center justify-between rounded-xl bg-primary-container/30 p-5">
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-on-primary-fixed-variant">Total Enfants</p>
-            <p className="text-3xl font-black text-on-primary-fixed-variant">{etat.enfants.length}</p>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container text-on-primary-fixed-variant">
-            <span className="material-symbols-outlined text-3xl">groups</span>
-          </div>
-        </div>
-      </div>
 
       <div className="overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm">
         {etat.chargement ? (
@@ -195,7 +184,7 @@ function EnfantsPage() {
                           : 'group transition-colors hover:bg-surface-container'
                       }
                     >
-                      <td className="px-6 py-5 font-mono text-xs font-bold text-primary">{enfant.numeroFiche}</td>
+                      <td className="px-6 py-5 font-mono text-xs font-bold text-primary">{enfant.numeroDossier}</td>
                       <td className="px-6 py-5 font-semibold text-on-surface">{construireNomEnfant(enfant)}</td>
                       <td className="px-6 py-5">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${classeSexe(enfant.sexe)}`}>
