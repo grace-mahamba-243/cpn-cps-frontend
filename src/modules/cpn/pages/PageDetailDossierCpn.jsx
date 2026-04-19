@@ -20,16 +20,11 @@ function CarteRaccourci({ icone, titre, sousTitre, badge, couleurIcone, couleurB
       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${couleurIcone}`}>
         <span className="material-symbols-outlined text-2xl">{icone}</span>
       </div>
-      <div className="pr-6">
-        <p className="text-sm font-bold text-on-surface">{titre}</p>
-        {sousTitre && <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant">{sousTitre}</p>}
-      </div>
+      <p className="text-sm font-bold text-on-surface">{titre}</p>
       {badge !== null && badge !== undefined && (
         <span className={`absolute right-3 top-3 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${couleurBadge}`}>{badge}</span>
       )}
-      <span className="material-symbols-outlined absolute bottom-4 right-4 text-[16px] text-on-surface-variant/25 transition-colors group-hover:text-on-surface-variant/60">
-        arrow_forward
-      </span>
+
     </button>
   )
 }
@@ -249,7 +244,6 @@ function PageDetailDossierCpn() {
             <CarteRaccourci
               icone="calendar_month"
               titre="Contacts CPN"
-              sousTitre={dernierContact ? `Dernier : ${formaterDateCourte(dernierContact.dateContact)}` : 'Aucun contact'}
               badge={dossier.nombreContacts ?? 0}
               couleurIcone="bg-tertiary-container/30 text-tertiary"
               couleurBadge="bg-tertiary-container text-on-tertiary-container"
@@ -258,7 +252,6 @@ function PageDetailDossierCpn() {
             <CarteRaccourci
               icone="biotech"
               titre="Examens"
-              sousTitre={`${examensRecus} résultat${examensRecus !== 1 ? 's' : ''} reçu${examensRecus !== 1 ? 's' : ''}`}
               badge={dossier.examens?.length ?? 0}
               couleurIcone="bg-surface-container-high text-on-surface-variant"
               couleurBadge="bg-surface-variant text-on-surface-variant"

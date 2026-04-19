@@ -1,10 +1,10 @@
-// Ce composant affiche la liste des dossiers CPS Femme avec une navbar pill pour basculer entre file d'attente et dossiers.
+// Ce composant affiche la liste des dossiers CPS Enfant avec une navbar pill pour basculer entre file d'attente et dossiers.
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
+import serviceCpsEnfant from '../../../services/api/serviceCpsEnfant'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
 
-function initialesPatiente(nom) {
+function initialesEnfant(nom) {
   if (!nom) return '?'
   const mots = nom.trim().split(/\s+/)
   if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase()
@@ -26,7 +26,7 @@ function couleurAvatar(nom) {
   return COULEURS_AVATAR[Math.abs(h) % COULEURS_AVATAR.length]
 }
 
-function PageListeDossiersCpsFemme() {
+function PageListeDossiersCpsEnfant() {
   const navigate = useNavigate()
   const [tous, setTous] = useState([])
   const [recherche, setRecherche] = useState('')
@@ -45,7 +45,7 @@ function PageListeDossiersCpsFemme() {
   // Charger le total des dossiers
   useEffect(() => {
     let actif = true
-    serviceCpsFemme.listerDossiers('').then((d) => {
+    serviceCpsEnfant.listerDossiers('').then((d) => {
       if (actif) setStats({ totalDossiers: d.length })
     }).catch(() => {})
     return () => { actif = false }
@@ -55,13 +55,13 @@ function PageListeDossiersCpsFemme() {
   useEffect(() => {
     let actif = true
     setChargement(true); setErreur(null)
-    serviceCpsFemme.listerDossiers('').then((liste) => { if (actif) setTous(liste) })
+    serviceCpsEnfant.listerDossiers('').then((liste) => { if (actif) setTous(liste) })
       .catch((e) => { if (actif) setErreur(e.message) })
       .finally(() => { if (actif) setChargement(false) })
     return () => { actif = false }
   }, [])
 
-  // Recherche indépendante (dropdown flottant)
+  // Recherche flottante avec debounce
   const gererRecherche = (valeur) => {
     setRecherche(valeur)
     if (!valeur.trim()) {
@@ -73,13 +73,13 @@ function PageListeDossiersCpsFemme() {
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(async () => {
       setChargementRecherche(true)
-      try { setResultatsRecherche(await serviceCpsFemme.listerDossiers(valeur)) }
+      try { setResultatsRecherche(await serviceCpsEnfant.listerDossiers(valeur)) }
       catch { setResultatsRecherche([]) }
       finally { setChargementRecherche(false) }
     }, 350)
   }
 
-  // Fermer le dropdown si clic en dehors
+  // Fermer dropdown si clic en dehors
   useEffect(() => {
     const handler = (e) => {
       if (rechercheRef.current && !rechercheRef.current.contains(e.target)) {
@@ -90,37 +90,40 @@ function PageListeDossiersCpsFemme() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Vérifier si un dossier CPS est dans la file d'attente
+  const nomEnfant = (d) =>
+    [d.enfant?.nom, d.enfant?.postnom, d.enfant?.prenom].filter(Boolean).join(' ') ||
+    d.mereNom || '—'
+
+  // Vérifier si un dossier est dans la file d'attente
   const rdvDuDossier = (d) =>
     arrivees.find(
       (a) =>
         a.numeroDossier === d.numeroDossierCps ||
-        (a.nomPatient && d.patiente?.nom && a.nomPatient.toLowerCase().includes(d.patiente.nom.toLowerCase().split(' ')[0]))
+        (a.nomPatient && nomEnfant(d) && a.nomPatient.toLowerCase().includes(nomEnfant(d).toLowerCase().split(' ')[0]))
     ) ?? null
 
-  async function prendrePatiente(rdv) {
+  async function prendrePatient(rdv) {
     if (pronantId) return
     setPronantId(rdv.id)
     try {
       let dossier = null
       if (rdv.numeroDossier) {
-        const r = await serviceCpsFemme.listerDossiers(rdv.numeroDossier)
+        const r = await serviceCpsEnfant.listerDossiers(rdv.numeroDossier)
         dossier = r.find((d) => d.numeroDossierCps === rdv.numeroDossier) ?? (r.length === 1 ? r[0] : null)
       }
       if (!dossier && rdv.nomPatient) {
-        const r = await serviceCpsFemme.listerDossiers(rdv.nomPatient)
+        const r = await serviceCpsEnfant.listerDossiers(rdv.nomPatient)
         dossier = r.length === 1 ? r[0] : null
       }
-      // Retirer ce rdv de la file d'attente (décrémente le compteur)
       setArrivees((prev) => prev.filter((a) => a.id !== rdv.id))
-      if (dossier) { navigate('/cps-femme/' + dossier.id) }
+      if (dossier) { navigate('/cps-enfant/' + dossier.id) }
       else {
         const p = new URLSearchParams()
         if (rdv.numeroDossier) p.set('refDossier', rdv.numeroDossier)
         if (rdv.nomPatient) p.set('nom', rdv.nomPatient)
-        navigate('/cps-femme/nouveau?' + p.toString())
+        navigate('/cps-enfant/nouveau?' + p.toString())
       }
-    } catch { navigate('/cps-femme/nouveau') }
+    } catch { navigate('/cps-enfant/nouveau') }
     finally { setPronantId(null) }
   }
 
@@ -129,12 +132,12 @@ function PageListeDossiersCpsFemme() {
 
       {/* Ligne supérieure : compteur à gauche | recherche au centre | bouton à droite */}
       <div className="flex items-center">
-        {/* Barre de recherche centrée — 30% large, légèrement à gauche */}
+        {/* Barre de recherche centrée */}
         <div className="relative mx-auto shrink-0" style={{ width: '30%' }} ref={rechercheRef}>
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-outline">search</span>
           <input
             type="text"
-            placeholder="Nom, numéro de dossier, téléphone..."
+            placeholder="Nom enfant, numéro dossier, mère..."
             value={recherche}
             onChange={(e) => gererRecherche(e.target.value)}
             onFocus={() => { if (recherche && resultatsRecherche.length > 0) setAfficherResultats(true) }}
@@ -167,16 +170,16 @@ function PageListeDossiersCpsFemme() {
                           onClick={() => {
                             setAfficherResultats(false)
                             setRecherche('')
-                            if (rdv) prendrePatiente(rdv)
-                            else navigate('/cps-femme/' + d.id)
+                            if (rdv) prendrePatient(rdv)
+                            else navigate('/cps-enfant/' + d.id)
                           }}
                           className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-container transition-colors"
                         >
-                          <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(d.patiente?.nom)}>
-                            {initialesPatiente(d.patiente?.nom)}
+                          <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(nomEnfant(d))}>
+                            {initialesEnfant(nomEnfant(d))}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-on-surface">{d.patiente?.nom ?? ''}</p>
+                            <p className="truncate text-sm font-semibold text-on-surface">{nomEnfant(d)}</p>
                             <p className="text-xs font-mono text-on-surface-variant">{d.numeroDossierCps}</p>
                           </div>
                           {rdv ? (
@@ -200,15 +203,6 @@ function PageListeDossiersCpsFemme() {
           )}
         </div>
 
-        {/* Bouton Nouveau dossier */}
-        <button
-          onClick={() => navigate('/cps-femme/nouveau')}
-          className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:opacity-90 transition-opacity"
-          style={{ marginLeft: 'auto', marginRight: '25%' }}
-        >
-          <span className="material-symbols-outlined text-sm">add</span>
-          Nouveau dossier
-        </button>
       </div>
 
       {/* Dossiers */}
@@ -238,12 +232,12 @@ function PageListeDossiersCpsFemme() {
                   const rdv = rdvDuDossier(d)
                   return (
                     <li key={d.id}>
-                      <button type="button" onClick={() => navigate('/cps-femme/' + d.id)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left hover:opacity-90 transition-opacity" style={{ background: '#dfeaee' }}>
-                        <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(d.patiente?.nom)}>
-                          {initialesPatiente(d.patiente?.nom)}
+                      <button type="button" onClick={() => navigate('/cps-enfant/' + d.id)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left hover:opacity-90 transition-opacity" style={{ background: '#dfeaee' }}>
+                        <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(nomEnfant(d))}>
+                          {initialesEnfant(nomEnfant(d))}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-on-surface">{d.patiente?.nom ?? ''}</p>
+                          <p className="truncate text-sm font-semibold text-on-surface">{nomEnfant(d)}</p>
                           <p className="text-xs font-mono text-on-surface-variant">{d.numeroDossierCps}</p>
                         </div>
                         {rdv ? (
@@ -268,4 +262,4 @@ function PageListeDossiersCpsFemme() {
   )
 }
 
-export default PageListeDossiersCpsFemme
+export default PageListeDossiersCpsEnfant

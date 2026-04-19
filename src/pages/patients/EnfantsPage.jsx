@@ -135,14 +135,6 @@ function EnfantsPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-cyan-800">Dossiers des Enfants</h1>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-sm transition-all hover:shadow-md active:opacity-80"
-          onClick={() => navigate('/enfants/nouveau')}
-        >
-          <span className="material-symbols-outlined">add</span>
-          Nouvel enfant
-        </button>
       </div>
 
       {messageSucces ? (

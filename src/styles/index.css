@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 html {
-  font-size: 75%;
+  font-size: 78%;
 }
 
 /* Maintenir la taille originale de la barre latérale malgré le zoom global */

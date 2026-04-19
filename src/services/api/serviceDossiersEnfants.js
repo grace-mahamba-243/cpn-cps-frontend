@@ -87,6 +87,152 @@ const serviceDossiersEnfants = {
     if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
     return corps
   },
+
+  // Retourne le resume complet du dossier enfant (avec suivis, nutritions et doses).
+  async recupererResume(enfantId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/resume`, {
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (reponse.status === 404) return null
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return corps
+  },
+
+  // --- Suivi enfant ---
+
+  async listerSuivis(enfantId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/suivis`, {
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return Array.isArray(corps) ? corps : []
+  },
+
+  async ajouterSuivi(enfantId, donnees) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/suivis`, {
+        method: 'POST',
+        headers: construireEntetes(),
+        body: JSON.stringify(donnees),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return corps
+  },
+
+  // --- Nutrition ---
+
+  async listerNutritions(enfantId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/nutritions`, {
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return Array.isArray(corps) ? corps : []
+  },
+
+  async ajouterNutrition(enfantId, donnees) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/nutritions`, {
+        method: 'POST',
+        headers: construireEntetes(),
+        body: JSON.stringify(donnees),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return corps
+  },
+
+  // --- Vaccination ---
+
+  async listerVaccinations(enfantId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/vaccinations`, {
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return Array.isArray(corps) ? corps : []
+  },
+
+  async enregistrerVaccination(enfantId, donnees) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/vaccinations`, {
+        method: 'POST',
+        headers: construireEntetes(),
+        body: JSON.stringify(donnees),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return corps
+  },
+
+  // --- Examens ---
+
+  // Retourne la liste des examens d'un enfant.
+  async listerExamens(enfantId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/examens`, {
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return Array.isArray(corps?.examens) ? corps.examens : []
+  },
+
+  // Demande un nouvel examen pour un enfant.
+  async demanderExamen(enfantId, donnees) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/enfants/${encodeURIComponent(enfantId)}/examens`, {
+        method: 'POST',
+        headers: construireEntetes(),
+        body: JSON.stringify(donnees),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return corps?.examen ?? corps
+  },
 }
 
 export default serviceDossiersEnfants

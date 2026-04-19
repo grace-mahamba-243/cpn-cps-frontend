@@ -28,6 +28,7 @@ import PageListeRendezVous from '../../modules/rendez-vous/pages/PageListeRendez
 import PageDetailRendezVous from '../../modules/rendez-vous/pages/PageDetailRendezVous'
 import PageCreationRendezVous from '../../modules/rendez-vous/pages/PageCreationRendezVous'
 import PageListeDossiersCpn from '../../modules/cpn/pages/PageListeDossiersCpn'
+import PageFileAttenteGenerale from '../../modules/tableau-bord-clinique/pages/PageFileAttenteGenerale'
 import PageOuvertureCpn from '../../modules/cpn/pages/PageOuvertureCpn'
 import PageDetailDossierCpn from '../../modules/cpn/pages/PageDetailDossierCpn'
 import PageNouveauContactCpn from '../../modules/cpn/pages/PageNouveauContactCpn'
@@ -49,9 +50,22 @@ import PageNouvelleVisiteCps from '../../modules/cps-femme/pages/PageNouvelleVis
 import PageDetailVisiteCps from '../../modules/cps-femme/pages/PageDetailVisiteCps'
 import PageExamensCpsFemme from '../../modules/cps-femme/pages/PageExamensCpsFemme'
 import PageHistoriqueCpsFemme from '../../modules/cps-femme/pages/PageHistoriqueCpsFemme'
+import PageListeDossiersCpsEnfant from '../../modules/cps-enfant/pages/PageListeDossiersCpsEnfant'
+import PageOuvertureCpsEnfant from '../../modules/cps-enfant/pages/PageOuvertureCpsEnfant'
+import PageDetailDossierCpsEnfant from '../../modules/cps-enfant/pages/PageDetailDossierCpsEnfant'
+import PageListeVisitesCpsEnfant from '../../modules/cps-enfant/pages/PageListeVisitesCpsEnfant'
+import PageNouvelleVisiteCpsEnfant from '../../modules/cps-enfant/pages/PageNouvelleVisiteCpsEnfant'
+import PageDetailVisiteCpsEnfant from '../../modules/cps-enfant/pages/PageDetailVisiteCpsEnfant'
+import PageExamensCpsEnfant from '../../modules/cps-enfant/pages/PageExamensCpsEnfant'
 import PageJournalActivites from '../../modules/administration/pages/PageJournalActivites'
 import PageListeDemandesLaboratoire from '../../modules/laboratoire/pages/PageListeDemandesLaboratoire'
 import PageDetailDemandeLaboratoire from '../../modules/laboratoire/pages/PageDetailDemandeLaboratoire'
+import PageDetailDossierEnfantModule from '../../modules/dossier-enfant/pages/PageDetailDossierEnfant'
+import PageNouveauSuiviEnfant from '../../modules/dossier-enfant/pages/PageNouveauSuiviEnfant'
+import PageNouvelleNutritionEnfant from '../../modules/dossier-enfant/pages/PageNouvelleNutritionEnfant'
+import PageNouvelleVaccinationEnfant from '../../modules/dossier-enfant/pages/PageNouvelleVaccinationEnfant'
+import PageVaccinationsEnfant from '../../modules/dossier-enfant/pages/PageVaccinationsEnfant'
+import PageExamensEnfant from '../../modules/dossier-enfant/pages/PageExamensEnfant'
 import { routesAdministration, routesPrivees } from './registreRoutes'
 
 const composantsRoutesPrivees = {
@@ -68,6 +82,7 @@ const composantsRoutesPrivees = {
   '/rendez-vous': <PageListeRendezVous />,
   '/rendez-vous/nouveau': <PageCreationRendezVous />,
   '/rendez-vous/:rendezVousId': <PageDetailRendezVous />,
+  '/file-attente': <PageFileAttenteGenerale />,
   '/cpn': <PageListeDossiersCpn />,
   '/cpn/nouveau': <PageOuvertureCpn />,
   '/cpn/:dossierId': <PageDetailDossierCpn />,
@@ -91,6 +106,13 @@ const composantsRoutesPrivees = {
   '/cps-femme/:dossierId/visites/:visiteId': <PageDetailVisiteCps />,
   '/cps-femme/:dossierId/examens': <PageExamensCpsFemme />,
   '/cps-femme/historique/:patienteId': <PageHistoriqueCpsFemme />,
+  '/cps-enfant': <PageListeDossiersCpsEnfant />,
+  '/cps-enfant/nouveau': <PageOuvertureCpsEnfant />,
+  '/cps-enfant/:dossierId': <PageDetailDossierCpsEnfant />,
+  '/cps-enfant/:dossierId/visites': <PageListeVisitesCpsEnfant />,
+  '/cps-enfant/:dossierId/visites/nouvelle': <PageNouvelleVisiteCpsEnfant />,
+  '/cps-enfant/:dossierId/visites/:visiteId': <PageDetailVisiteCpsEnfant />,
+  '/cps-enfant/:dossierId/examens': <PageExamensCpsEnfant />,
   '/admin/utilisateurs': <PageListeUtilisateurs />,
   '/admin/utilisateurs/nouveau': <PageAjoutUtilisateur />,
   '/admin/utilisateurs/:userId': <PageDetailUtilisateur />,
@@ -101,6 +123,12 @@ const composantsRoutesPrivees = {
   '/admin/journal': <PageJournalActivites />,
   '/laboratoire': <PageListeDemandesLaboratoire />,
   '/laboratoire/:examenId': <PageDetailDemandeLaboratoire />,
+  '/dossier-enfant/:enfantId': <PageDetailDossierEnfantModule />,
+  '/dossier-enfant/:enfantId/suivis/nouveau': <PageNouveauSuiviEnfant />,
+  '/dossier-enfant/:enfantId/nutritions/nouvelle': <PageNouvelleNutritionEnfant />,
+  '/dossier-enfant/:enfantId/vaccinations': <PageVaccinationsEnfant />,
+  '/dossier-enfant/:enfantId/vaccinations/nouvelle': <PageNouvelleVaccinationEnfant />,
+  '/dossier-enfant/:enfantId/examens': <PageExamensEnfant />,
 }
 
 // Ce composant centralise le routage de l'application et applique les protections
