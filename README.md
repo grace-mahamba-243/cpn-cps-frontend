@@ -593,27 +593,9 @@ Error: OpenAI API key missing. Set OPENAI_API_KEY in .env
 
 ---
 
-##  Scripts Utilitaires
-
-```bash
-# Vérifier la connexion à la base de données
-cd cpn-cps-nestjs
-node scripts/check-db.js
-
-# Corriger les rôles en base
-node scripts/fix-roles.js
-
-# Générer les diagrammes UML (depuis la racine)
-cd ..
-python gen_uml.py
-# → Génère Diagrammes_UML_CPN_CPS_v5.docx
-```
-
----
 
 
 **Centre de Santé Afia Himbi — Goma, République Démocratique du Congo**  
 **Année académique 2025–2026**
 
----
-└── styles/
+
