@@ -1,7 +1,8 @@
-// Ce composant guide l utilisateur en deux etapes : 1) recherche d une femme, 2) saisie du formulaire d accouchement.
-import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+﻿// Ce composant permet de modifier les données d'un accouchement existant.
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import serviceAccouchement from '../../../services/api/serviceAccouchement'
+import useAuthentification from '../../authentification/hooks/useAuthentification'
 
 const MARQUEUR_DETAILS_NOUVEAUX_NES = '=== DETAILS NOUVEAUX-NES ==='
 
@@ -53,37 +54,11 @@ function serialiserDetailsNouveauxNes(nouveauxNes, decalage = 2) {
     .join('\n\n')
 }
 
-const ETAT_INITIAL = {
-  numeroDossierMere: '',
-  dossierCpnId: '',
-  typeAccouchement: '',
-  dateAccouchement: new Date().toISOString().slice(0, 16),
-  ageGestationnel: '',
-  modeAccouchement: '',
-  etatMere: '',
-  complicationsMere: '',
-  perteSanguineMl: '',
-  nombreNouveauxNes: '1',
-  nouveauxNes: [],
-  notes: '',
-}
+const CLS_INPUT =
+  'w-full rounded-lg border border-outline-variant/50 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary/60 transition-colors'
+const CLS_SELECT =
+  'w-full rounded-lg border border-outline-variant/50 bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary/60 transition-colors'
 
-function formaterNomPatiente(p) {
-  return [p.nom].filter(Boolean).join(' ')
-}
-
-function calculerAge(dateNaissance) {
-  if (!dateNaissance) return null
-  return Math.floor((Date.now() - new Date(dateNaissance).getTime()) / (365.25 * 24 * 3600 * 1000))
-}
-
-function initialesAvatar(nom) {
-  if (!nom) return '?'
-  const m = nom.trim().split(/\s+/)
-  return m.length >= 2 ? (m[0][0] + m[1][0]).toUpperCase() : m[0].slice(0, 2).toUpperCase()
-}
-
-// Champ de formulaire conforme au design system
 function Champ({ label, obligatoire = false, children }) {
   return (
     <label className="flex flex-col gap-2">
@@ -95,66 +70,63 @@ function Champ({ label, obligatoire = false, children }) {
   )
 }
 
-const CLS_INPUT =
-  'w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20'
-
-const CLS_SELECT =
-  'w-full rounded-lg border-none bg-surface-container p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20'
-
-export default function PageNouvelAccouchement() {
+export default function PageModifierAccouchement() {
+  const { accouchementId } = useParams()
   const navigate = useNavigate()
-  const [etape, setEtape] = useState(1)
-  const [patienteTrouvee, setPatienteTrouvee] = useState(null)
-  const [rechercheTerme, setRechercheTerme] = useState('')
-  const [resultatsRecherche, setResultatsRecherche] = useState([])
-  const [rechercheEnCours, setRechercheEnCours] = useState(false)
-  const [form, setForm] = useState(ETAT_INITIAL)
-  const [envoi, setEnvoi] = useState(false)
+  const { utilisateur } = useAuthentification()
+  const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState(null)
+  const [envoi, setEnvoi] = useState(false)
+  const [form, setForm] = useState(null)
   const [nouveauNeCourant, setNouveauNeCourant] = useState(creerTodoNouveauNe())
   const [erreurAjout, setErreurAjout] = useState(null)
-  const [dossiersCpn, setDossiersCpn] = useState([])
-  const timerRecherche = useRef(null)
 
-  function surChangementRecherche(e) {
-    const v = e.target.value
-    setRechercheTerme(v)
-    clearTimeout(timerRecherche.current)
-    if (v.trim().length < 2) { setResultatsRecherche([]); return }
-    timerRecherche.current = setTimeout(() => lancerRecherche(v), 350)
-  }
+  useEffect(() => {
+    charger()
+  }, [accouchementId])
 
-  async function lancerRecherche(terme) {
-    setRechercheEnCours(true)
+  async function charger() {
+    setChargement(true)
+    setErreur(null)
     try {
-      setResultatsRecherche(await serviceAccouchement.rechercherPatientes(terme))
-    } catch {
-      setResultatsRecherche([])
-    } finally {
-      setRechercheEnCours(false)
-    }
-  }
+      const detail = await serviceAccouchement.obtenirAccouchement(accouchementId)
+      if (!detail) throw new Error('Accouchement introuvable.')
 
-  function selectionnerPatiente(p) {
-    setPatienteTrouvee(p)
-    setForm((prev) => ({ ...prev, numeroDossierMere: p.numeroDossier, dossierCpnId: '' }))
-    setResultatsRecherche([])
-    setEtape(2)
-    serviceAccouchement.listerDossiersCpnPatiente(p.id)
-      .then((liste) => {
-        setDossiersCpn(liste)
-        // Sélection automatique du dossier CPN OUVERT s'il existe
-        const ouvert = liste.find((d) => d.statut === 'OUVERT')
-        if (ouvert) {
-          setForm((prev) => ({ ...prev, dossierCpnId: ouvert.id }))
-        }
+      const nombreNouveauxNes = normaliserNombreNouveauxNes(detail.nombreNouveauxNes ?? 1)
+      const premierTodo = {
+        sexeNouveauNe: detail.sexeNouveauNe ?? '',
+        poidsNaissanceG: detail.poidsNaissanceG ?? '',
+        scoreApgar1min: detail.scoreApgar1min ?? '',
+        scoreApgar5min: detail.scoreApgar5min ?? '',
+        anomaliesCongenitales: detail.anomaliesCongenitales ?? '',
+        etatNouveauNe: detail.etatNouveauNe ?? 'VIVANT',
+      }
+      const nouveauxNes = ajusterTodosNouveauxNes([premierTodo], nombreNouveauxNes)
+
+      setForm({
+        typeAccouchement: detail.typeAccouchement ?? 'INTERNE',
+        dateAccouchement: detail.dateAccouchement
+          ? detail.dateAccouchement.slice(0, 16)
+          : '',
+        ageGestationnel: detail.ageGestationnel ?? '',
+        modeAccouchement: detail.modeAccouchement ?? 'NATUREL',
+        etatMere: detail.etatMere ?? 'STABLE',
+        complicationsMere: detail.complicationsMere ?? '',
+        perteSanguineMl: detail.perteSanguineMl ?? '',
+        nombreNouveauxNes,
+        nouveauxNes,
+        notes: nettoyerNotesAvecDetails(detail.notes ?? ''),
       })
-      .catch(() => setDossiersCpn([]))
+    } catch (e) {
+      setErreur(e.message || 'Impossible de charger cet accouchement.')
+    } finally {
+      setChargement(false)
+    }
   }
 
   function surChangement(e) {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    setForm((f) => ({ ...f, [name]: value }))
   }
 
   function surChangementNouveauNeCourant(champ, valeur) {
@@ -168,41 +140,30 @@ export default function PageNouvelAccouchement() {
     if (nouveauNeCourant.scoreApgar1min === '') { setErreurAjout('Le score APGAR à 1 min est obligatoire.'); return }
     if (nouveauNeCourant.scoreApgar5min === '') { setErreurAjout('Le score APGAR à 5 min est obligatoire.'); return }
     if (!nouveauNeCourant.etatNouveauNe) { setErreurAjout("L'état du nouveau-né est obligatoire."); return }
-    setForm((prev) => ({ ...prev, nouveauxNes: [...prev.nouveauxNes, { ...nouveauNeCourant }] }))
+    setForm((f) => ({ ...f, nouveauxNes: [...f.nouveauxNes, { ...nouveauNeCourant }] }))
     setNouveauNeCourant(creerTodoNouveauNe())
   }
 
   function supprimerNouveauNe(index) {
-    setForm((prev) => ({ ...prev, nouveauxNes: prev.nouveauxNes.filter((_, i) => i !== index) }))
-  }
-
-  function validerForm() {
-    const nombreAttendu = normaliserNombreNouveauxNes(form.nombreNouveauxNes)
-
-    if (!form.numeroDossierMere) return 'Veuillez sélectionner une patiente.'
-    if (!form.dateAccouchement) return "La date et l'heure d'accouchement sont obligatoires."
-    if (!form.typeAccouchement) return "Le type d'accouchement est obligatoire."
-    if (!form.modeAccouchement) return "Le mode d'accouchement est obligatoire."
-    if (!form.ageGestationnel) return "L'âge gestationnel est obligatoire."
-    if (!form.etatMere) return "L'état de la mère est obligatoire."
-    if (form.perteSanguineMl === '') return 'La perte sanguine estimée est obligatoire.'
-
-    if (form.nouveauxNes.length === 0) {
-      return 'Veuillez ajouter au moins un nouveau-né.'
-    }
-
-    if (form.nouveauxNes.length !== nombreAttendu) {
-      return `Vous avez indiqué ${nombreAttendu} nouveau(x)-né(s), mais seulement ${form.nouveauxNes.length} ont été ajouté(s). Veuillez compléter la liste.`
-    }
-
-    return null
+    setForm((f) => ({ ...f, nouveauxNes: f.nouveauxNes.filter((_, i) => i !== index) }))
   }
 
   async function soumettre(e) {
     e.preventDefault()
     setErreur(null)
-    const msg = validerForm()
-    if (msg) { setErreur(msg); return }
+
+    const nombreAttendu = normaliserNombreNouveauxNes(form.nombreNouveauxNes)
+
+    if (form.nouveauxNes.length === 0) {
+      setErreur('Veuillez ajouter au moins un nouveau-né.')
+      return
+    }
+
+    if (form.nouveauxNes.length !== nombreAttendu) {
+      setErreur(`Vous avez indiqué ${nombreAttendu} nouveau(x)-né(s), mais seulement ${form.nouveauxNes.length} ont été ajouté(s). Veuillez compléter la liste.`)
+      return
+    }
+
     setEnvoi(true)
     try {
       const nombreNouveauxNes = normaliserNombreNouveauxNes(form.nombreNouveauxNes)
@@ -218,8 +179,6 @@ export default function PageNouvelAccouchement() {
         .join('\n\n')
 
       const donnees = {
-        numeroDossierMere: form.numeroDossierMere,
-        dossierCpnId: form.dossierCpnId || undefined,
         typeAccouchement: form.typeAccouchement,
         dateAccouchement: form.dateAccouchement,
         ageGestationnel: form.ageGestationnel ? parseInt(form.ageGestationnel) : undefined,
@@ -235,137 +194,81 @@ export default function PageNouvelAccouchement() {
         scoreApgar5min: premierNouveauNe.scoreApgar5min !== '' ? parseInt(premierNouveauNe.scoreApgar5min) : undefined,
         anomaliesCongenitales: premierNouveauNe.anomaliesCongenitales || undefined,
         notes: notesFinales || undefined,
+        utilisateurId: utilisateur?.id,
+        utilisateurNom: utilisateur?.nom,
       }
-      const acc = await serviceAccouchement.enregistrerAccouchement(donnees)
-      navigate(`/accouchements/${acc.id}`)
+      await serviceAccouchement.modifierAccouchement(accouchementId, donnees)
+      navigate(`/accouchements/${accouchementId}`)
     } catch (err) {
-      setErreur(err.message || "Une erreur est survenue lors de l'enregistrement.")
+      setErreur(err.message || 'Une erreur est survenue lors de la modification.')
     } finally {
       setEnvoi(false)
     }
   }
 
-  // ─── ÉTAPE 1 : Recherche ──────────────────────────────────────────────────
-
-  if (etape === 1) {
+  if (chargement) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6 px-8 py-8">
-        <div>
-          <nav className="mb-3 flex items-center gap-2 text-sm text-on-surface-variant">
-
-          </nav>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-on-surface">Nouvel accouchement</h2>
-              <p className="mt-0.5 text-sm text-on-surface-variant">Étape 1 / 2 — Recherchez et sélectionnez la mère.</p>
-            </div>
-            <button
-              type="button"
-              className="shrink-0 rounded-full border border-primary/20 px-5 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/10"
-              onClick={() => navigate('/accouchements')}
-            >
-              Retour à la liste
-            </button>
-          </div>
-        </div>
-
-        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
-          <div className="mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-tertiary">person_search</span>
-            <h3 className="text-lg font-bold tracking-tight text-on-surface">Recherche de la patiente</h3>
-          </div>
-
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-outline">search</span>
-            <input
-              type="text"
-              autoFocus
-              value={rechercheTerme}
-              onChange={surChangementRecherche}
-              placeholder="Nom, prénom, numéro de dossier, téléphone…"
-              className="w-full rounded-lg border-none bg-surface-container py-3 pl-10 pr-9 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            {rechercheEnCours && (
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-sm text-on-surface-variant">refresh</span>
-            )}
-          </div>
-
-          {resultatsRecherche.length > 0 && (
-            <div className="mt-4 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm">
-              <div className="border-b border-outline-variant bg-surface-container-low px-4 py-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                {resultatsRecherche.length} résultat{resultatsRecherche.length > 1 ? 's' : ''} — cliquez pour sélectionner
-              </div>
-              {resultatsRecherche.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => selectionnerPatiente(p)}
-                  className="flex w-full items-center gap-4 border-b border-outline-variant/50 px-4 py-4 text-left last:border-0 hover:bg-surface-container-low transition-colors"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary-container text-xs font-bold text-on-secondary-container">
-                    {initialesAvatar(formaterNomPatiente(p))}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-on-surface">{formaterNomPatiente(p)}</p>
-                    <p className="mt-0.5 text-xs text-on-surface-variant">
-                      Dossier : <span className="font-mono">{p.numeroDossier}</span>
-                      {p.telephone ? ` · ${p.telephone}` : ''}
-                      {p.dateNaissance ? ` · ${calculerAge(p.dateNaissance)} ans` : ''}
-                    </p>
-                  </div>
-                  <span className="material-symbols-outlined shrink-0 text-primary">arrow_forward</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {rechercheTerme.length >= 2 && !rechercheEnCours && resultatsRecherche.length === 0 && (
-            <div className="mt-4 flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-4">
-              <span className="material-symbols-outlined mt-0.5 text-on-surface-variant">search_off</span>
-              <p className="text-sm text-on-surface-variant">
-                Aucune patiente trouvée. Vérifiez l'orthographe ou le numéro de dossier.
-              </p>
-            </div>
-          )}
-        </section>
+      <div className="flex h-48 items-center justify-center text-on-surface-variant">
+        <span className="material-symbols-outlined animate-spin mr-2">refresh</span>
+        Chargement…
       </div>
     )
   }
 
-  // ─── ÉTAPE 2 : Formulaire ─────────────────────────────────────────────────
+  if (erreur && !form) {
+    return (
+      <div className="mx-auto max-w-3xl px-8 py-8">
+        <button
+          onClick={() => navigate(`/accouchements/${accouchementId}`)}
+          className="mb-4 flex items-center gap-1 text-sm text-on-surface-variant hover:text-on-surface transition"
+        >
+          <span className="material-symbols-outlined text-base">arrow_back</span>
+          Retour au détail
+        </button>
+        <div className="flex items-center gap-3 rounded-xl border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container">
+          <span className="material-symbols-outlined">error</span>
+          {erreur}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-8 py-8">
+
+      {/* En-tête */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <nav className="mb-2 flex items-center gap-2 text-sm text-on-surface-variant">
-           
+            <button
+              type="button"
+              onClick={() => navigate('/accouchements')}
+              className="hover:text-on-surface transition"
+            >
+              Accouchements
+            </button>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <button
+              type="button"
+              onClick={() => navigate(`/accouchements/${accouchementId}`)}
+              className="hover:text-on-surface transition"
+            >
+              Détail
+            </button>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span className="font-medium text-primary">Modification</span>
           </nav>
-          <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">Centre de Santé Afia Himbi</h2>
-          <p className="mt-1 text-on-surface-variant">Étape 2 / 2 — Saisie des données de l'accouchement.</p>
+          <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">Modifier l&apos;accouchement</h2>
+          <p className="mt-1 text-on-surface-variant">Corrigez ou complétez les données enregistrées.</p>
         </div>
         <button
           type="button"
-          className="rounded-full border border-primary/20 px-6 py-2.5 text-sm font-semibold text-primary transition-all hover:bg-primary/10"
-          onClick={() => setEtape(1)}
+          onClick={() => navigate(`/accouchements/${accouchementId}`)}
+          className="self-start inline-flex items-center gap-2 rounded-full border border-outline-variant/50 px-5 py-2 text-sm font-semibold text-on-surface-variant transition hover:bg-surface-container"
         >
-          Changer de patiente
+          <span className="material-symbols-outlined text-base">close</span>
+          Annuler
         </button>
-      </div>
-
-      {/* Patiente sélectionnée */}
-      <div className="flex items-center gap-4 rounded-xl border border-secondary-container bg-secondary-container/50 px-5 py-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary-container text-xs font-bold text-on-secondary-container">
-          {initialesAvatar(patienteTrouvee?.nom ?? '')}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-on-surface">{patienteTrouvee?.nom}</p>
-          <p className="text-xs text-on-surface-variant font-mono">
-            {patienteTrouvee?.numeroDossier}
-            {patienteTrouvee?.dateNaissance ? ` · ${calculerAge(patienteTrouvee.dateNaissance)} ans` : ''}
-          </p>
-        </div>
-        <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
       </div>
 
       {erreur && (
@@ -386,7 +289,6 @@ export default function PageNouvelAccouchement() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Champ label="Type d'accouchement" obligatoire>
               <select name="typeAccouchement" value={form.typeAccouchement} onChange={surChangement} className={CLS_SELECT}>
-                <option value="">— Choisir —</option>
                 <option value="INTERNE">Interne (dans la structure)</option>
                 <option value="EXTERNE">Externe (ailleurs)</option>
               </select>
@@ -398,7 +300,6 @@ export default function PageNouvelAccouchement() {
 
             <Champ label="Mode d'accouchement" obligatoire>
               <select name="modeAccouchement" value={form.modeAccouchement} onChange={surChangement} className={CLS_SELECT}>
-                <option value="">— Choisir —</option>
                 <option value="NATUREL">Naturel (voie basse)</option>
                 <option value="CESARIENNE">Césarienne</option>
                 <option value="INSTRUMENTAL">Instrumental</option>
@@ -407,48 +308,8 @@ export default function PageNouvelAccouchement() {
               </select>
             </Champ>
 
-            <Champ label="Âge gestationnel (semaines)" obligatoire>
+            <Champ label="Âge gestationnel (semaines)">
               <input type="number" name="ageGestationnel" value={form.ageGestationnel} onChange={surChangement} min={20} max={45} placeholder="Ex : 38" className={CLS_INPUT} />
-            </Champ>
-
-            <Champ label="Dossier CPN lié (grossesse)">
-              {dossiersCpn.length > 0 ? (() => {
-                const dossierLie = dossiersCpn.find((d) => d.id === form.dossierCpnId)
-                const dossierOuvert = dossiersCpn.find((d) => d.statut === 'OUVERT')
-                // Si un seul dossier CPN ouvert existe → sélection automatique, affichage lecture seule
-                if (dossierOuvert && form.dossierCpnId === dossierOuvert.id) {
-                  return (
-                    <div className="flex items-center gap-3 rounded-lg bg-surface-container p-3">
-                      <span className="material-symbols-outlined text-base text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>folder_open</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-on-surface">{dossierOuvert.numeroDossierCpn}</p>
-                        <p className="text-xs text-on-surface-variant">
-                          En cours
-                          {dossierOuvert.dateProbableAccouchement ? ` · DPA ${new Date(dossierOuvert.dateProbableAccouchement).toLocaleDateString('fr-FR')}` : ''}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Lié automatiquement</span>
-                    </div>
-                  )
-                }
-                // Sinon → liste déroulante manuelle (plusieurs dossiers ou aucun ouvert)
-                return (
-                  <select name="dossierCpnId" value={form.dossierCpnId} onChange={surChangement} className={CLS_SELECT}>
-                    <option value="">— Aucun dossier CPN lié —</option>
-                    {dossiersCpn.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.numeroDossierCpn}
-                        {d.dateProbableAccouchement ? ` · DPA ${new Date(d.dateProbableAccouchement).toLocaleDateString('fr-FR')}` : ''}
-                        {d.statut === 'OUVERT' ? ' · En cours' : ' · Clôturé'}
-                      </option>
-                    ))}
-                  </select>
-                )
-              })() : (
-                <p className="rounded-lg bg-surface-container p-3 text-sm text-on-surface-variant italic">
-                  Aucun dossier CPN trouvé pour cette patiente.
-                </p>
-              )}
             </Champ>
           </div>
         </section>
@@ -462,14 +323,13 @@ export default function PageNouvelAccouchement() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Champ label="État de la mère" obligatoire>
               <select name="etatMere" value={form.etatMere} onChange={surChangement} className={CLS_SELECT}>
-                <option value="">— Choisir —</option>
                 <option value="STABLE">Stable</option>
                 <option value="COMPLICATION">Complication</option>
                 <option value="DECES">Décès</option>
               </select>
             </Champ>
 
-            <Champ label="Perte sanguine estimée (ml)" obligatoire>
+            <Champ label="Perte sanguine estimée (ml)">
               <input type="number" name="perteSanguineMl" value={form.perteSanguineMl} onChange={surChangement} min={0} placeholder="Ex : 300" className={CLS_INPUT} />
             </Champ>
 
@@ -507,7 +367,7 @@ export default function PageNouvelAccouchement() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <Champ label="Sexe" obligatoire>
                   <select value={nouveauNeCourant.sexeNouveauNe} onChange={(e) => surChangementNouveauNeCourant('sexeNouveauNe', e.target.value)} className={CLS_SELECT}>
-                    <option value="">— Choisir —</option>
+                    <option value="">— Non précisé —</option>
                     <option value="MASCULIN">Masculin</option>
                     <option value="FEMININ">Féminin</option>
                     <option value="INCONNU">Inconnu</option>
@@ -568,7 +428,7 @@ export default function PageNouvelAccouchement() {
                   {form.nouveauxNes.length} nouveau(x)-né(s) enregistré(s)
                 </p>
                 {form.nouveauxNes.map((nn, index) => (
-                  <div key={`nn-liste-${index}`} className="flex items-start justify-between rounded-lg border border-outline-variant/60 bg-surface p-3">
+                  <div key={`nn-liste-modif-${index}`} className="flex items-start justify-between rounded-lg border border-outline-variant/60 bg-surface p-3">
                     <div className="flex items-start gap-3">
                       <span className="material-symbols-outlined mt-0.5 text-base text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                       <div>
@@ -616,7 +476,7 @@ export default function PageNouvelAccouchement() {
           <button
             type="button"
             className="rounded-full px-8 py-2.5 text-sm font-semibold text-on-surface-variant transition-all hover:bg-surface-container-highest"
-            onClick={() => navigate('/accouchements')}
+            onClick={() => navigate(`/accouchements/${accouchementId}`)}
             disabled={envoi}
           >
             Annuler
@@ -627,9 +487,10 @@ export default function PageNouvelAccouchement() {
             className="inline-flex items-center gap-2 rounded-full bg-primary px-10 py-3 font-bold text-on-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <span className="material-symbols-outlined">save</span>
-            {envoi ? 'Enregistrement en cours…' : "Enregistrer l'accouchement"}
+            {envoi ? 'Enregistrement…' : 'Enregistrer les modifications'}
           </button>
         </div>
+
       </form>
     </div>
   )

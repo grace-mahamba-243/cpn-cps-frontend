@@ -34,25 +34,7 @@ function DossierGrossesse({ dossier, numero, onOuvrir }) {
         </div>
 
         <p className="text-xs text-on-surface-variant">{periode}</p>
-
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-on-surface-variant">
-          <span><span className="font-medium text-on-surface">Gestite :</span> {dossier.gestite ?? '-'}</span>
-          <span><span className="font-medium text-on-surface">Parite :</span> {dossier.parite ?? '-'}</span>
-          <span><span className="font-medium text-on-surface">AG ouv. :</span>{' '}{dossier.ageGestionnelOuverture ? `${dossier.ageGestionnelOuverture} SA` : '-'}</span>
-          <span><span className="font-medium text-on-surface">Contacts :</span> {dossier.nombreContacts ?? 0}</span>
-        </div>
-
-        {dossier.notesCloture && (
-          <p className="mt-1.5 text-[12px] text-on-surface-variant italic line-clamp-1">
-            {dossier.notesCloture}
-            {dossier.closPar && <span className="not-italic"> - {dossier.closPar}</span>}
-          </p>
-        )}
       </div>
-
-      <span className="material-symbols-outlined text-lg text-on-surface-variant/30 transition-colors group-hover:text-on-surface-variant/70 self-center">
-        arrow_forward
-      </span>
     </button>
   )
 }

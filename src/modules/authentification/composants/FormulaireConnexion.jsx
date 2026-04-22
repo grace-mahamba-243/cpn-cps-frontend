@@ -27,7 +27,7 @@ function FormulaireConnexion({
         </p>
       </div>
 
-      <form className="w-full max-w-[340px] space-y-6" onSubmit={onSubmit}>
+      <form className="w-[60%] space-y-6" onSubmit={onSubmit}>
         <div className="space-y-2">
           <label className="ml-1 block text-sm font-semibold text-on-surface-variant" htmlFor="identifiant">
             Identifiant
@@ -112,14 +112,6 @@ function FormulaireConnexion({
         </div>
       </form>
 
-      <div className="mt-12 text-center">
-        <p className="text-sm text-on-surface-variant">
-          Besoin d aide ?{' '}
-          <Link className="font-bold text-primary hover:underline" to="/acces-refuse">
-            Contacter l assistance technique
-          </Link>
-        </p>
-      </div>
     </section>
   )
 }

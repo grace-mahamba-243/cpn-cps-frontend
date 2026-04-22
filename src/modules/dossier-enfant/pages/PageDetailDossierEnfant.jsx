@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import serviceDossiersEnfants from '../../../services/api/serviceDossiersEnfants'
+import InfoEnregistrement from '../../../composants/partages/InfoEnregistrement'
 
 function formaterDate(dateIso) {
   if (!dateIso) return '—'
@@ -119,9 +120,23 @@ export default function PageDossierEnfantDetail() {
   }
 
   const statusVaccin = { ADMINISTREE: 'text-primary', DIFFEREE: 'text-tertiary', REFUSEE: 'text-error' }
+  const nomComplet = [resume.nom, resume.postnom, resume.prenom].filter(Boolean).join(' ')
+  const dateAujourdhui = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
   return (
-    <div className="space-y-8">
+    <>
+    <div className="screen-only space-y-8">
+      {/* Bouton Imprimer */}
+      <div className="no-print flex justify-end">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-5 py-2.5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+          onClick={() => window.print()}
+        >
+          <span className="material-symbols-outlined text-base">print</span>
+          Imprimer
+        </button>
+      </div>
       {/* Bandeau identité */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary-dim p-8 text-on-primary shadow-md">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -161,7 +176,6 @@ export default function PageDossierEnfantDetail() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { icone: 'monitor_heart', titre: 'Suivis', badge: (resume.suivis ?? []).length, couleur: 'bg-primary/10 text-primary', lien: 'suivis/nouveau' },
-          { icone: 'nutrition', titre: 'Nutrition', badge: (resume.nutritions ?? []).length, couleur: 'bg-tertiary/10 text-tertiary', lien: 'nutritions/nouvelle' },
           { icone: 'vaccines', titre: 'Vaccination', badge: (resume.vaccinations ?? []).length, couleur: 'bg-secondary/10 text-secondary', lien: 'vaccinations/nouvelle' },
           { icone: 'biotech', titre: 'Examens', badge: null, couleur: 'bg-on-surface/10 text-on-surface-variant', lien: 'examens' },
         ].map(({ icone, titre, badge, couleur, lien }) => (
@@ -235,44 +249,6 @@ export default function PageDossierEnfantDetail() {
         )}
       </section>
 
-      {/* Nutrition */}
-      <section className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm">
-        <SectionTitre
-          icone="nutrition"
-          titre="Évaluations nutritionnelles"
-          action="Nouvelle évaluation"
-          onAction={() => navigate('nutritions/nouvelle')}
-        />
-        {(resume.nutritions ?? []).length === 0 ? (
-          <TableauVide message="Aucune évaluation nutritionnelle enregistrée." />
-        ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                <th className="px-4 pb-3">Date</th>
-                <th className="px-4 pb-3">Poids (kg)</th>
-                <th className="px-4 pb-3">Z-score P/A</th>
-                <th className="px-4 pb-3">Statut nutritionnel</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-container">
-              {resume.nutritions.map((n, i) => (
-                <LigneTableau
-                  key={n.id ?? i}
-                  className={i % 2 === 0 ? '' : 'bg-surface-container/30'}
-                  colonnes={[
-                    formaterDate(n.dateEvaluation),
-                    n.poidsKg ?? '—',
-                    n.zScorePourAge != null ? n.zScorePourAge : '—',
-                    n.statutNutritionnel || '—',
-                  ]}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
       {/* Vaccination */}
       <section className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm">
         <SectionTitre
@@ -308,6 +284,170 @@ export default function PageDossierEnfantDetail() {
           </table>
         )}
       </section>
+
+      <InfoEnregistrement enregistrePar={resume?.enregistrePar} modifiePar={resume?.modifiePar} />
     </div>
+
+    {/* ============================================================
+        RAPPORT D'IMPRESSION — masqué à l'écran, visible uniquement à l'impression
+        ============================================================ */}
+    <div className="print-only" style={{ fontFamily: 'Inter, sans-serif', background: 'white', color: '#191c1d', padding: '0', position: 'relative', overflow: 'hidden' }}>
+
+      {/* En-tête du document */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ width: '56px', height: '56px', background: '#005eb8', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+            <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '32px' }}>child_care</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: '18px', fontWeight: 900, color: '#00478d', margin: 0, letterSpacing: '-0.5px' }}>Centre de Santé Afia Himbi</h1>
+            <p style={{ color: '#424752', fontWeight: 600, fontSize: '12px', margin: '2px 0' }}>Unité de Soins Pédiatriques et Postnatals</p>
+            <p style={{ color: '#424752', fontSize: '11px', margin: '4px 0 0 0', lineHeight: '1.5' }}>
+              Goma, Nord-Kivu, République Démocratique du Congo<br />
+              +243 000 000 000
+            </p>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <span style={{ display: 'inline-block', padding: '3px 10px', background: '#d5e4f7', color: '#526070', fontSize: '9px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '99px', marginBottom: '6px' }}>Dossier Enfant Officiel</span>
+          <p style={{ color: '#424752', fontSize: '11px', margin: '2px 0' }}>N° Dossier : <strong style={{ color: '#191c1d' }}>{resume.numeroDossier || resume.numeroFiche}</strong></p>
+          <p style={{ color: '#424752', fontSize: '11px', margin: '2px 0' }}>Date : <strong style={{ color: '#191c1d' }}>{dateAujourdhui}</strong></p>
+        </div>
+      </div>
+
+      {/* Identification de l'enfant */}
+      <div style={{ background: '#f3f4f5', borderRadius: '8px', padding: '24px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+        <div>
+          <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700, margin: '0 0 4px 0' }}>Nom de l'enfant</p>
+          <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#00478d', margin: 0, fontFamily: 'Manrope, sans-serif' }}>{nomComplet || 'Non renseigné'}</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', borderLeft: '1px solid #c2c6d4', paddingLeft: '24px' }}>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Date de naissance</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{formaterDate(resume.dateNaissance)}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Sexe</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.sexe === 'M' ? 'Masculin' : resume.sexe === 'F' ? 'Féminin' : '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Lieu de naissance</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.lieuNaissance || '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Statut</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: resume.statut === 'OUVERT' ? '#00478d' : '#b3261e', margin: 0 }}>{resume.statut || '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Données à la naissance */}
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Données à la naissance</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Poids (g)</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.poidsNaissanceG || '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Score Apgar 1 min</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.scoreApgar1min ?? '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Score Apgar 5 min</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.scoreApgar5min ?? '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>État à la naissance</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.etatNaissance || '—'}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Âge gestationnel (sem.)</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{resume.ageGestationnelSemaines ?? '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Suivis cliniques */}
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Suivis cliniques</h3>
+        {(resume.suivis ?? []).length === 0 ? (
+          <p style={{ color: '#424752', fontSize: '12px', fontStyle: 'italic' }}>Aucun suivi clinique enregistré.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ background: '#f3f4f5' }}>
+                {['Date', 'Poids (kg)', 'Taille (cm)', 'Diagnostics', 'Agent'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#424752', borderBottom: '2px solid #e1e3e4' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {resume.suivis.map((s, i) => (
+                <tr key={s.id ?? i} style={{ background: i % 2 === 0 ? 'white' : '#f8f9fa', borderBottom: '1px solid #e1e3e4' }}>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{formaterDate(s.dateVisite)}</td>
+                  <td style={{ padding: '6px 10px', color: '#191c1d', fontWeight: 600 }}>{s.poidsKg ?? '—'}</td>
+                  <td style={{ padding: '6px 10px', color: '#191c1d' }}>{s.tailleCm ?? '—'}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{s.diagnostics || '—'}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{s.agentSante || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Calendrier vaccinal */}
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Calendrier vaccinal</h3>
+        {(resume.vaccinations ?? []).length === 0 ? (
+          <p style={{ color: '#424752', fontSize: '12px', fontStyle: 'italic' }}>Aucune dose vaccinale enregistrée.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ background: '#f3f4f5' }}>
+                {['Vaccin', 'Dose', 'Date', 'Âge (mois)', 'Statut'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#424752', borderBottom: '2px solid #e1e3e4' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {resume.vaccinations.map((v, i) => (
+                <tr key={v.id ?? i} style={{ background: i % 2 === 0 ? 'white' : '#f8f9fa', borderBottom: '1px solid #e1e3e4' }}>
+                  <td style={{ padding: '6px 10px', fontWeight: 600, color: '#191c1d' }}>{v.vaccin}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{v.numeroDose}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{formaterDate(v.dateAdministration)}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{v.ageMois ?? '—'}</td>
+                  <td style={{ padding: '6px 10px', fontWeight: 700, color: v.statut === 'ADMINISTREE' ? '#00478d' : v.statut === 'REFUSEE' ? '#b3261e' : '#6e5e0e' }}>{v.statut}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pied de page */}
+      <div style={{ borderTop: '1px solid #e1e3e4', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 8px 0' }}>Signature autorisée</p>
+          <div style={{ height: '48px', width: '200px', background: '#f3f4f5', borderRadius: '4px', borderBottom: '2px solid rgba(0,71,141,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '6px' }}>
+            <span style={{ fontFamily: 'Manrope, sans-serif', color: 'rgba(0,71,141,0.6)', fontSize: '18px', fontStyle: 'italic' }}>Centre Afia Himbi</span>
+          </div>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#191c1d', margin: '0' }}>Centre de Santé Afia Himbi</p>
+          <p style={{ fontSize: '10px', color: '#424752', margin: '0' }}>Service Pédiatrie — Goma, RDC</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginBottom: '4px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00478d', display: 'inline-block' }}></span>
+            <p style={{ fontSize: '9px', color: '#424752', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: 0 }}>Document officiel vérifié</p>
+          </div>
+          <p style={{ fontSize: '10px', color: '#424752', margin: '0' }}>Page 1 sur 1</p>
+        </div>
+      </div>
+
+      {/* Bande décorative en bas */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(to right, #00478d, #005eb8, #526070)' }} />
+    </div>
+    </>
   )
 }

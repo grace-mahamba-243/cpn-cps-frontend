@@ -1,7 +1,8 @@
 // Ce composant affiche le tableau de bord unifié de la file d'attente pour CPN, CPS Femme et CPS Enfant.
 // Il charge en temps réel les patients arrivés du jour pour chaque service et permet d'accéder directement au dossier.
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useAuthentification from '../../authentification/hooks/useAuthentification'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
 import serviceCpn from '../../../services/api/serviceCpn'
 import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
@@ -133,14 +134,7 @@ function SectionFileAttente({ service, arrivees, chargement, pronantId, onPrendr
         </div>
         <p className="font-medium text-slate-500">Aucun patient en attente</p>
         <p className="text-sm text-slate-400">La file d&apos;attente {service.label} est vide pour aujourd&apos;hui.</p>
-        <button
-          type="button"
-          onClick={() => navigate(service.nouveauUrl)}
-          className={`mt-2 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${cs.bg} ${cs.text} hover:opacity-80`}
-        >
-          <span className="material-symbols-outlined text-base">add_circle</span>
-          Ouvrir un dossier
-        </button>
+        
       </div>
     )
   }
@@ -169,11 +163,7 @@ function SectionFileAttente({ service, arrivees, chargement, pronantId, onPrendr
               </p>
             </div>
 
-            {/* Badge statut */}
-            <span className={`hidden shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold sm:inline-block ${badge.cls}`}>
-              {badge.label}
-            </span>
-
+        
             {/* Bouton prise en charge */}
             <button
               type="button"
@@ -195,6 +185,16 @@ function SectionFileAttente({ service, arrivees, chargement, pronantId, onPrendr
 
 function PageFileAttenteGenerale() {
   const navigate = useNavigate()
+  const { utilisateurConnecte } = useAuthentification()
+  const rolesCpnSeulement = ['INFIRMIERE', 'SAGE_FEMME']
+  const rolesTousServices = ['MEDECIN']
+  const masquerTotalRdv = [...rolesCpnSeulement, ...rolesTousServices].includes(utilisateurConnecte?.roleCode)
+  const servicesFiltres = useMemo(() => {
+    const role = utilisateurConnecte?.roleCode
+    if (rolesCpnSeulement.includes(role)) return SERVICES.filter((s) => s.cle === 'cpn')
+    if (rolesTousServices.includes(role)) return SERVICES
+    return SERVICES
+  }, [utilisateurConnecte?.roleCode])
   const [onglet, setOnglet] = useState('cpn')
   const [arrivees, setArrivees] = useState({ cpn: [], 'cps-femme': [], 'cps-enfant': [] })
   const [rdvTotal, setRdvTotal] = useState({ cpn: null, 'cps-femme': null, 'cps-enfant': null })
@@ -204,7 +204,7 @@ function PageFileAttenteGenerale() {
 
   const chargerFileAttente = useCallback(async () => {
     const today = dateDuJourIso()
-    for (const srv of SERVICES) {
+    for (const srv of servicesFiltres) {
       try {
         const [arrives, tous] = await Promise.all([
           serviceRendezVous.lister({ statut: 'Arrive', date: today, serviceDestination: srv.serviceDestination }),
@@ -218,7 +218,7 @@ function PageFileAttenteGenerale() {
         setChargement((prev) => ({ ...prev, [srv.cle]: false }))
       }
     }
-  }, [])
+  }, [servicesFiltres])
 
   useEffect(() => {
     void chargerFileAttente()
@@ -229,10 +229,12 @@ function PageFileAttenteGenerale() {
   async function prendreEnCharge(rdv, service) {
     if (pronantId) return
     setPronantId(rdv.id)
+    // Retrait immédiat optmiste de la liste
+    setArrivees((prev) => ({ ...prev, [service.cle]: prev[service.cle].filter((r) => r.id !== rdv.id) }))
     try {
+      // Passer le statut à Termine pour qu'il ne réapparaisse pas au prochain rechargement
+      await serviceRendezVous.mettreAJourStatut(rdv.id, 'Termine').catch(() => null)
       const dossier = await rechercherDossierParRdv(rdv, service.cle)
-      // Retirer immédiatement de la file locale
-      setArrivees((prev) => ({ ...prev, [service.cle]: prev[service.cle].filter((a) => a.id !== rdv.id) }))
       if (dossier) {
         navigate(`${service.baseUrl}/${dossier.id}`)
       } else {
@@ -248,8 +250,8 @@ function PageFileAttenteGenerale() {
     }
   }
 
-  const serviceActif = SERVICES.find((s) => s.cle === onglet)
-  const totalGlobal = SERVICES.reduce((acc, s) => acc + (arrivees[s.cle]?.length ?? 0), 0)
+  const serviceActif = servicesFiltres.find((s) => s.cle === onglet) ?? servicesFiltres[0]
+  const totalGlobal = servicesFiltres.reduce((acc, s) => acc + (arrivees[s.cle]?.length ?? 0), 0)
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6 lg:p-8">
@@ -257,7 +259,7 @@ function PageFileAttenteGenerale() {
       <div className="flex flex-col gap-1 px-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-headline text-2xl font-bold text-slate-900">File d&apos;attente clinique</h2>
-          <p className="mt-0.5 text-sm text-slate-500">CPN · CPS Femme · CPS Enfant — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{servicesFiltres.map((s) => s.label).join(' · ')} — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         <button
           type="button"
@@ -271,7 +273,7 @@ function PageFileAttenteGenerale() {
 
       {/* Cartes de synthèse */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {SERVICES.map((srv) => {
+        {servicesFiltres.map((srv) => {
           const cs = couleurService(srv.couleur)
           const nb = arrivees[srv.cle]?.length ?? 0
           const total = rdvTotal[srv.cle]
@@ -285,13 +287,11 @@ function PageFileAttenteGenerale() {
               <div>
                 <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">{srv.label}</p>
                 <p className={`text-4xl font-black ${cs.text}`}>{nb}</p>
-                {total !== null && (
+                {total !== null && !masquerTotalRdv && (
                   <p className="mt-1 text-xs text-slate-400">sur {total} rendez-vous</p>
                 )}
               </div>
-              <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${cs.bg}`}>
-                <span className={`material-symbols-outlined text-3xl ${cs.text}`}>{srv.icone}</span>
-              </div>
+
             </button>
           )
         })}
@@ -307,37 +307,6 @@ function PageFileAttenteGenerale() {
 
       {/* Conteneur principal */}
       <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-        {/* Tabs */}
-        <div className="border-b border-slate-100 bg-slate-50 px-4 pt-4">
-          <div className="flex gap-1">
-            {SERVICES.map((srv) => {
-              const cs = couleurService(srv.couleur)
-              const nb = arrivees[srv.cle]?.length ?? 0
-              const actif = onglet === srv.cle
-              return (
-                <button
-                  key={srv.cle}
-                  type="button"
-                  onClick={() => setOnglet(srv.cle)}
-                  className={`flex items-center gap-2 rounded-t-xl px-4 py-2.5 text-sm font-semibold transition-all border-b-2 ${
-                    actif
-                      ? `border-b-transparent bg-white text-slate-900 shadow-sm -mb-px`
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-base">{srv.icone}</span>
-                  <span className="hidden sm:inline">{srv.label}</span>
-                  {nb > 0 && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${actif ? `${cs.badge}` : 'bg-slate-200 text-slate-600'}`}>
-                      {nb}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
         {/* Contenu de l'onglet actif */}
         {serviceActif && (
           <SectionFileAttente
@@ -347,20 +316,6 @@ function PageFileAttenteGenerale() {
             pronantId={pronantId}
             onPrendrePatient={prendreEnCharge}
           />
-        )}
-
-        {/* Pied : lien vers le module complet */}
-        {serviceActif && !chargement[serviceActif.cle] && (
-          <div className="border-t border-slate-100 px-5 py-4">
-            <button
-              type="button"
-              onClick={() => navigate(serviceActif.baseUrl)}
-              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
-            >
-              <span className="material-symbols-outlined text-base">open_in_new</span>
-              Voir tous les dossiers {serviceActif.label}
-            </button>
-          </div>
         )}
       </div>
     </div>

@@ -19,8 +19,7 @@ function EnteteApplication() {
   const estProfilReception =
     roleNormalise === 'RECEPTION' ||
     roleNormalise.includes('RECEPTION') ||
-    roleNormalise.includes('ACCUEIL') ||
-    aPermissionReception
+    roleNormalise.includes('ACCUEIL')
   const estProfilAdmin =
     roleNormalise === 'SUPER_ADMIN' ||
     roleNormalise === 'ADMIN' ||

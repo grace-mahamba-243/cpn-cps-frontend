@@ -196,7 +196,7 @@ function PageCreationRendezVous() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-8 pb-16 pt-24">
+    <div className="mx-auto max-w-6xl space-y-6 px-8 pb-16 pt-2">
       {/* En-tete */}
       <div className="flex items-center gap-4">
         <button
@@ -287,7 +287,7 @@ function PageCreationRendezVous() {
                       onChange={(e) => { setRechercheDossier(e.target.value); setMenuRechercheOuvert(true) }}
                       onFocus={() => setMenuRechercheOuvert(true)}
                       placeholder="Entrez le nom ou le numero de dossier..."
-                      className="w-full rounded-lg border-none bg-surface-container-lowest py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full rounded-lg border-2 border-primary/40 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     />
 
                     {menuRechercheOuvert && dossiersFiltres.length > 0 && (
@@ -406,7 +406,7 @@ function PageCreationRendezVous() {
                   value={formulaire.motif}
                   onChange={(e) => definirChamp('motif', e.target.value)}
                   placeholder="Ex : Consultation de routine, Premier trimestre..."
-                  className="w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest px-4 py-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-colors"
                 />
                 {erreurs.motif ? (
                   <p className="mt-1.5 ml-1 text-xs font-medium text-error">{erreurs.motif}</p>

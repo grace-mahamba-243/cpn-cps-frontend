@@ -1,6 +1,7 @@
 // Ce service centralise les appels HTTP vers le module rendez-vous du backend.
 // Il normalise les donnees entre le format backend (champs snake_case, statuts UPPERCASE)
 // et le format attendu par les composants frontend (champs French, statuts capitalized).
+import { enrichirAvecUtilisateur } from './utilitairesApi'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
@@ -164,7 +165,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous`, {
         method: 'POST',
         headers: construireEntetes(),
-        body: JSON.stringify(normaliserVersApi(donnees)),
+        body: JSON.stringify(enrichirAvecUtilisateur(normaliserVersApi(donnees))),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')
@@ -182,7 +183,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/statut`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ statut: 'ARRIVE' }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ statut: 'ARRIVE' })),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')
@@ -210,7 +211,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/statut`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ statut: statutBackend }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ statut: statutBackend })),
       })
     } catch {
       throw new Error('Impossible de mettre a jour le statut.')
@@ -228,7 +229,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/reprogrammer`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ dateRdv: date, heureRdv: heure }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ dateRdv: date, heureRdv: heure })),
       })
     } catch {
       throw new Error('Impossible de reprogrammer le rendez-vous.')

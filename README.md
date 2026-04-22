@@ -371,7 +371,9 @@ Même structure REST (GET liste, POST create, GET :id, PATCH :id) pour :
 | `PATCH` | `/api/users/:id` | Modifier un utilisateur |
 | `GET` | `/api/roles` | Liste des rôles |
 
----
+# Prévisualiser le build de production
+npm run preview
+```
 
 ##  Modules Fonctionnels
 
@@ -454,7 +456,7 @@ laboratoire.gerer                  → Gérer les examens labo
 administration.utilisateurs.gerer  → Gérer les utilisateurs
 ```
 
----
+L'application intègre un assistant clinique basé sur l'API **OpenAI** dans deux modules :
 
 ##  Intégration IA (OpenAI)
 

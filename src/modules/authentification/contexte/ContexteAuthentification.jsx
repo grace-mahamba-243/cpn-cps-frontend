@@ -70,6 +70,14 @@ function enrichirUtilisateurAuthentifie(utilisateur) {
   )
 }
 
+function fusionnerUtilisateurAuthentifie(utilisateurSource, utilisateurMaj) {
+  return {
+    ...utilisateurSource,
+    ...utilisateurMaj,
+    accesSpecifiques: utilisateurSource?.accesSpecifiques ?? utilisateurMaj?.accesSpecifiques,
+  }
+}
+
 function determinerEtatSessionInitial() {
   const session = lireSessionStockee()
 
@@ -167,6 +175,30 @@ function FournisseurAuthentification({ children }) {
     return utilisateurEnrichi
   }
 
+  const changerMotDePasseObligatoire = async ({ motDePasseActuel, nouveauMotDePasse }) => {
+    if (!utilisateurConnecte?.identifiant) {
+      throw new Error("Aucun utilisateur connecte pour changer le mot de passe.")
+    }
+
+    const reponse = await serviceAuthentification.changerMotDePasse({
+      identifiant: utilisateurConnecte.identifiant,
+      motDePasseActuel,
+      nouveauMotDePasse,
+    })
+
+    const sessionCourante = lireSessionStockee()
+    const utilisateurFusionne = fusionnerUtilisateurAuthentifie(utilisateurConnecte, reponse.utilisateur)
+    const utilisateurEnrichi = enrichirUtilisateurAuthentifie(utilisateurFusionne)
+
+    if (sessionCourante) {
+      sauvegarderSession(utilisateurEnrichi, sessionCourante.expiration, sessionCourante.sessionId ?? null)
+    }
+
+    setUtilisateurConnecte(utilisateurEnrichi)
+
+    return utilisateurEnrichi
+  }
+
   const reinitialiserSessionExpiree = () => {
     setSessionExpiree(false)
   }
@@ -239,6 +271,7 @@ function FournisseurAuthentification({ children }) {
     sessionExpiree,
     estInitialisation,
     connexion,
+    changerMotDePasseObligatoire,
     deconnexion,
     possedePermission: (permission) => possedeUnePermission(permissionsUtilisateur, permission),
     possedeToutesLesPermissions: (permissions) =>

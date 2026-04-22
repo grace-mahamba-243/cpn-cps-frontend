@@ -1,5 +1,6 @@
 import serviceGestionAcces from './serviceGestionAcces'
 import { enrichirUtilisateur } from '../../modules/gestion-acces/controle-acces'
+import { enrichirAvecUtilisateur } from './utilitairesApi'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
@@ -149,7 +150,7 @@ const serviceUtilisateurs = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(donneesUtilisateur),
+        body: JSON.stringify(enrichirAvecUtilisateur(donneesUtilisateur)),
       })
       const corps = await lireCorpsJson(reponse)
 
@@ -175,7 +176,7 @@ const serviceUtilisateurs = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(donneesUtilisateur),
+        body: JSON.stringify(enrichirAvecUtilisateur(donneesUtilisateur)),
       })
       const corps = await lireCorpsJson(reponse)
 

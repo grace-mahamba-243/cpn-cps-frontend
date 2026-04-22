@@ -5,6 +5,7 @@ import RedirectionSectionProtegee from './RedirectionSectionProtegee'
 import RouteInviteSeulement from './RouteInviteSeulement'
 import RouteProtegee from './RouteProtegee'
 import PageConnexion from '../../modules/authentification/pages/PageConnexion'
+import PagePremierChangementMotDePasse from '../../modules/authentification/pages/PagePremierChangementMotDePasse'
 import PageSessionExpiree from '../../modules/authentification/pages/PageSessionExpiree'
 import BibliothequeComposantsPage from '../../pages/bibliotheque-composants/BibliothequeComposantsPage'
 import PatientsPage from '../../pages/patients/PatientsPage'
@@ -41,6 +42,7 @@ import PageHistoriqueCpn from '../../modules/cpn/pages/PageHistoriqueCpn'
 import PageListeAccouchements from '../../modules/accouchement/pages/PageListeAccouchements'
 import PageNouvelAccouchement from '../../modules/accouchement/pages/PageNouvelAccouchement'
 import PageDetailAccouchement from '../../modules/accouchement/pages/PageDetailAccouchement'
+import PageModifierAccouchement from '../../modules/accouchement/pages/PageModifierAccouchement'
 import PageListeDossiersCpsFemme from '../../modules/cps-femme/pages/PageListeDossiersCpsFemme'
 import PageOuvertureCpsFemme from '../../modules/cps-femme/pages/PageOuvertureCpsFemme'
 import PageDetailDossierCpsFemme from '../../modules/cps-femme/pages/PageDetailDossierCpsFemme'
@@ -62,7 +64,6 @@ import PageListeDemandesLaboratoire from '../../modules/laboratoire/pages/PageLi
 import PageDetailDemandeLaboratoire from '../../modules/laboratoire/pages/PageDetailDemandeLaboratoire'
 import PageDetailDossierEnfantModule from '../../modules/dossier-enfant/pages/PageDetailDossierEnfant'
 import PageNouveauSuiviEnfant from '../../modules/dossier-enfant/pages/PageNouveauSuiviEnfant'
-import PageNouvelleNutritionEnfant from '../../modules/dossier-enfant/pages/PageNouvelleNutritionEnfant'
 import PageNouvelleVaccinationEnfant from '../../modules/dossier-enfant/pages/PageNouvelleVaccinationEnfant'
 import PageVaccinationsEnfant from '../../modules/dossier-enfant/pages/PageVaccinationsEnfant'
 import PageExamensEnfant from '../../modules/dossier-enfant/pages/PageExamensEnfant'
@@ -97,6 +98,7 @@ const composantsRoutesPrivees = {
   '/accouchements': <PageListeAccouchements />,
   '/accouchements/nouveau': <PageNouvelAccouchement />,
   '/accouchements/:accouchementId': <PageDetailAccouchement />,
+  '/accouchements/:accouchementId/modifier': <PageModifierAccouchement />,
   '/cps-femme': <PageListeDossiersCpsFemme />,
   '/cps-femme/nouveau': <PageOuvertureCpsFemme />,
   '/cps-femme/:dossierId': <PageDetailDossierCpsFemme />,
@@ -125,7 +127,6 @@ const composantsRoutesPrivees = {
   '/laboratoire/:examenId': <PageDetailDemandeLaboratoire />,
   '/dossier-enfant/:enfantId': <PageDetailDossierEnfantModule />,
   '/dossier-enfant/:enfantId/suivis/nouveau': <PageNouveauSuiviEnfant />,
-  '/dossier-enfant/:enfantId/nutritions/nouvelle': <PageNouvelleNutritionEnfant />,
   '/dossier-enfant/:enfantId/vaccinations': <PageVaccinationsEnfant />,
   '/dossier-enfant/:enfantId/vaccinations/nouvelle': <PageNouvelleVaccinationEnfant />,
   '/dossier-enfant/:enfantId/examens': <PageExamensEnfant />,
@@ -148,6 +149,12 @@ function AppRoutes() {
         <Route element={<LayoutPublic />}>
           <Route path="/acces-refuse" element={<AccesRefusePage />} />
           <Route path="/session-expiree" element={<PageSessionExpiree />} />
+        </Route>
+
+        <Route element={<RouteProtegee autoriserPremierAcces />}>
+          <Route element={<LayoutPublic />}>
+            <Route path="/premiere-connexion" element={<PagePremierChangementMotDePasse />} />
+          </Route>
         </Route>
 
         <Route path="/admin" element={<RedirectionSectionProtegee groupe="admin" />} />
