@@ -30,15 +30,15 @@ Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et de
 | **Administrateur** | Gestion utilisateurs, rôles, journal d'activités |
 
 ---
-##voici l'ia
+##.
 <img width="1919" height="947" alt="image" src="https://github.com/user-attachments/assets/5849868f-5209-43f9-95bc-bac760a110c1" />
 
-## voici un etat de sortie pour l'etat de sortie 
+## État de sortie de la patiente
 <img width="1916" height="957" alt="image" src="https://github.com/user-attachments/assets/d611ad54-ef52-474f-907a-186e56c8b6eb" />
 ## voice dossier d'une patiente cps 
 <img width="1919" height="942" alt="image" src="https://github.com/user-attachments/assets/9331f133-a163-4907-b930-5a0386809d40" />
 
-##analyse ia 
+##Voici l’analyse de l’IA basée sur les données de la patiente.
 <img width="1919" height="948" alt="image" src="https://github.com/user-attachments/assets/72ab6595-5f81-44fe-9292-1406258ceac0" />
 
 
