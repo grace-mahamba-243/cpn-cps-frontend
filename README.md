@@ -1,7 +1,7 @@
 
 ##  Présentation du Projet
 
-### Contexteg
+### Contexte
 
 Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et des naissances est encore largement géré sur papier, avec les risques de perte de données, d'erreurs et d'absence de traçabilité que cela implique.
 
@@ -30,6 +30,9 @@ Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et de
 | **Administrateur** | Gestion utilisateurs, rôles, journal d'activités |
 
 ---
+## page de CONNEXION
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/794dddd9-8b49-4af8-85de-12a4b4db0e6a" />
+
 ##.
 <img width="1919" height="947" alt="image" src="https://github.com/user-attachments/assets/5849868f-5209-43f9-95bc-bac760a110c1" />
 
@@ -69,7 +72,7 @@ Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et de
 ┌─────────────────────────────────────────────────────┐
 │          BASE DE DONNÉES MySQL 8                    │
 │       cpn_cps_himbi  ── port 3306                   │
-│   26 fichiers de migration ─ 20+ tables             │
+│           │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -158,7 +161,7 @@ Avant de démarrer le projet, assurez-vous d'avoir installé :
 | npm | 9.x | `npm -v` |
 | MySQL Server | 8.x | `mysql --version` |
 | Git | 2.x | `git --version` |
-| Python | 3.10+ | `python --version` (pour génération UML) |
+
 
 ---
 
@@ -167,7 +170,7 @@ Avant de démarrer le projet, assurez-vous d'avoir installé :
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/<votre-compte>/cpn-cps-himbi.git
+git clone https://github.com/<grace-mahamba-243>/cpn-cps-himbi.git
 cd cpn-cps-himbi
 ```
 
@@ -371,10 +374,6 @@ Même structure REST (GET liste, POST create, GET :id, PATCH :id) pour :
 | `PATCH` | `/api/users/:id` | Modifier un utilisateur |
 | `GET` | `/api/roles` | Liste des rôles |
 
-# Prévisualiser le build de production
-npm run preview
-```
-
 ##  Modules Fonctionnels
 
 ### Module CPN — Consultation Prénatale
@@ -443,18 +442,7 @@ npm run preview
 | `AGENT_RECEPTION` | Réceptionniste | Patientes, rendez-vous, file |
 | `AGENT_LABORATOIRE` | Laborantin | Examens biologiques |
 
-### Permissions Clés
 
-```
-reception.tableau_bord.consulter   → Accès au tableau de bord réception
-patients.consulter                 → Voir la liste des patientes
-cpn.consulter / cpn.gerer          → Lecture / écriture CPN
-accouchement.gerer                 → Enregistrer les accouchements
-cps_femme.gerer                    → Gérer CPS Femme
-cps_enfant.gerer                   → Gérer CPS Enfant
-laboratoire.gerer                  → Gérer les examens labo
-administration.utilisateurs.gerer  → Gérer les utilisateurs
-```
 
 L'application intègre un assistant clinique basé sur l'API **OpenAI** dans deux modules :
 
@@ -525,7 +513,7 @@ $ npm run build
 [08:12:34] Starting compilation in watch mode...
 [08:12:37] Found 0 errors. Watching for file changes.
 ```
-**Exit Code : `0`** 
+
 
 ### Erreur — Port déjà occupé
 
@@ -554,28 +542,7 @@ Error: OpenAI API key missing. Set OPENAI_API_KEY in .env
 
 
 
-##  Captures d'Écran
 
-### Page de Connexion
-> Interface de connexion sécurisée avec identifiant et mot de passe.  
-> *(Voir dossier `/docs/screenshots/connexion.png`)*
-
-### Tableau de Bord
-> Vue d'ensemble avec indicateurs : patientes enregistrées, dossiers CPN ouverts, accouchements du mois, rendez-vous du jour.
-
-### Liste des Patientes
-> Tableau filtrable et paginable avec numéro de dossier, nom, date d'enregistrement et statut.
-
-### Dossier CPN
-> Formulaire de saisie d'un contact CPN avec champs cliniques (poids, TA, âge gestationnel, BCF, etc.) et affichage de l'analyse IA en temps réel.
-
-### File d'Attente
-> Tableau de bord de la réception avec statuts colorés (vert = arrivé, orange = en attente, bleu = terminé).
-
-### Dossier Enfant — Vaccinations
-> Carnet vaccinal numérique avec calendrier OMS et statut de chaque dose (administrée, différée, refusée).
-
----
 
 
 
