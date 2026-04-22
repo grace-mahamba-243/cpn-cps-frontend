@@ -1,6 +1,6 @@
 // Ce composant permet d'ouvrir un dossier CPS Enfant : recherche de l'enfant, saisie des informations néonatales.
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import serviceCpsEnfant from '../../../services/api/serviceCpsEnfant'
 
 const aujourd_hui = new Date().toISOString().split('T')[0]
@@ -22,14 +22,80 @@ const VIDE = {
 
 function PageOuvertureCpsEnfant() {
   const navigate = useNavigate()
+  const { state: locationState } = useLocation()
   const [etape, setEtape] = useState(1)
   const [termeRecherche, setTermeRecherche] = useState('')
   const [resultats, setResultats] = useState([])
   const [chargementRecherche, setChargementRecherche] = useState(false)
   const [enfantSelectionne, setEnfantSelectionne] = useState(null)
+  const autoOuvertureDejaLancee = useRef(false)
   const timerRef = useRef(null)
   const [formulaire, setFormulaire] = useState(VIDE)
   const [envoi, setEnvoi] = useState({ chargement: false, erreur: null })
+
+  const ouvrirAutomatiquement = async (enfant, prefill = {}) => {
+    setEnvoi({ chargement: true, erreur: null })
+    try {
+      const existant = await serviceCpsEnfant.dossierParEnfantId(enfant.id).catch(() => null)
+      if (existant?.id) {
+        navigate(`/cps-enfant/${existant.id}`, {
+          replace: true,
+          state: { messageSucces: 'Dossier CPS enfant déjà ouvert. Redirection automatique.' },
+        })
+        return
+      }
+
+      const numeroDossierCps = `CPS-ENF-${Date.now().toString(36).toUpperCase().slice(-6)}`
+      const donnees = {
+        enfantId: enfant.id,
+        numeroDossierCps,
+        dateOuverture: prefill.dateOuverture || aujourd_hui,
+        mereNom: prefill.mereNom || null,
+        mereTelephone: prefill.mereTelephone || null,
+        dateNaissance: prefill.dateNaissance || enfant.dateNaissance?.split?.('T')?.[0] || null,
+        typeAccouchement: prefill.typeAccouchement || 'INTERNE',
+        poidsNaissanceG: prefill.poidsNaissanceG ? Number(prefill.poidsNaissanceG) : null,
+        scoreApgar1min: prefill.scoreApgar1min ? Number(prefill.scoreApgar1min) : null,
+        scoreApgar5min: prefill.scoreApgar5min ? Number(prefill.scoreApgar5min) : null,
+        groupeSanguin: prefill.groupeSanguin || null,
+        rhesus: prefill.rhesus || null,
+        vihStatut: prefill.vihStatut || 'INCONNU',
+        notes: prefill.notes || null,
+      }
+      const dossier = await serviceCpsEnfant.ouvrirDossier(donnees)
+      navigate(`/cps-enfant/${dossier.id}`, {
+        replace: true,
+        state: { messageSucces: 'Dossier CPS Enfant ouvert automatiquement.' },
+      })
+    } catch (ex) {
+      setEnvoi({ chargement: false, erreur: ex.message })
+      setEtape(2)
+    }
+  }
+
+  useEffect(() => {
+    const enfant = locationState?.enfantPreselectionne
+    if (!enfant?.id) return
+
+    const prefill = locationState?.prefillCps ?? {}
+    setEnfantSelectionne(enfant)
+    setFormulaire((f) => ({
+      ...f,
+      dateNaissance: prefill.dateNaissance || enfant.dateNaissance?.split?.('T')?.[0] || f.dateNaissance,
+      mereNom: prefill.mereNom || f.mereNom,
+      mereTelephone: prefill.mereTelephone || f.mereTelephone,
+      typeAccouchement: prefill.typeAccouchement || f.typeAccouchement,
+      poidsNaissanceG: prefill.poidsNaissanceG || f.poidsNaissanceG,
+      scoreApgar1min: prefill.scoreApgar1min || f.scoreApgar1min,
+      scoreApgar5min: prefill.scoreApgar5min || f.scoreApgar5min,
+    }))
+    setEtape(2)
+
+    if (locationState?.autoOuvrirCps && !autoOuvertureDejaLancee.current) {
+      autoOuvertureDejaLancee.current = true
+      void ouvrirAutomatiquement(enfant, prefill)
+    }
+  }, [locationState])
 
   const gererRecherche = (valeur) => {
     setTermeRecherche(valeur)
@@ -119,6 +185,12 @@ function PageOuvertureCpsEnfant() {
       {/* Étape 1 : Recherche enfant */}
       {etape === 1 && (
         <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-4">
+          {locationState?.messageSucces && (
+            <div className="flex items-start gap-2 rounded-xl bg-tertiary-container/50 px-4 py-3 text-sm text-on-tertiary-container">
+              <span className="material-symbols-outlined text-base mt-0.5">check_circle</span>
+              <span>{locationState.messageSucces}</span>
+            </div>
+          )}
           <h2 className="font-semibold text-on-surface flex items-center gap-2">
             <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>child_care</span>
             Rechercher l&apos;enfant

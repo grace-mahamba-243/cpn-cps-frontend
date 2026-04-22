@@ -85,7 +85,7 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
             onChange={(e) => { setRecherche(e.target.value); setMenuOuvert(true) }}
             onFocus={() => setMenuOuvert(true)}
             placeholder={`Entrez le nom ou le numero de dossier ${typePatient === 'Enfant' ? 'enfant' : 'mere'}...`}
-            className="w-full rounded-lg border-none bg-surface-container-lowest py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-lg border-2 border-primary/40 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
             autoFocus
           />
         </div>
@@ -337,7 +337,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
             maxLength={100}
             onChange={(e) => { setMotif(e.target.value); setErreurs((p) => ({ ...p, motif: undefined })) }}
             placeholder="Ex: Consultation CPN, Suivi vaccinal..."
-            className="w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-lg border-2 border-primary/40 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
           />
           {erreurs.motif && <p className="ml-1 mt-1 text-xs text-error">{erreurs.motif}</p>}
         </div>
@@ -517,7 +517,7 @@ function PageEnregistrementArrivee() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-6 pb-16 pt-24">
+    <div className="mx-auto max-w-2xl space-y-8 px-6 pb-16 pt-2">
       {/* En-tete */}
       <div>
         <button

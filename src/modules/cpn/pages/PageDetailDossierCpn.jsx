@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpn from '../../../services/api/serviceCpn'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
 import SqueletteChargement from '../composants/SqueletteChargement'
+import InfoEnregistrement from '../../../composants/partages/InfoEnregistrement'
 import EcranErreur from '../composants/EcranErreur'
 import BandeauPatiente from '../composants/BandeauPatiente'
 import Modale from '../composants/Modale'
@@ -48,6 +49,8 @@ function PageDetailDossierCpn() {
   const [clotureEnCours, setClotureEnCours] = useState(false)
   // Vérifier si un dossier ouvert existe déjà pour cette patiente (pour bloquer la réouverture)
   const [dossierOuvertExistant, setDossierOuvertExistant] = useState(false)
+  const [modaleSuppressionOuverte, setModaleSuppressionOuverte] = useState(false)
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false)
 
   const chargerDossier = async () => {
     setChargement(true)
@@ -73,21 +76,6 @@ function PageDetailDossierCpn() {
       // filtrer par numero de dossier (refDossier non supporte cote backend, on filtre ici)
       setRdvDuJour(liste)
     } catch { setRdvDuJour([]) }
-  }
-
-  const finirConsultation = async () => {
-    if (!rdvDuJour?.length) return
-    if (!confirm('Marquer la consultation comme terminée ?')) return
-    setFinEnCours(true)
-    try {
-      // on prend le premier RDV du jour correspondant au numero de dossier
-      const rdv = rdvDuJour.find(
-        (r) => r.refDossier === dossier?.numeroDossierCpn || r.patienteNom?.toLowerCase().includes(dossier?.patiente?.nom?.toLowerCase() ?? '')
-      ) ?? rdvDuJour[0]
-      await serviceRendezVous.mettreAJourStatut(rdv.id, 'Termine')
-      setRdvDuJour([])
-      setMessageSucces('Consultation terminée — patient retiré de la file d\'attente.')
-    } catch (ex) { alert(ex.message) } finally { setFinEnCours(false) }
   }
 
   const verifierDossierOuvert = async (patienteId) => {
@@ -157,6 +145,17 @@ function PageDetailDossierCpn() {
     } catch (ex) { alert(ex.message) }
   }
 
+  const supprimerDossier = async () => {
+    setSuppressionEnCours(true)
+    try {
+      await serviceCpn.supprimerDossier(dossierId)
+      navigate('/cpn', { replace: true, state: { messageSucces: 'Dossier CPN supprimé avec succès.' } })
+    } catch (ex) {
+      alert(ex.message)
+      setModaleSuppressionOuverte(false)
+    } finally { setSuppressionEnCours(false) }
+  }
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8">
 
@@ -189,8 +188,13 @@ function PageDetailDossierCpn() {
               {dossier.notesCloture ? ` — ${dossier.notesCloture}` : ''}
             </p>
           </div>
-          {/* Bouton Réouvrir : visible uniquement si aucun autre dossier ouvert */}
-          {!dossierOuvertExistant ? (
+          {/* Bouton Réouvrir : masqué si clôturé suite à un accouchement */}
+          {dossier.notesCloture?.toLowerCase().includes('accouchement') ? (
+            <div className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-surface-container px-4 py-2 text-xs text-on-surface-variant">
+              <span className="material-symbols-outlined text-base">child_care</span>
+              Clôturé après accouchement
+            </div>
+          ) : !dossierOuvertExistant ? (
             <button
               onClick={reouvrir}
               className="flex flex-shrink-0 items-center gap-2 rounded-full bg-tertiary-container px-4 py-2 text-sm font-semibold text-on-tertiary-container hover:opacity-90 transition-opacity"
@@ -263,9 +267,8 @@ function PageDetailDossierCpn() {
 
       {/* ── Actions ── */}
       <section>
-        <h3 className="mb-3 px-1 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Actions</h3>
         <div className="flex flex-wrap gap-3">
-          {dossier.statut === 'CLOS' && (
+          {dossier.statut === 'CLOS' && !location.state?.fromHistorique && (
             <button
               onClick={() => navigate('/cpn/nouveau', { state: { patientePreselectionnee: dossier.patiente } })}
               className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-opacity"
@@ -280,85 +283,52 @@ function PageDetailDossierCpn() {
               Nouveau Contact
             </button>
           )}
-          {rdvDuJour?.length > 0 && dossier.statut === 'OUVERT' && (
+
+          {!location.state?.fromHistorique && (
             <button
-              onClick={finirConsultation}
-              disabled={finEnCours}
-              className="flex items-center gap-2 rounded-full bg-tertiary px-5 py-2.5 text-sm font-semibold text-on-tertiary shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              onClick={() => navigate(`/cpn/historique/${dossier.patienteId}`)}
+              className="flex items-center gap-2 rounded-full bg-surface-container px-5 py-2.5 text-sm font-semibold text-on-surface-variant shadow-sm hover:opacity-90 transition-opacity"
             >
-              <span className="material-symbols-outlined text-base">check_circle</span>
-              {finEnCours ? 'En cours...' : 'Finir la consultation'}
+              <span className="material-symbols-outlined text-base">history</span>
+              Historique grossesses
             </button>
           )}
-          {dossier.statut === 'OUVERT' && (
-            <button onClick={() => setModaleClotureOuverte(true)} className="flex items-center gap-2 rounded-full bg-error-container/20 px-5 py-2.5 text-sm font-semibold text-error shadow-sm hover:opacity-90 transition-opacity">
-              <span className="material-symbols-outlined text-base">lock</span>
-              Clore le dossier
+
+          {/* Bouton supprimer : uniquement si le dossier n'a pas de contacts, est OUVERT, et pas depuis historique */}
+          {(dossier.nombreContacts ?? dossier.contacts?.length ?? 0) === 0 && dossier.statut !== 'CLOS' && !location.state?.fromHistorique && (
+            <button
+              onClick={() => setModaleSuppressionOuverte(true)}
+              className="flex items-center gap-2 rounded-full bg-error-container px-5 py-2.5 text-sm font-semibold text-on-error-container shadow-sm hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-base">delete</span>
+              Supprimer le dossier
             </button>
           )}
-          <button
-            onClick={() => navigate(`/cpn/historique/${dossier.patienteId}`)}
-            className="flex items-center gap-2 rounded-full bg-surface-container px-5 py-2.5 text-sm font-semibold text-on-surface-variant shadow-sm hover:opacity-90 transition-opacity"
-          >
-            <span className="material-symbols-outlined text-base">history</span>
-            Historique grossesses
-          </button>
         </div>
       </section>
 
+      <InfoEnregistrement enregistrePar={dossier.enregistrePar} modifiePar={dossier.modifiePar} />
+
       {/* ══ Modales ══ */}
 
-      {/* Modale clôture */}
-      {modaleClotureOuverte && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      {/* Modale confirmation suppression */}
+      {modaleSuppressionOuverte && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-3xl bg-surface p-6 shadow-xl">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-container/30">
-                <span className="material-symbols-outlined text-xl text-error">lock</span>
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-on-surface">Clôture du dossier CPN</h2>
-                <p className="text-xs text-on-surface-variant">Dossier {dossier.numeroDossierCpn}</p>
-              </div>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-error-container">
+              <span className="material-symbols-outlined text-2xl text-on-error-container">delete_forever</span>
             </div>
-
-            <div className="flex flex-col gap-4">
-              {/* Libellé / motif */}
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-on-surface">
-                  Libellé de clôture
-                </label>
-                <textarea
-                  className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  rows={3}
-                  placeholder="Motif ou remarques de clôture…"
-                  value={notesCloture}
-                  onChange={(e) => setNotesCloture(e.target.value)}
-                  autoFocus
-                />
-              </div>
-
-              {/* Nom utilisateur affiché */}
-              <div className="rounded-xl bg-surface-container-low px-4 py-3">
-                <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">Clôturé par</p>
-                <p className="mt-0.5 text-sm font-semibold text-on-surface">{nomUtilisateur || '—'}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
+            <h3 className="font-headline text-lg font-bold text-on-surface">Supprimer ce dossier CPN ?</h3>
+            <p className="mt-2 text-sm text-on-surface-variant">Cette action est irréversible. Le dossier sera définitivement supprimé.</p>
+            <div className="mt-6 flex gap-3 justify-end">
+              <button onClick={() => setModaleSuppressionOuverte(false)} className="rounded-full bg-surface-container px-5 py-2.5 text-sm font-semibold text-on-surface-variant hover:opacity-80">Annuler</button>
               <button
-                onClick={() => { setModaleClotureOuverte(false); setNotesCloture('') }}
-                className="rounded-full px-5 py-2.5 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={supprimerDossier}
+                disabled={suppressionEnCours}
+                className="flex items-center gap-2 rounded-full bg-error px-5 py-2.5 text-sm font-semibold text-on-error hover:opacity-90 disabled:opacity-50"
               >
-                Annuler
-              </button>
-              <button
-                onClick={confirmerCloture}
-                disabled={!notesCloture.trim() || clotureEnCours}
-                className="flex items-center gap-2 rounded-full bg-error px-5 py-2.5 text-sm font-semibold text-on-error shadow-sm hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                <span className="material-symbols-outlined text-base">lock</span>
-                {clotureEnCours ? 'Clôture en cours…' : 'Confirmer la clôture du dossier'}
+                {suppressionEnCours && <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>}
+                Confirmer la suppression
               </button>
             </div>
           </div>

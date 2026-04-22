@@ -1567,11 +1567,7 @@ p {
   justify-content: space-between;
   gap: 1.5rem;
   padding: 2rem;
-  border-left: 1px solid rgba(226, 232, 240, 0.92);
-}
-
-.page-detail-utilisateur .alerte {
-  border-left-color: rgba(226, 232, 240, 0.92);
+  border-left: 0.35rem solid var(--couleur-primaire);
 }
 
 .detail-utilisateur__hero-identite,
@@ -3301,56 +3297,196 @@ p {
 
 
 /* ============================================================
-   STYLES D'IMPRESSION — Dossier administratif mère
+   STYLES D'IMPRESSION  Dossier administratif mère
    ============================================================ */
-
-/* Cacher la section print-only en mode écran */
-.print-only {
-  display: none !important;
-}
-
 @media print {
-  /* Masquer tout sauf le rapport imprimable */
-  .screen-only,
+  /* Masquer la navigation, entete et boutons d'action */
   .barre-laterale,
   .entete-application,
   .no-print {
     display: none !important;
   }
 
-  /* Annuler le layout principal */
+  /* Annuler le layout en grille */
   .layout-prive {
     display: block !important;
   }
+
   .layout-prive__contenu {
     min-height: auto !important;
     margin-left: 0 !important;
   }
+
   .layout-prive__principal {
     padding: 0 !important;
   }
+
+  /* Supprimer le padding-top reserve pour le header fixe */
   .pt-24 {
     padding-top: 0 !important;
   }
 
-  /* Afficher le rapport imprimable */
-  .print-only {
-    display: block !important;
-  }
-
-  /* Fond blanc */
-  body, html, #root {
+  /* Fond blanc, texte noir pour l'impression */
+  body,
+  html,
+  #root {
     background: white !important;
   }
 
-  /* Format de page A4 — margin:0 supprime l'URL/date du navigateur dans les marges */
-  @page {
-    size: A4 portrait;
-    margin: 0;
+  * {
+    color: black !important;
+    background-color: white !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
-  /* Padding interne pour compenser le margin:0 */
-  .print-only {
-    padding: 12mm 14mm !important;
+  /* En-tête centre de santé avant le contenu */
+  body::before {
+    content: "CENTRE DE SANTÉ AFIA HIMBI  GOMA, RDC";
+    display: block;
+    text-align: center;
+    font-size: 13pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding-bottom: 6pt;
+    border-bottom: 2px solid black;
+    margin-bottom: 14pt;
+  }
+
+  /* Sections du dossier */
+  section {
+    border: 1px solid #888 !important;
+    border-radius: 4pt !important;
+    page-break-inside: avoid;
+    margin-bottom: 10pt !important;
+    padding: 10pt !important;
+  }
+
+  /* Afficher les grilles correctement */
+  .grid {
+    display: grid !important;
+  }
+
+  /* Tableau des rendez-vous */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #999 !important;
+    padding: 4pt 6pt !important;
+    font-size: 9pt !important;
+    text-align: left !important;
+  }
+
+  th {
+    font-weight: 800 !important;
+    background: #f0f0f0 !important;
+    color: black !important;
+  }
+
+  /* Format de page A4 */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm 15mm 12mm;
+  }
+}
+
+
+/* ============================================================
+   STYLES D'IMPRESSION  Dossier administratif mère
+   ============================================================ */
+@media print {
+  /* Masquer la navigation, entete et boutons d'action */
+  .barre-laterale,
+  .entete-application,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Annuler le layout en grille */
+  .layout-prive {
+    display: block !important;
+  }
+
+  .layout-prive__contenu {
+    min-height: auto !important;
+    margin-left: 0 !important;
+  }
+
+  .layout-prive__principal {
+    padding: 0 !important;
+  }
+
+  /* Supprimer le padding-top reserve pour le header fixe */
+  .pt-24 {
+    padding-top: 0 !important;
+  }
+
+  /* Fond blanc, texte noir pour l'impression */
+  body,
+  html,
+  #root {
+    background: white !important;
+  }
+
+  * {
+    color: black !important;
+    background-color: white !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* En-tête centre de santé avant le contenu */
+  body::before {
+    content: "CENTRE DE SANTÉ AFIA HIMBI  GOMA, RDC";
+    display: block;
+    text-align: center;
+    font-size: 13pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding-bottom: 6pt;
+    border-bottom: 2px solid black;
+    margin-bottom: 14pt;
+  }
+
+  /* Sections du dossier */
+  section {
+    border: 1px solid #888 !important;
+    border-radius: 4pt !important;
+    page-break-inside: avoid;
+    margin-bottom: 10pt !important;
+    padding: 10pt !important;
+  }
+
+  /* Afficher les grilles correctement */
+  .grid {
+    display: grid !important;
+  }
+
+  /* Tableau des rendez-vous */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #999 !important;
+    padding: 4pt 6pt !important;
+    font-size: 9pt !important;
+    text-align: left !important;
+  }
+
+  th {
+    font-weight: 800 !important;
+    background: #f0f0f0 !important;
+    color: black !important;
+  }
+
+  /* Format de page A4 */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm 15mm 12mm;
   }
 }

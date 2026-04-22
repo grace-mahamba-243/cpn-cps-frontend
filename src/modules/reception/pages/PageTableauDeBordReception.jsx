@@ -18,7 +18,11 @@ function libelleStatut(statut) {
 }
 
 function dateDuJourIso() {
-  return new Date().toISOString().slice(0, 10)
+  const maintenant = new Date()
+  const annee = maintenant.getFullYear()
+  const mois = String(maintenant.getMonth() + 1).padStart(2, '0')
+  const jour = String(maintenant.getDate()).padStart(2, '0')
+  return `${annee}-${mois}-${jour}`
 }
 
 function normaliserTexte(valeur = '') {
@@ -42,7 +46,10 @@ function PageTableauDeBordReception() {
     const charger = async () => {
       try {
         const liste = await serviceRendezVousApi.lister({ date: dateDuJourIso() })
-        if (estActif) setRendezVousDuJour(liste)
+        if (estActif) {
+          const actifs = liste.filter((rdv) => (rdv.statut ?? '').toLowerCase() !== 'annule')
+          setRendezVousDuJour(actifs)
+        }
       } catch {
         // Echec silencieux : on affiche la liste vide
       } finally {

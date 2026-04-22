@@ -1,4 +1,6 @@
 // Ce service gere les appels API du module CPS Femme vers le backend NestJS.
+import { enrichirAvecUtilisateur } from './utilitairesApi'
+
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
 async function lireCorpsJson(reponse) {
@@ -30,6 +32,12 @@ function construireMessageErreur(reponse, corps) {
 }
 
 async function appelerApi(url, options = {}) {
+  if (options.body && (options.method === 'POST' || options.method === 'PATCH' || options.method === 'PUT')) {
+    try {
+      const d = JSON.parse(options.body)
+      options = { ...options, body: JSON.stringify(enrichirAvecUtilisateur(d)) }
+    } catch { /* corps non-JSON */ }
+  }
   const reponse = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
@@ -181,6 +189,11 @@ const serviceCpsFemme = {
   // Alias pour interprétation échographie
   async entrerInterpretation(dossierId, examenId, donnees) {
     return this.enregistrerResultat(dossierId, examenId, { interpretation: donnees.interpretation, statut: 'RESULTAT_RECU' })
+  },
+
+  // Supprimer un dossier CPS Femme (uniquement si aucune visite ni examen)
+  async supprimerDossier(dossierId) {
+    return appelerApi(`${URL_API}/cps-femme/${dossierId}`, { method: 'DELETE' })
   },
 }
 

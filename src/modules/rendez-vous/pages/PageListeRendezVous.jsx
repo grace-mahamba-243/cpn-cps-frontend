@@ -3,10 +3,13 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
+import useAuthentification from '../../authentification/hooks/useAuthentification'
+import { normaliserCodeRole } from '../../gestion-acces/controle-acces'
 
 const TAILLE_PAGE = 8
 const FILTRES_RAPIDES = {
   JOUR: 'jour',
+  TOUS: 'tous',
 }
 
 function normaliserTexte(valeur = '') {
@@ -92,9 +95,12 @@ function creerDateFiltreRapide(filtreRapide) {
   }
 }
 
-// Ce composant affiche la liste administrative des rendez-vous pour la reception avec recherche, filtres et actions rapides.
+// Ce composant affiche la liste des rendez-vous — filtree sur CPN uniquement pour les infirmieres et sages-femmes.
 function PageListeRendezVous() {
   const navigate = useNavigate()
+  const { utilisateurConnecte } = useAuthentification()
+  const roleNormalise = normaliserCodeRole(utilisateurConnecte?.roleCode ?? utilisateurConnecte?.role) ?? ''
+  const estClinique = roleNormalise === 'INFIRMIERE' || roleNormalise === 'SAGE_FEMME'
 
   const [etat, setEtat] = useState({
     chargement: true,
@@ -165,9 +171,19 @@ function PageListeRendezVous() {
 
   const rendezVousFiltres = useMemo(() => {
     return etat.rendezVous.filter((ligne) => {
+      // Les rendez-vous annulés ne doivent plus être visibles dans la liste opérationnelle.
+      if (normaliserTexte(ligne.statut) === 'annule') {
+        return false
+      }
+
       // Si une date specifique est choisie dans le selecteur, elle prime sur le filtre rapide
       if (filtres.date) {
         return ligne.date === filtres.date
+      }
+
+      // Filtre "Tous" : afficher tous les rendez-vous
+      if (filtres.filtreRapide === FILTRES_RAPIDES.TOUS) {
+        return true
       }
 
       // Sinon appliquer le filtre rapide du jour
@@ -176,7 +192,7 @@ function PageListeRendezVous() {
       const plageRapide = creerDateFiltreRapide(filtres.filtreRapide)
       return dateRendezVous >= plageRapide.debut && dateRendezVous <= plageRapide.fin
     })
-  }, [etat.rendezVous, filtres])
+  }, [etat.rendezVous, filtres, estClinique])
 
   const statistiques = useMemo(() => {
     return rendezVousFiltres.reduce(
@@ -240,7 +256,7 @@ function PageListeRendezVous() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-24">
+    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-2">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Gestion des flux</h1>
@@ -286,13 +302,30 @@ function PageListeRendezVous() {
 
       <section className="rounded-3xl bg-surface-container-low p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            className="rounded-full bg-surface-container-lowest px-6 py-2 text-sm font-bold text-primary shadow-sm"
-            onClick={() => definirFiltre('date', '')}
-          >
-            Rendez-vous du jour
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={`rounded-full px-5 py-2 text-sm font-bold shadow-sm transition-colors ${
+                !filtres.date && filtres.filtreRapide === FILTRES_RAPIDES.JOUR
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container'
+              }`}
+              onClick={() => { definirFiltre('date', ''); definirFiltre('filtreRapide', FILTRES_RAPIDES.JOUR) }}
+            >
+              Aujourd'hui
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-5 py-2 text-sm font-bold shadow-sm transition-colors ${
+                !filtres.date && filtres.filtreRapide === FILTRES_RAPIDES.TOUS
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container'
+              }`}
+              onClick={() => { definirFiltre('date', ''); definirFiltre('filtreRapide', FILTRES_RAPIDES.TOUS) }}
+            >
+              Tous
+            </button>
+          </div>
 
           <div className="w-56">
             <label className="mb-1.5 ml-1 block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Date</label>
@@ -300,7 +333,7 @@ function PageListeRendezVous() {
               type="date"
               value={filtres.date}
               onChange={(event) => definirFiltre('date', event.target.value)}
-              className="w-full rounded-xl border-none bg-surface-container-lowest px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border-2 border-primary/40 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
             />
           </div>
         </div>
@@ -332,7 +365,6 @@ function PageListeRendezVous() {
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Service</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Type de RDV</th>
                     <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Statut</th>
-                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Motif</th>
                     <th className="px-6 py-4 text-right text-[11px] font-extrabold uppercase tracking-widest text-on-surface-variant">Actions</th>
                   </tr>
                 </thead>
@@ -366,7 +398,6 @@ function PageListeRendezVous() {
                         </span>
                 
                       </td>
-                      <td className="px-6 py-5 text-sm italic text-on-surface-variant">{ligne.motif}</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center justify-end">
                           {/* Bouton trois points */}

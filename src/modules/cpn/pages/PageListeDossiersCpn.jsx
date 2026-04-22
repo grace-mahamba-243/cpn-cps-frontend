@@ -151,7 +151,7 @@ function PageListeDossiersCpn() {
             value={recherche}
             onChange={(e) => gererRecherche(e.target.value)}
             onFocus={() => { if (recherche && resultatsRecherche.length > 0) setAfficherResultats(true) }}
-            className="w-full rounded-xl border border-outline-variant/50 bg-surface py-2 pl-10 pr-9 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant"
+            className="w-full rounded-xl border-2 border-primary/40 bg-white py-2 pl-10 pr-9 text-sm text-on-surface outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant"
           />
           {recherche && (
             <button onClick={() => { setRecherche(''); setResultatsRecherche([]); setAfficherResultats(false) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
@@ -168,7 +168,17 @@ function PageListeDossiersCpn() {
                   Recherche...
                 </div>
               ) : resultatsRecherche.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-on-surface-variant">Aucun dossier trouvé pour « {recherche} »</p>
+                <div className="px-4 py-4 flex flex-col gap-3">
+                  <p className="text-sm text-on-surface-variant">Aucun dossier trouvé pour « {recherche} »</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/patients/nouveau')}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-opacity w-fit"
+                  >
+                    <span className="material-symbols-outlined text-base">person_add</span>
+                    Créer une nouvelle mère
+                  </button>
+                </div>
               ) : (
                 <ul className="divide-y divide-outline-variant/20 max-h-72 overflow-y-auto">
                   {resultatsRecherche.slice(0, 8).map((d) => {

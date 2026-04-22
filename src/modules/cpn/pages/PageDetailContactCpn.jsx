@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpn from '../../../services/api/serviceCpn'
+import InfoEnregistrement from '../../../composants/partages/InfoEnregistrement'
 
 /* ─── Styles d'impression injectés globalement ─── */
 const STYLES_IMPRESSION = `
@@ -141,6 +142,10 @@ function PageDetailContactCpn() {
   const jourCreation = contact.creeLe ? new Date(contact.creeLe).toISOString().split('T')[0] : null
   const modificationAutorisee = jourCreation === today && dossier?.statut === 'OUVERT' && !location.state?.fromHistorique
 
+  const patienteNomComplet = dossier?.nomPatiente
+    ?? (dossier?.patiente ? [dossier.patiente.nom, dossier.patiente.postnom, dossier.patiente.prenom].filter(Boolean).join(' ') : null)
+    ?? '—'
+
   const imprimerSection = (classeBody) => {
     setMenuImpressionOuvert(false)
     document.body.classList.add(classeBody)
@@ -187,7 +192,7 @@ function PageDetailContactCpn() {
             Contact n{contact.numeroContact}
           </h2>
           {dossier && (
-            <p className="text-sm text-on-surface-variant">{dossier.numeroDossierCpn}  {dossier.patiente?.nomComplet}</p>
+            <p className="text-sm text-on-surface-variant">{dossier.numeroDossierCpn}  {patienteNomComplet}</p>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -378,6 +383,8 @@ function PageDetailContactCpn() {
         />
       )}
 
+      <InfoEnregistrement enregistrePar={contact.enregistrePar} modifiePar={contact.modifiePar} />
+
       {/* Zones imprimables — invisibles à l'écran */}
       </div>{/* fin contenu-page-contact */}
       <ZoneImpressionContact
@@ -422,30 +429,40 @@ function ZoneImpressionContact({ contact, dossier, medicaments, decision }) {
   }
 
   const patiente = dossier?.patiente
+  const nomPatienteImpression = dossier?.nomPatiente
+    ?? (patiente ? [patiente.nom, patiente.postnom, patiente.prenom].filter(Boolean).join(' ') : null)
+    ?? '—'
   const dateContact = contact.dateContact ? new Date(contact.dateContact).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''
   const dateNow = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 
   return (
-    <div id="zone-impression-contact" style={{ fontFamily: 'Arial, sans-serif', color: '#111', background: '#fff', padding: 0 }}>
+    <div id="zone-impression-contact" style={{ fontFamily: 'Inter, sans-serif', color: '#191c1d', background: '#fff', padding: 0, position: 'relative', overflow: 'hidden' }}>
 
       {/* En-tête institutionnel */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2.5px solid #1a5276', paddingBottom: 10, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a5276', letterSpacing: 0.5 }}>CENTRE DE SANTÉ — AFIA HIMBI</div>
-          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>Consultation Prénatale (CPN)</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', background: '#005eb8', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '26px' }}>medical_services</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: '16px', fontWeight: 900, color: '#00478d', margin: 0 }}>Centre de Santé Afia Himbi</h1>
+            <p style={{ color: '#424752', fontWeight: 600, fontSize: '11px', margin: '2px 0' }}>Unité de Soins Prénatals et Postnatals</p>
+            <p style={{ color: '#424752', fontSize: '10px', margin: '3px 0 0 0' }}>Goma, Nord-Kivu, RDC — +243 000 000 000</p>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a5276' }}>FICHE DE CONTACT CPN</div>
-          <div style={{ fontSize: 10, color: '#6b7280' }}>Contact n°{contact.numeroContact} — {dateContact}</div>
-          <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>Imprimé le {dateNow}</div>
+          <span style={{ display: 'inline-block', padding: '2px 8px', background: '#d5e4f7', color: '#526070', fontSize: '8px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '99px', marginBottom: '4px' }}>Fiche de Contact CPN</span>
+          <p style={{ color: '#424752', fontSize: '10px', margin: '2px 0' }}>Contact n°{contact.numeroContact} — {dateContact}</p>
+          <p style={{ color: '#424752', fontSize: '10px', margin: '2px 0' }}>Imprimé le {dateNow}</p>
         </div>
       </div>
+      <div style={{ height: '3px', background: 'linear-gradient(to right, #00478d, #005eb8, #526070)', marginBottom: '16px', borderRadius: '2px' }} />
 
       {/* Identité patiente */}
       <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 12px', marginBottom: 14, display: 'flex', gap: 32 }}>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Patiente</span>
-          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{patiente?.nomComplet ?? '—'}</div>
+          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{nomPatienteImpression}</div>
         </div>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>N° Dossier CPN</span>
@@ -545,24 +562,34 @@ function ZoneImpressionExamens({ contact, dossier }) {
   const dateNow = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
   const dateContact = contact.dateContact ? new Date(contact.dateContact).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''
   const patiente = dossier?.patiente
+  const nomPatiente = dossier?.nomPatiente
+    ?? (patiente ? [patiente.nom, patiente.postnom, patiente.prenom].filter(Boolean).join(' ') : null)
+    ?? '—'
 
   return (
-    <div id="zone-impression-examens" style={{ fontFamily: 'Arial, sans-serif', color: '#111', background: '#fff', padding: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #1a5276', paddingBottom: 10, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a5276' }}>CENTRE DE SANTÉ — AFIA HIMBI</div>
-          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>Consultation Prénatale (CPN)</div>
+    <div id="zone-impression-examens" style={{ fontFamily: 'Inter, sans-serif', color: '#191c1d', background: '#fff', padding: 0, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', background: '#005eb8', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '26px' }}>medical_services</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: '16px', fontWeight: 900, color: '#00478d', margin: 0 }}>Centre de Santé Afia Himbi</h1>
+            <p style={{ color: '#424752', fontWeight: 600, fontSize: '11px', margin: '2px 0' }}>Unité de Soins Prénatals — CPN</p>
+            <p style={{ color: '#424752', fontSize: '10px', margin: '3px 0 0 0' }}>Goma, Nord-Kivu, RDC</p>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a5276' }}>EXAMENS DEMANDÉS</div>
-          <div style={{ fontSize: 10, color: '#6b7280' }}>Contact n°{contact.numeroContact} — {dateContact}</div>
-          <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>Imprimé le {dateNow}</div>
+          <span style={{ display: 'inline-block', padding: '2px 8px', background: '#d5e4f7', color: '#526070', fontSize: '8px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '99px', marginBottom: '4px' }}>Examens Demandés</span>
+          <p style={{ color: '#424752', fontSize: '10px', margin: '2px 0' }}>Contact n°{contact.numeroContact} — {dateContact}</p>
+          <p style={{ color: '#424752', fontSize: '10px', margin: '2px 0' }}>Imprimé le {dateNow}</p>
         </div>
       </div>
+      <div style={{ height: '3px', background: 'linear-gradient(to right, #00478d, #005eb8, #526070)', marginBottom: '14px', borderRadius: '2px' }} />
       <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 12px', marginBottom: 14, display: 'flex', gap: 32 }}>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Patiente</span>
-          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{patiente?.nomComplet ?? '—'}</div>
+          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{nomPatiente}</div>
         </div>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>N° Dossier CPN</span>
@@ -602,6 +629,9 @@ function ZoneImpressionMedicaments({ contact, dossier, medicaments, decision }) 
   const dateNow = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
   const dateContact = contact.dateContact ? new Date(contact.dateContact).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''
   const patiente = dossier?.patiente
+  const nomPatiente = dossier?.nomPatiente
+    ?? (patiente ? [patiente.nom, patiente.postnom, patiente.prenom].filter(Boolean).join(' ') : null)
+    ?? '—'
 
   return (
     <div id="zone-impression-medicaments" style={{ fontFamily: 'Arial, sans-serif', color: '#111', background: '#fff', padding: 0 }}>
@@ -619,7 +649,7 @@ function ZoneImpressionMedicaments({ contact, dossier, medicaments, decision }) 
       <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 12px', marginBottom: 16, display: 'flex', gap: 32 }}>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Patiente</span>
-          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{patiente?.nomComplet ?? '—'}</div>
+          <div style={{ fontWeight: 800, fontSize: 13, color: '#1e3a5f' }}>{nomPatiente}</div>
         </div>
         <div>
           <span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>N° Dossier CPN</span>

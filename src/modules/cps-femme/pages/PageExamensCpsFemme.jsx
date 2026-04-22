@@ -113,18 +113,40 @@ function PanneauInterpretation({ examen, dossierId, visites, onTermine, onAnnule
 // ── Formulaire demande d'examen ───────────────────────────────────────────────
 function FormulaireDemandeExamen({ dossierId, onTermine, onAnnuler }) {
   const [typeExamen, setTypeExamen] = useState('BIOLOGIQUE')
-  const [libelle, setLibelle] = useState('')
+  const [nouvelExamen, setNouvelExamen] = useState('')
+  const [examensTodo, setExamensTodo] = useState([])
   const [notes, setNotes] = useState('')
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState('')
 
+  const ajouterExamen = () => {
+    const libelle = nouvelExamen.trim()
+    if (!libelle) return
+
+    setExamensTodo((precedent) => [...precedent, { libelle, typeExamen }])
+    setNouvelExamen('')
+  }
+
+  const supprimerExamen = (index) => {
+    setExamensTodo((precedent) => precedent.filter((_, i) => i !== index))
+  }
+
   const soumettre = async (e) => {
     e.preventDefault()
-    if (!libelle.trim()) { setErreur('Le libellé est obligatoire.'); return }
+    if (examensTodo.length === 0) {
+      setErreur('Selectionnez au moins un examen.')
+      return
+    }
     setEnvoi(true)
     setErreur('')
     try {
-      await serviceCpsFemme.demanderExamen(dossierId, { typeExamen, libelle: libelle.trim(), notes: notes.trim() || null })
+      for (const examen of examensTodo) {
+        await serviceCpsFemme.demanderExamen(dossierId, {
+          typeExamen: examen.typeExamen,
+          libelle: examen.libelle,
+          notes: notes.trim() || null,
+        })
+      }
       onTermine()
     } catch (ex) {
       setErreur(ex.message)
@@ -134,51 +156,88 @@ function FormulaireDemandeExamen({ dossierId, onTermine, onAnnuler }) {
   }
 
   return (
-    <div className="rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-6 shadow-sm">
-      <h3 className="mb-4 text-sm font-bold text-on-surface">Nouvelle demande d'examen</h3>
-      <form onSubmit={soumettre} className="space-y-4">
-        <div className="flex gap-3">
-          {['BIOLOGIQUE', 'ECHOGRAPHIE'].map((t) => (
+    <div className="space-y-4 rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-on-surface">Nouvelle demande d'examen</h3>
+      <form onSubmit={soumettre} className="space-y-5">
+        <section className="space-y-4 rounded-xl border border-outline-variant/40 bg-surface p-4">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">science</span>
+            <h4 className="text-sm font-semibold text-on-surface">Selection des examens</h4>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {['BIOLOGIQUE', 'ECHOGRAPHIE'].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTypeExamen(type)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${typeExamen === type ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container-low'}`}
+              >
+                {type === 'BIOLOGIQUE' ? 'Biologique' : 'Echographie'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={nouvelExamen}
+              onChange={(e) => setNouvelExamen(e.target.value)}
+              className="w-full rounded-lg border border-outline-variant/50 bg-surface-container-lowest px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-3/5"
+              placeholder="Ajouter un examen a la todo-list"
+            />
             <button
-              key={t}
               type="button"
-              onClick={() => setTypeExamen(t)}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${typeExamen === t ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}
+              onClick={ajouterExamen}
+              className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:opacity-90"
             >
-              <span className="material-symbols-outlined text-[16px]">{t === 'BIOLOGIQUE' ? 'biotech' : 'ecg'}</span>
-              {t === 'BIOLOGIQUE' ? 'Biologique' : 'Échographie'}
+              Ajouter
             </button>
-          ))}
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-on-surface-variant">Libellé *</label>
-          <input
-            type="text"
-            value={libelle}
-            onChange={(e) => setLibelle(e.target.value)}
-            className="w-full rounded-lg border border-outline-variant/50 bg-surface px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="Ex : NFS, Glycémie, Écho abdominale…"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-on-surface-variant">Notes (optionnel)</label>
+          </div>
+
+          <div className="space-y-2">
+            {examensTodo.map((item, index) => (
+              <div key={`${item.libelle}-${index}`} className="flex items-center justify-between rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-bold text-on-surface-variant">
+                    {item.typeExamen === 'BIOLOGIQUE' ? 'Biologique' : 'Echographie'}
+                  </span>
+                  <span className="text-sm text-on-surface">{item.libelle}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => supprimerExamen(index)}
+                  className="rounded-full p-1 text-on-surface-variant hover:bg-surface-container"
+                  aria-label="Supprimer examen"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-xl border border-outline-variant/40 bg-surface p-4">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Notes cliniques</label>
           <textarea
-            rows={2}
+            rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-lg border border-outline-variant/50 bg-surface px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-            placeholder="Indication clinique…"
+            className="w-full rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            placeholder="Ajouter des notes cliniques..."
           />
-        </div>
+        </section>
+
         {erreur && <p className="text-xs text-error">{erreur}</p>}
-        <div className="flex gap-2">
+
+        <div className="flex flex-wrap gap-2">
           <button
             type="submit"
             disabled={envoi}
             className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
-            {envoi ? 'Envoi…' : 'Envoyer la demande'}
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            {envoi ? 'Envoi...' : 'Envoyer au laboratoire'}
           </button>
           <button
             type="button"

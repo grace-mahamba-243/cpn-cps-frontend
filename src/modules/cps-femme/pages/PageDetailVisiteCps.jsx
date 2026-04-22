@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
+import InfoEnregistrement from '../../../composants/partages/InfoEnregistrement'
 
 /* ─── Styles d'impression injectés globalement ─── */
 const STYLES_IMPRESSION = `
@@ -316,6 +317,8 @@ function PageDetailVisiteCps() {
           />
         )}
 
+      <InfoEnregistrement enregistrePar={visite.enregistrePar} modifiePar={visite.modifiePar} />
+
       </div>{/* fin contenu-page-visite */}
 
       {/* Zones imprimables */}
@@ -358,15 +361,18 @@ function ZoneImpressionVisite({ visite, dossier }) {
   return (
     <div id="zone-impression-visite" style={{ fontFamily: 'Arial, sans-serif', color: '#111', background: '#fff', padding: 0 }}>
       {/* En-tête */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2.5px solid #1a5276', paddingBottom: 10, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a5276' }}>CENTRE DE SANTÉ — AFIA HIMBI</div>
-          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>Consultation Postnatale (CPS Femme)</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderRadius: 10, background: '#005eb8', padding: '14px 18px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff' }}>&#10010;</div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Centre de Santé Afia Himbi</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>Consultation Postnatale (CPS Femme)</div>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a5276' }}>FICHE DE VISITE CPS</div>
-          <div style={{ fontSize: 10, color: '#6b7280' }}>{LABELS_TYPE_VISITE[visite.typeVisite] ?? visite.typeVisite} — {dateVisite}</div>
-          <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>Imprimé le {dateNow}</div>
+          <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>FICHE DE VISITE CPS</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)' }}>{LABELS_TYPE_VISITE[visite.typeVisite] ?? visite.typeVisite} — {dateVisite}</div>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>Imprimé le {dateNow}</div>
         </div>
       </div>
       {/* Identité */}
@@ -451,15 +457,18 @@ function ZoneImpressionTraitementCps({ visite, dossier }) {
 
   return (
     <div id="zone-impression-traitement-cps" style={{ fontFamily: 'Arial, sans-serif', color: '#111', background: '#fff', padding: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #1a5276', paddingBottom: 10, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#1a5276' }}>CENTRE DE SANTÉ — AFIA HIMBI</div>
-          <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>Consultation Postnatale (CPS Femme)</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', borderRadius: 10, background: '#005eb8', padding: '14px 18px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff' }}>&#10010;</div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Centre de Santé Afia Himbi</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>Consultation Postnatale (CPS Femme)</div>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a5276' }}>ORDONNANCE / TRAITEMENT CPS</div>
-          <div style={{ fontSize: 10, color: '#6b7280' }}>{LABELS_TYPE_VISITE[visite.typeVisite] ?? visite.typeVisite} — {dateVisite}</div>
-          <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>Imprimé le {dateNow}</div>
+          <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>ORDONNANCE / TRAITEMENT CPS</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)' }}>{LABELS_TYPE_VISITE[visite.typeVisite] ?? visite.typeVisite} — {dateVisite}</div>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>Imprimé le {dateNow}</div>
         </div>
       </div>
       <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 12px', marginBottom: 16, display: 'flex', gap: 32 }}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpn from '../../../services/api/serviceCpn'
+import { ConteneurImpression, EnTeteImpression, BandeauPatientImpression, PiedDePageImpression } from '../../../composants/partages/EnTeteImpression'
 
 const FACTEURS_RISQUE_OPTIONS = [
   { id: 'grande_multipare',      label: 'Grande multipare (≥ 5 accouchements)' },
@@ -140,7 +141,8 @@ function PageDossierOuvertureCpn() {
   }[dossier.vihStatut] ?? 'bg-surface-variant text-on-surface-variant'
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-8 pb-16">
+    <>
+    <div className="screen-only mx-auto flex max-w-5xl flex-col gap-8 pb-16">
 
       {/* ── En-tête ── */}
       <div className="flex items-start justify-between gap-4">
@@ -299,6 +301,70 @@ function PageDossierOuvertureCpn() {
         </section>
       )}
     </div>
+
+      {/* ── Section impression ── */}
+      <ConteneurImpression>
+        <EnTeteImpression
+          badge="Fiche d'Ouverture CPN"
+          reference={dossier.numeroDossierCpn}
+          date={new Date().toLocaleDateString('fr-FR')}
+        />
+        <BandeauPatientImpression
+          nom={dossier.nomPatiente}
+          infos={[
+            { label: 'N° Dossier', valeur: dossier.numeroDossier },
+            { label: 'Âge', valeur: calculerAgeAns(dossier.dateNaissance) ? `${calculerAgeAns(dossier.dateNaissance)} ans` : '—' },
+            { label: 'Date ouverture', valeur: formaterDate(dossier.dateOuverture) },
+            { label: 'DPA', valeur: formaterDate(dossier.dateProbableAccouchement) },
+          ]}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+          <div>
+            <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Informations cliniques</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {[
+                { label: 'DDR', valeur: formaterDate(dossier.derniersRegles) },
+                { label: 'AG ouverture', valeur: ageGest ? `${ageGest} SA` : '—' },
+                { label: 'Groupe sanguin', valeur: dossier.groupeSanguin },
+                { label: 'Rhésus', valeur: dossier.rhesus === '+' ? 'Positif (+)' : dossier.rhesus === '-' ? 'Négatif (−)' : '—' },
+                { label: 'Statut VIH', valeur: dossier.vihStatut ?? '—' },
+                { label: 'Taille', valeur: dossier.taille ? `${dossier.taille} cm` : '—' },
+              ].map(c => (
+                <div key={c.label}>
+                  <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>{c.label}</p>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{c.valeur || '—'}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Obstétrique (G/P/A)</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+              {[
+                { label: 'Gestité', valeur: dossier.gestite },
+                { label: 'Parité', valeur: dossier.parite },
+                { label: 'Avortements', valeur: dossier.avortements },
+              ].map(c => (
+                <div key={c.label}>
+                  <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>{c.label}</p>
+                  <p style={{ fontSize: '20px', fontWeight: 900, color: '#00478d', margin: 0 }}>{c.valeur ?? 0}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {dossier.notes && (
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '8px' }}>Notes</h3>
+            <p style={{ fontSize: '12px', color: '#424752', whiteSpace: 'pre-wrap', margin: 0 }}>{dossier.notes}</p>
+          </div>
+        )}
+
+        <PiedDePageImpression service="Service CPN — Consultations Prénatales" />
+      </ConteneurImpression>
+    </>
   )
 }
 

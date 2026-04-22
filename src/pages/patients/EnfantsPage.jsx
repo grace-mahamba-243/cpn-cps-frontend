@@ -129,7 +129,7 @@ function EnfantsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-24">
+    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-2">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-cyan-800">Dossiers des Enfants</h1>

@@ -245,12 +245,7 @@ export default function PageListeAccouchements() {
                           </p>
                         </div>
                         <div className="flex flex-col gap-1 items-end shrink-0">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${COULEUR_ETAT_MERE[a.etatMere] ?? 'bg-surface-container-highest text-on-surface'}`}>
-                            Mère : {LABELS_ETAT_MERE[a.etatMere] ?? a.etatMere}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${COULEUR_ETAT_NN[a.etatNouveauNe] ?? 'bg-surface-container-highest text-on-surface'}`}>
-                            Bébé : {LABELS_ETAT_NN[a.etatNouveauNe] ?? a.etatNouveauNe}
-                          </span>
+                         
                         </div>
                         <span className="material-symbols-outlined text-on-surface-variant text-base shrink-0 mt-0.5">chevron_right</span>
                       </button>

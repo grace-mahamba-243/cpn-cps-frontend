@@ -104,7 +104,7 @@ function PatientsPage() {
   const nouveauxDossiers = etat.meres.length
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-8 pb-16 pt-24">
+    <div className="mx-auto max-w-7xl space-y-10 px-8 pb-16 pt-2">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-on-surface">Dossiers des Mères</h1>
