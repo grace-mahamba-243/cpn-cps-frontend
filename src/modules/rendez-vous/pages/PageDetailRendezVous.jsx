@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../../composants/interface/Alerte'
 import serviceRendezVous from '../../../services/api/serviceRendezVous'
@@ -62,13 +62,13 @@ function obtenirIconeStatut(statut) {
   }
 }
 
-/* ── Champ lecture seule (même style que PageDossierOuvertureCpn) ── */
+/* -- Champ lecture seule (même style que PageDossierOuvertureCpn) -- */
 function ChampLecture({ label, valeur, principal, couleur }) {
   const cls = couleur ?? (principal ? 'text-primary' : 'text-on-surface')
   return (
     <div className="flex flex-col">
       <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
-      <div className={`rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${cls}`}>
+      <div className={`w-[90%] rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${cls}`}>
         {(valeur !== null && valeur !== undefined && valeur !== '')
           ? valeur
           : <span className="font-normal italic text-on-surface-variant/60">Non renseigné</span>}
@@ -77,10 +77,10 @@ function ChampLecture({ label, valeur, principal, couleur }) {
   )
 }
 
-/* ── Section détail (style border-l-4) ── */
+/* -- Section détail (style border-l-4) -- */
 function SectionDetail({ icone, couleurIcone = 'text-primary', titre, children }) {
   return (
-    <div className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+    <div className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
       <div className="mb-6 flex items-center gap-2">
         <span className={`material-symbols-outlined ${couleurIcone}`} style={{ fontVariationSettings: "'FILL' 1" }}>{icone}</span>
         <h4 className="text-lg font-bold tracking-tight text-on-surface">{titre}</h4>
@@ -116,19 +116,6 @@ function PageDetailRendezVous() {
     void charger()
     return () => { estActif = false }
   }, [rendezVousId])
-
-  const enregistrerArrivee = async () => {
-    setActionEnCours('arrivee')
-    setErreurAction(null)
-    try {
-      const rdvMaj = await serviceRendezVous.enregistrerArrivee(rendezVousId)
-      setEtat((prev) => ({ ...prev, rendezVous: rdvMaj }))
-    } catch (err) {
-      setErreurAction(err.message)
-    } finally {
-      setActionEnCours(null)
-    }
-  }
 
   const annulerRendezVous = async () => {
     setActionEnCours('annulation')
@@ -196,25 +183,34 @@ function PageDetailRendezVous() {
   const estAnnule = (rdv.statut ?? '').toLowerCase() === 'annule'
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-2">
 
-      {/* En-tete */}
-      <header className="mb-2">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 text-primary hover:text-primary-dim transition-all mb-4 group text-sm font-semibold"
-          onClick={() => navigate('/rendez-vous')}
-        >
-          <span className="material-symbols-outlined text-sm">arrow_back</span>
-          Retour a la liste
-        </button>
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Detail du rendez-vous</h1>
-            <p className="text-on-surface-variant mt-1">Consultez et gerez les details de la visite de la patiente.</p>
-          </div>
+      {/* En-tête + actions */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <button
+            type="button"
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+            onClick={() => navigate('/rendez-vous')}
+          >
+            <span className="material-symbols-outlined text-base">arrow_back</span>
+            Retour à la liste
+          </button>
+          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface">Détail du rendez-vous</h1>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          <span className={obtenirClassesStatut(rdv.statut)}>
+            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>{obtenirIconeStatut(rdv.statut)}</span>
+            {rdv.statut}
+          </span>
+          {rdv.numeroDossier && (
+            <div className="rounded-2xl bg-primary px-5 py-4 text-on-primary shadow-lg shadow-primary/20">
+              <p className="text-xs uppercase tracking-[0.16em] text-on-primary/80">N° dossier</p>
+              <p className="mt-1 text-lg font-black">{rdv.numeroDossier}</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Alerte erreur action */}
       {erreurAction && (
@@ -223,195 +219,174 @@ function PageDetailRendezVous() {
         </Alerte>
       )}
 
-      {/* Barre d actions (visible si non annule et non termine) */}
-      {!estAnnule && !estTermine && (
-        <section className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-
-            {/* Bouton enregistrer arrivee */}
-            <div className="flex items-center gap-4 flex-grow lg:flex-grow-0">
-              {estPrevu && (
-                <button
-                  type="button"
-                  disabled={!!actionEnCours}
-                  className="bg-primary text-on-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-dim transition-colors shadow-md whitespace-nowrap disabled:opacity-60"
-                  onClick={enregistrerArrivee}
-                >
-                  <span className="material-symbols-outlined text-xl">check_circle</span>
-                  {actionEnCours === 'arrivee' ? 'Enregistrement...' : "Enregistrer l arrivee"}
-                </button>
-              )}
-              {estArrive && (
-                <span className="inline-flex items-center gap-2 bg-tertiary-container text-on-tertiary-container px-6 py-3 rounded-xl font-bold shadow-sm">
-                  <span className="material-symbols-outlined text-xl">how_to_reg</span>
-                  Arrivee enregistree
-                </span>
-              )}
-            </div>
-
-            {/* Actions secondaires (masquees si le patient est arrive) */}
-            {!estArrive && <div className="flex items-center gap-3 flex-wrap">
-              <button
-                type="button"
-                disabled={!!actionEnCours}
-                className="bg-secondary-container text-on-secondary-container px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-secondary-fixed-dim transition-all group disabled:opacity-60"
-                onClick={() => {
-                  setAfficherFormReprogrammer((v) => !v)
-                  setFormReprogrammer({ date: rdv.date ?? '', heure: rdv.heure ?? '' })
-                }}
-              >
-                <span className="material-symbols-outlined group-hover:rotate-45 transition-transform">event_repeat</span>
-                Reprogrammer
-              </button>
-
-              {!confirmerAnnulation ? (
-                <button
-                  type="button"
-                  disabled={!!actionEnCours}
-                  className="border border-error/30 text-error px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-error/5 transition-all disabled:opacity-60"
-                  onClick={() => setConfirmerAnnulation(true)}
-                >
-                  <span className="material-symbols-outlined text-[20px]">cancel</span>
-                  Annuler le rendez-vous
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 bg-error-container/20 border border-error/30 px-4 py-2.5 rounded-xl">
-                  <span className="text-sm font-semibold text-error mr-2">Confirmer l annulation ?</span>
-                  <button
-                    type="button"
-                    disabled={actionEnCours === 'annulation'}
-                    className="bg-error text-on-error px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 disabled:opacity-60 transition-colors"
-                    onClick={annulerRendezVous}
-                  >
-                    {actionEnCours === 'annulation' ? 'En cours...' : 'Oui'}
-                  </button>
-                  <button
-                    type="button"
-                    className="border border-outline-variant/40 text-on-surface-variant px-4 py-2 rounded-lg text-sm font-bold hover:bg-surface-container transition-colors"
-                    onClick={() => setConfirmerAnnulation(false)}
-                  >
-                    Non
-                  </button>
-                </div>
-              )}
-            </div>}
-          </div>
-
-          {/* Formulaire reprogrammation inline */}
-          {afficherFormReprogrammer && (
-            <form
-              onSubmit={soumettreReprogrammation}
-              className="mt-6 pt-6 border-t border-outline-variant/20 flex flex-wrap items-end gap-4"
-            >
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nouvelle date</p>
-                <input
-                  type="date"
-                  required
-                  value={formReprogrammer.date}
-                  onChange={(e) => setFormReprogrammer((p) => ({ ...p, date: e.target.value }))}
-                  className="rounded-xl border border-outline-variant/40 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nouvelle heure</p>
-                <input
-                  type="time"
-                  required
-                  value={formReprogrammer.heure}
-                  onChange={(e) => setFormReprogrammer((p) => ({ ...p, heure: e.target.value }))}
-                  className="rounded-xl border border-outline-variant/40 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={actionEnCours === 'reprogrammer'}
-                className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-dim transition-colors disabled:opacity-60"
-              >
-                {actionEnCours === 'reprogrammer' ? 'En cours...' : 'Confirmer la reprogrammation'}
-              </button>
-              <button
-                type="button"
-                className="border border-outline-variant/40 text-on-surface-variant px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-surface-container transition-colors"
-                onClick={() => setAfficherFormReprogrammer(false)}
-              >
-                Annuler
-              </button>
-            </form>
-          )}
-        </section>
-      )}
-
-      {/* Grille principale */}
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 space-y-6">
-
-          {/* Apercu patient */}
-          <section className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-wrap justify-between items-center gap-4">
+      {/* Aperçu patient + Actions — sur la même ligne */}
+      {(!estAnnule && !estTermine) ? (
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          {/* Patient */}
+          <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-4 shadow-sm">
             <div className="flex items-center gap-4">
-              {/* Avatar initiales */}
-              <div className="w-14 h-14 rounded-full bg-tertiary-container flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-extrabold text-on-tertiary-container tracking-tight">
-                  {rdv.initialesPatient || ''}
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-tertiary-container">
+                <span className="text-base font-extrabold tracking-tight text-on-tertiary-container">
+                  {rdv.initialesPatient || '—'}
                 </span>
               </div>
               <div>
-                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-1">
+                <span className="mb-1 block text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                   {rdv.typePatient === 'Enfant' ? 'Enfant' : 'Patiente'}
                 </span>
-                <h2 className="text-xl font-bold text-on-surface">
-                  {rdv.nomPatient}
-                  {rdv.numeroDossier && (
-                    <span className="text-on-surface-variant font-normal text-sm ml-3">{rdv.numeroDossier}</span>
-                  )}
-                </h2>
+                <p className="text-sm font-bold text-on-surface">{rdv.nomPatient}</p>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className={obtenirClassesStatut(rdv.statut)}>
-                <span className="w-2 h-2 rounded-full bg-current opacity-70" />
-                {rdv.statut}
-              </span>
             </div>
           </section>
 
-          {/* Informations detaillees */}
-          <SectionDetail icone="event_note" couleurIcone="text-primary" titre="Informations détaillées">
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
-                <ChampLecture label="Service médical" valeur={rdv.service} />
-                <ChampLecture label="Date" valeur={formaterDate(rdv.date)} principal />
-                <ChampLecture label="Heure" valeur={rdv.heure} principal />
-              </div>
-              <hr className="border-surface-container-high" />
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
-                <ChampLecture label="Motif" valeur={rdv.motif} />
-                <ChampLecture label="Type de visite" valeur="Visite planifiée" />
-                {rdv.creePar && <ChampLecture label="Enregistré par" valeur={rdv.creePar} />}
-              </div>
-              {rdv.observations && (
+              {/* Actions — visible uniquement s'il reste des actions possibles */}
+          {!estArrive && <section className="rounded-xl border-l-4 border-primary/40 bg-surface-container-lowest p-8 shadow-sm">
+            <div className="flex flex-wrap items-center gap-4">
+              {!estArrive && (
                 <>
-                  <hr className="border-surface-container-high" />
-                  <div className="flex flex-col">
-                    <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Observations</span>
-                    <div className="rounded-lg bg-surface-container px-3 py-3 text-sm text-on-surface leading-relaxed">{rdv.observations}</div>
-                  </div>
-                </>
-              )}
-              {rdv.misAJourLe && rdv.creeLe !== rdv.misAJourLe && (
-                <>
-                  <hr className="border-surface-container-high" />
-                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-                    {rdv.creeLe && <ChampLecture label="Créé le" valeur={formaterDateHeure(rdv.creeLe)} />}
-                    <ChampLecture label="Dernière mise à jour" valeur={formaterDateHeure(rdv.misAJourLe)} />
-                  </div>
+                  <button
+                    type="button"
+                    disabled={!!actionEnCours}
+                    className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-5 py-2.5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:opacity-60"
+                    onClick={() => {
+                      setAfficherFormReprogrammer((v) => !v)
+                      setFormReprogrammer({ date: rdv.date ?? '', heure: rdv.heure ?? '' })
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-base">event_repeat</span>
+                    Reprogrammer
+                  </button>
+                  {!confirmerAnnulation ? (
+                    <button
+                      type="button"
+                      disabled={!!actionEnCours}
+                      className="inline-flex items-center gap-2 rounded-full border border-error/30 px-5 py-2.5 text-sm font-semibold text-error transition-colors hover:bg-error/5 disabled:opacity-60"
+                      onClick={() => setConfirmerAnnulation(true)}
+                    >
+                      <span className="material-symbols-outlined text-base">cancel</span>
+                      Annuler
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-full border border-error/30 bg-error-container/10 px-4 py-2">
+                      <span className="text-sm font-semibold text-error">Confirmer ?</span>
+                      <button
+                        type="button"
+                        disabled={actionEnCours === 'annulation'}
+                        className="rounded-full bg-error px-4 py-1.5 text-sm font-bold text-on-error transition-colors hover:opacity-90 disabled:opacity-60"
+                        onClick={annulerRendezVous}
+                      >
+                        {actionEnCours === 'annulation' ? '...' : 'Oui'}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-outline-variant/40 px-4 py-1.5 text-sm font-bold text-on-surface-variant transition-colors hover:bg-surface-container"
+                        onClick={() => setConfirmerAnnulation(false)}
+                      >
+                        Non
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
-          </SectionDetail>
-
+            {afficherFormReprogrammer && (
+              <form
+                onSubmit={soumettreReprogrammation}
+                className="mt-6 flex flex-wrap items-end gap-4 border-t border-outline-variant/20 pt-6"
+              >
+                <div className="space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Nouvelle date</p>
+                  <input
+                    type="date"
+                    required
+                    value={formReprogrammer.date}
+                    onChange={(e) => setFormReprogrammer((p) => ({ ...p, date: e.target.value }))}
+                    className="rounded-xl border border-outline-variant/40 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Nouvelle heure</p>
+                  <input
+                    type="time"
+                    required
+                    value={formReprogrammer.heure}
+                    onChange={(e) => setFormReprogrammer((p) => ({ ...p, heure: e.target.value }))}
+                    className="rounded-xl border border-outline-variant/40 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={actionEnCours === 'reprogrammer'}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {actionEnCours === 'reprogrammer' ? 'En cours...' : 'Confirmer'}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-full border border-outline-variant/40 bg-white px-5 py-2.5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+                  onClick={() => setAfficherFormReprogrammer(false)}
+                >
+                  Annuler
+                </button>
+              </form>
+            )}
+          </section>}
         </div>
-      </div>
+      ) : (
+        <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-tertiary-container">
+              <span className="text-base font-extrabold tracking-tight text-on-tertiary-container">
+                {rdv.initialesPatient || '—'}
+              </span>
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                {rdv.typePatient === 'Enfant' ? 'Enfant' : 'Patiente'}
+              </span>
+              <p className="text-sm font-bold text-on-surface">{rdv.nomPatient}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Informations détaillées */}
+      <section className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>event_note</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Informations détaillées</h4>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+          <ChampLecture label="Date" valeur={formaterDate(rdv.date)} principal />
+          <ChampLecture label="Heure" valeur={rdv.heure} principal />
+          <ChampLecture label="Service m—dical" valeur={rdv.service} />
+        </div>
+        <hr className="my-6 border-surface-container-high" />
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+          <ChampLecture label="Motif" valeur={rdv.motif} />
+          <ChampLecture label="Type de visite" valeur="Consultation" />
+          {rdv.creePar && <ChampLecture label="Enregistr— par" valeur={rdv.creePar} />}
+        </div>
+        {rdv.observations && (
+          <>
+            <hr className="my-6 border-surface-container-high" />
+            <div className="flex flex-col">
+              <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Observations</span>
+              <div className="rounded-lg bg-surface-container px-3 py-3 text-sm leading-relaxed text-on-surface">{rdv.observations}</div>
+            </div>
+          </>
+        )}
+        {rdv.misAJourLe && rdv.creeLe !== rdv.misAJourLe && (
+          <>
+            <hr className="my-6 border-surface-container-high" />
+            <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+              {rdv.creeLe && <ChampLecture label="Cr—— le" valeur={formaterDateHeure(rdv.creeLe)} />}
+              <ChampLecture label="Derni—re mise — jour" valeur={formaterDateHeure(rdv.misAJourLe)} />
+            </div>
+          </>
+        )}
+      </section>
+
     </div>
   )
 }

@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { formaterDateCourte } from './utilitairesCpn'
 
-function SectionContacts({ dossierId, contacts, statut }) {
+function SectionContacts({ dossierId, contacts, statut, fromHistorique = false }) {
   const navigate = useNavigate()
   const liste = [...(contacts ?? [])].sort((a, b) => b.numeroContact - a.numeroContact)
 
@@ -91,7 +91,7 @@ function SectionContacts({ dossierId, contacts, statut }) {
                       {/* Actions */}
                       <td className="px-5 py-4 text-right">
                         <button
-                          onClick={() => navigate(`/cpn/${dossierId}/contacts/${c.id}`)}
+                          onClick={() => navigate(`/cpn/${dossierId}/contacts/${c.id}`, fromHistorique ? { state: { fromHistorique: true } } : undefined)}
                           className="inline-flex items-center gap-1 rounded-full border border-outline-variant px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
                           Voir dossier

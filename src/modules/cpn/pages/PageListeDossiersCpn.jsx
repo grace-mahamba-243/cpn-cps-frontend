@@ -1,4 +1,4 @@
-﻿// Ce composant affiche la barre de recherche de dossiers CPN et la file d'attente des arrivées du jour.
+﻿// Ce composant affiche la liste des dossiers CPN avec une navbar pill pour basculer entre file d'attente et dossiers.
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import serviceCpn from '../../../services/api/serviceCpn'
@@ -30,19 +30,18 @@ function PageListeDossiersCpn() {
   const navigate = useNavigate()
   const [tous, setTous] = useState([])
   const [recherche, setRecherche] = useState('')
+  const [resultatsRecherche, setResultatsRecherche] = useState([])
+  const [chargementRecherche, setChargementRecherche] = useState(false)
+  const [afficherResultats, setAfficherResultats] = useState(false)
   const [chargement, setChargement] = useState(false)
   const [erreur, setErreur] = useState(null)
   const timerRef = useRef(null)
-
-  // Statistiques globales
+  const rechercheRef = useRef(null)
   const [stats, setStats] = useState({ totalDossiers: null, totalRdvAujourdhui: null })
-
-  // File d'attente : rendez-vous CPN arrivés aujourd'hui
   const [arrivees, setArrivees] = useState([])
   const [chargementArrivees, setChargementArrivees] = useState(true)
-  const [pronantId, setPronantId] = useState(null) // ID du rdv en cours de traitement
+  const [pronantId, setPronantId] = useState(null)
 
-  // Charge les stats globales (total dossiers + RDV du jour)
   useEffect(() => {
     let actif = true
     const aujourd_hui = new Date().toISOString().split('T')[0]
@@ -55,243 +54,261 @@ function PageListeDossiersCpn() {
     return () => { actif = false }
   }, [])
 
-  // Charge les rendez-vous CPN arrivés aujourd'hui
+  // Charger tous les dossiers au montage
   useEffect(() => {
     let actif = true
-    const aujourd_hui = new Date().toISOString().split('T')[0]
-    serviceRendezVous
-      .lister({ statut: 'Arrive', date: aujourd_hui, serviceDestination: 'Maternite (CPN)' })
-      .then((liste) => { if (actif) setArrivees(liste) })
-      .catch(() => { if (actif) setArrivees([]) })
-      .finally(() => { if (actif) setChargementArrivees(false) })
+    setChargement(true); setErreur(null)
+    serviceCpn.listerDossiers('').then((liste) => { if (actif) setTous(liste) })
+      .catch((e) => { if (actif) setErreur(e.message) })
+      .finally(() => { if (actif) setChargement(false) })
     return () => { actif = false }
   }, [])
 
+  // Recherche indépendante (dropdown flottant)
   const gererRecherche = (valeur) => {
     setRecherche(valeur)
-    if (!valeur) { setTous([]); setErreur(null); return }
+    if (!valeur.trim()) {
+      setResultatsRecherche([])
+      setAfficherResultats(false)
+      return
+    }
+    setAfficherResultats(true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(async () => {
-      setChargement(true)
-      setErreur(null)
-      try {
-        const liste = await serviceCpn.listerDossiers(valeur)
-        setTous(liste)
-      } catch (e) {
-        setErreur(e.message)
-      } finally {
-        setChargement(false)
-      }
-    }, 400)
+      setChargementRecherche(true)
+      try { setResultatsRecherche(await serviceCpn.listerDossiers(valeur)) }
+      catch { setResultatsRecherche([]) }
+      finally { setChargementRecherche(false) }
+    }, 350)
   }
+
+  // Fermer le dropdown si clic en dehors
+  useEffect(() => {
+    const handler = (e) => {
+      if (rechercheRef.current && !rechercheRef.current.contains(e.target)) {
+        setAfficherResultats(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Vérifier si un dossier CPN est dans la file d'attente
+  const rdvDuDossier = (d) =>
+    arrivees.find(
+      (a) =>
+        a.numeroDossier === d.numeroDossierCpn ||
+        (a.nomPatient && d.nomPatiente && a.nomPatient.toLowerCase().includes(d.nomPatiente.toLowerCase().split(' ')[0]))
+    ) ?? null
 
   async function prendrePatiente(rdv) {
     if (pronantId) return
     setPronantId(rdv.id)
     try {
-      // Recherche 1 : par numéro de dossier (refDossier du rendez-vous)
       let dossier = null
       if (rdv.numeroDossier) {
-        const parNumero = await serviceCpn.listerDossiers(rdv.numeroDossier)
-        dossier = parNumero.find(
-          (d) => d.numeroDossierCpn === rdv.numeroDossier || d.numeroDossier === rdv.numeroDossier
-        ) ?? (parNumero.length === 1 ? parNumero[0] : null)
+        const r = await serviceCpn.listerDossiers(rdv.numeroDossier)
+        dossier = r.find((d) => d.numeroDossierCpn === rdv.numeroDossier || d.numeroDossier === rdv.numeroDossier) ?? (r.length === 1 ? r[0] : null)
       }
-
-      // Recherche 2 (fallback) : par nom de la patiente
       if (!dossier && rdv.nomPatient) {
-        const parNom = await serviceCpn.listerDossiers(rdv.nomPatient)
-        dossier = parNom.length === 1 ? parNom[0] : null
+        const r = await serviceCpn.listerDossiers(rdv.nomPatient)
+        dossier = r.length === 1 ? r[0] : null
       }
-
-      if (dossier) {
-        // Patiente connue → profil du dossier CPN directement
-        navigate(`/cpn/${dossier.id}`)
-      } else {
-        // Nouvelle patiente → page d'initialisation CPN avec données pré-remplies
-        const params = new URLSearchParams()
-        if (rdv.numeroDossier) params.set('refDossier', rdv.numeroDossier)
-        if (rdv.nomPatient) params.set('nom', rdv.nomPatient)
-        navigate(`/cpn/nouveau?${params.toString()}`)
+      // Retirer ce rdv de la file d'attente (décrémente le compteur)
+      setArrivees((prev) => prev.filter((a) => a.id !== rdv.id))
+      if (dossier) { navigate('/cpn/' + dossier.id) }
+      else {
+        const p = new URLSearchParams()
+        if (rdv.numeroDossier) p.set('refDossier', rdv.numeroDossier)
+        if (rdv.nomPatient) p.set('nom', rdv.nomPatient)
+        navigate('/cpn/nouveau?' + p.toString())
       }
-    } catch {
-      navigate('/cpn/nouveau')
-    } finally {
-      setPronantId(null)
-    }
+    } catch { navigate('/cpn/nouveau') }
+    finally { setPronantId(null) }
   }
 
+  const btnPill = (actif) => ({
+    background: actif ? '#fff' : 'transparent',
+    color: actif ? '#0f0f0f' : 'rgba(255,255,255,0.5)',
+  })
+
+  const badgeStyle = (actif) => ({
+    background: actif ? '#0f0f0f' : 'rgba(255,255,255,0.15)',
+    color: '#fff',
+  })
+
   return (
-    <div className="flex flex-col gap-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {/* ── Cartes statistiques ── */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-4 rounded-2xl bg-surface-container-lowest px-5 py-4 shadow-sm">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>folder_shared</span>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-on-surface">
-              {stats.totalDossiers === null ? '—' : stats.totalDossiers}
-            </p>
-            <p className="text-xs font-medium text-on-surface-variant">Dossiers CPN</p>
-          </div>
+      {/* Ligne supérieure : compteur à gauche | recherche au centre | bouton à droite */}
+      <div className="flex items-center">
+        {/* Barre de recherche centrée — 30% large, légèrement à gauche */}
+        <div className="relative mx-auto shrink-0" style={{ width: '30%' }} ref={rechercheRef}>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-outline">search</span>
+          <input
+            type="text"
+            placeholder="Nom, numéro de dossier, téléphone..."
+            value={recherche}
+            onChange={(e) => gererRecherche(e.target.value)}
+            onFocus={() => { if (recherche && resultatsRecherche.length > 0) setAfficherResultats(true) }}
+            className="w-full rounded-xl border-2 border-primary/40 bg-white py-2 pl-10 pr-9 text-sm text-on-surface outline-none focus:border-primary transition-colors placeholder:text-on-surface-variant"
+          />
+          {recherche && (
+            <button onClick={() => { setRecherche(''); setResultatsRecherche([]); setAfficherResultats(false) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          )}
+
+          {/* Dropdown résultats */}
+          {afficherResultats && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-outline-variant/40 bg-surface shadow-lg overflow-hidden">
+              {chargementRecherche ? (
+                <div className="flex items-center gap-2 px-4 py-3 text-sm text-on-surface-variant">
+                  <span className="material-symbols-outlined animate-spin text-base">refresh</span>
+                  Recherche...
+                </div>
+              ) : resultatsRecherche.length === 0 ? (
+                <div className="px-4 py-4 flex flex-col gap-3">
+                  <p className="text-sm text-on-surface-variant">Aucun dossier trouvé pour « {recherche} »</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/patients/nouveau')}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-opacity w-fit"
+                  >
+                    <span className="material-symbols-outlined text-base">person_add</span>
+                    Créer une nouvelle mère
+                  </button>
+                </div>
+              ) : (
+                <ul className="divide-y divide-outline-variant/20 max-h-72 overflow-y-auto">
+                  {resultatsRecherche.slice(0, 8).map((d) => {
+                    const rdv = rdvDuDossier(d)
+                    return (
+                      <li key={d.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAfficherResultats(false)
+                            setRecherche('')
+                            if (rdv) prendrePatiente(rdv)
+                            else navigate('/cpn/' + d.id)
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-container transition-colors"
+                        >
+                          <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(d.nomPatiente)}>
+                            {initialesPatiente(d.nomPatiente)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-on-surface">{d.nomPatiente ?? ''}</p>
+                            <p className="text-xs font-mono text-on-surface-variant">{d.numeroDossierCpn}</p>
+                          </div>
+                          {rdv ? (
+                            <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                              <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
+                              Prendre
+                            </span>
+                          ) : (
+                            <span className="text-xs text-on-surface-variant">Ouvrir</span>
+                          )}
+                        </button>
+                      </li>
+                    )
+                  })}
+                  {resultatsRecherche.length > 8 && (
+                    <li className="px-4 py-2 text-xs text-on-surface-variant">+{resultatsRecherche.length - 8} autre(s) — affinez la recherche</li>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-4 rounded-2xl bg-surface-container-lowest px-5 py-4 shadow-sm">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-tertiary/10">
-            <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-on-surface">
-              {stats.totalRdvAujourdhui === null ? '—' : stats.totalRdvAujourdhui}
-            </p>
-            <p className="text-xs font-medium text-on-surface-variant">RDV aujourd'hui</p>
-          </div>
-        </div>
+
+        {/* Bouton Nouveau dossier */}
+        <button
+          onClick={() => navigate('/cpn/nouveau')}
+          className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:opacity-90 transition-opacity"
+          style={{ marginLeft: 'auto', marginRight: '25%' }}
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Nouveau dossier
+        </button>
       </div>
 
-      {/* En-tête */}
-      <div className="space-y-1">
-        <h2 className="text-4xl font-extrabold tracking-tight text-on-surface" style={{ fontFamily: 'Manrope, sans-serif' }}>
-          Suivi Prénatal (CPN)
-        </h2>
-        <p className="max-w-xl text-on-surface-variant">
-          Gestion centralisée des consultations prénatales pour un suivi rigoureux de la santé maternelle et néonatale.
-        </p>
-      </div>
+      {/* Dossiers */}
+      <div className="flex flex-col gap-3">
+          <div style={{ width: '50%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Compteur */}
+          {stats.totalDossiers !== null && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-on-surface border border-outline-variant/50 rounded-lg px-3 py-1.5 bg-surface-container/50 w-fit">
+              Tous les dossiers
+              <span className="text-lg font-bold text-primary">{stats.totalDossiers}</span>
+            </p>
+          )}
 
-      {/* ── Barre de recherche de dossier ── */}
-      <div className="relative">
-        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-        <input
-          type="text"
-          placeholder="Rechercher un dossier CPN par nom, numéro, téléphone…"
-          value={recherche}
-          onChange={(e) => gererRecherche(e.target.value)}
-          className="w-full rounded-full border-none bg-surface-container py-3 pl-12 pr-12 text-sm text-on-surface outline-none placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
-        />
-        {recherche && (
-          <button
-            onClick={() => { setRecherche(''); setTous([]) }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-base">close</span>
-          </button>
-        )}
-
-        {/* Résultats de recherche en dropdown */}
-        {recherche && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-lowest shadow-xl">
-            {chargement ? (
-              <div className="flex items-center gap-2 px-5 py-4 text-sm text-on-surface-variant">
-                <span className="material-symbols-outlined animate-spin text-base">refresh</span>
-                Recherche en cours…
-              </div>
-            ) : erreur ? (
-              <div className="px-5 py-4 text-sm text-error">{erreur}</div>
-            ) : tous.length === 0 ? (
-              <div className="px-5 py-4 text-sm text-on-surface-variant">
-                Aucun dossier CPN trouvé pour « {recherche} »
-              </div>
-            ) : (
-              <ul className="max-h-72 divide-y divide-surface-container overflow-y-auto">
-                {tous.slice(0, 8).map((d) => {
-                  const initiales = initialesPatiente(d.nomPatiente)
+          {/* Liste */}
+          {chargement ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-on-surface-variant">
+              <span className="material-symbols-outlined animate-spin text-base">refresh</span>
+              Chargement...
+            </div>
+          ) : erreur ? (
+            <div className="px-4 py-3 text-sm text-error">{erreur}</div>
+          ) : tous.length === 0 ? (
+            <p className="text-sm text-on-surface-variant">Aucun dossier disponible.</p>
+          ) : (() => {
+            // Grouper les dossiers par patiente (une patiente peut avoir plusieurs grossesses)
+            const groupes = Object.values(
+              tous.reduce((acc, d) => {
+                const cle = d.patienteId ?? d.nomPatiente ?? d.id
+                if (!acc[cle]) acc[cle] = { patienteId: d.patienteId, nomPatiente: d.nomPatiente, dossiers: [] }
+                acc[cle].dossiers.push(d)
+                return acc
+              }, {})
+            )
+            const STATUT_COULEUR = { OUVERT: 'bg-primary/10 text-primary', CLOS: 'bg-surface-container-highest text-on-surface-variant' }
+            return (
+              <ul className="flex flex-col gap-2">
+                {groupes.map((g) => {
+                  const dernier = g.dossiers[0] // trié DESC — le plus récent en premier
+                  const rdv = rdvDuDossier(dernier)
+                  const nbGrossesses = g.dossiers.length
                   return (
-                    <li key={d.id}>
+                    <li key={g.patienteId ?? g.nomPatiente}>
                       <button
                         type="button"
-                        onClick={() => navigate(`/cpn/${d.id}`)}
-                        className="flex w-full items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-container-low text-left"
+                        onClick={() => navigate('/cpn/' + dernier.id)}
+                        className="flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left hover:opacity-90 transition-opacity"
+                        style={{ background: '#dfeaee' }}
                       >
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${couleurAvatar(d.nomPatiente)}`}>
-                          {initiales}
+                        <div className={'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + couleurAvatar(g.nomPatiente)}>
+                          {initialesPatiente(g.nomPatiente)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-on-surface">{d.nomPatiente ?? '—'}</p>
-                          <p className="text-xs font-mono text-primary">{d.numeroDossierCpn}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="truncate text-sm font-semibold text-on-surface">{g.nomPatiente ?? ''}</p>
+                            {nbGrossesses > 1 && (
+                              <span className="text-[10px] bg-secondary-container text-on-secondary-container rounded-full px-2 py-0.5 font-semibold">
+                                {nbGrossesses} grossesses
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-mono text-on-surface-variant">{dernier.numeroDossierCpn}</p>
+                          {dernier.dateProbableAccouchement && (
+                            <p className="text-xs text-on-surface-variant">DPA {new Date(dernier.dateProbableAccouchement).toLocaleDateString('fr-FR')}</p>
+                          )}
                         </div>
-                        <span className="material-symbols-outlined shrink-0 text-base text-on-surface-variant">chevron_right</span>
+                        <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUT_COULEUR[dernier.statut] ?? 'bg-surface-container-highest text-on-surface-variant'}`}>
+                          {dernier.statut === 'OUVERT' ? 'En cours' : 'Clôturé'}
+                        </span>
                       </button>
                     </li>
                   )
                 })}
-                {tous.length > 8 && (
-                  <li className="px-5 py-2 text-xs text-on-surface-variant">
-                    +{tous.length - 8} autre(s) résultat(s) — affinez la recherche
-                  </li>
-                )}
               </ul>
-            )}
+            )
+          })()}
           </div>
-        )}
-      </div>
-
-      {/* ── File d'attente – Arrivées CPN aujourd'hui ── */}
-      <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-primary/5">
-        <div className="flex items-center gap-3 border-b border-outline-variant/50 px-6 py-4">
-          <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-            pending_actions
-          </span>
-          <div>
-            <h3 className="text-sm font-bold text-on-surface">File d'attente – Arrivées CPN</h3>
-            <p className="text-xs text-on-surface-variant">Patientes enregistrées à la réception aujourd'hui</p>
-          </div>
-          <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-on-primary">
-            {chargementArrivees ? '…' : arrivees.length}
-          </span>
         </div>
-
-        {chargementArrivees ? (
-          <div className="flex items-center gap-2 px-6 py-8 text-sm text-on-surface-variant">
-            <span className="material-symbols-outlined animate-spin text-base">refresh</span>
-            Chargement des arrivées…
-          </div>
-        ) : arrivees.length === 0 ? (
-          <div className="px-6 py-10 text-center text-sm text-on-surface-variant">
-            <span className="material-symbols-outlined mb-2 block text-4xl opacity-40">check_circle</span>
-            Aucune patiente en attente pour l'instant.
-          </div>
-        ) : (
-          <div className="divide-y divide-primary/10">
-            {arrivees.map((rdv) => (
-              <div key={rdv.id} className="flex items-center gap-4 px-6 py-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${couleurAvatar(rdv.nomPatient)}`}>
-                  {initialesPatiente(rdv.nomPatient)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-on-surface">{rdv.nomPatient ?? '—'}</p>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-on-surface-variant">
-                    {rdv.numeroDossier && (
-                      <span className="font-mono font-semibold text-primary">{rdv.numeroDossier}</span>
-                    )}
-                    {rdv.heure && (
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        Arrivée à {rdv.heure}
-                      </span>
-                    )}
-                    {rdv.motif && <span className="italic">{rdv.motif}</span>}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={pronantId === rdv.id}
-                  onClick={() => prendrePatiente(rdv)}
-                  className="flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-bold text-on-primary shadow-sm transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-60"
-                >
-                  {pronantId === rdv.id ? (
-                    <span className="material-symbols-outlined animate-spin text-sm">refresh</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  )}
-                  Prendre
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
     </div>
   )

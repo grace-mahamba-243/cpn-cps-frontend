@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
 
@@ -51,7 +51,6 @@ function formaterDateAffichage(dateIso) {
 }
 
 const ETAT_INITIAL_FORMULAIRE = {
-  numeroDossier: genererNumeroDossier(),
   dateEnregistrement: dateDuJourIso(),
   nom: '',
   postnom: '',
@@ -78,10 +77,6 @@ function validerFormulaire(formulaire) {
   const erreurs = {}
   const aujourdHui = new Date()
   aujourdHui.setHours(0, 0, 0, 0)
-
-  if (!formulaire.numeroDossier.trim()) {
-    erreurs.numeroDossier = 'Le numéro dossier est obligatoire.'
-  }
 
   if (!formulaire.dateEnregistrement) {
     erreurs.dateEnregistrement = 'La date d enregistrement est obligatoire.'
@@ -191,7 +186,7 @@ function ChampFormulaire({
     <label className={[ 'flex flex-col gap-2', className ].filter(Boolean).join(' ')}>
       <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
         {label}
-        {obligatoire ? <span className="ml-1 text-error">*</span> : null}
+        null
       </span>
       {children}
       {erreur ? <span className="text-xs font-semibold text-error">{erreur}</span> : null}
@@ -205,6 +200,7 @@ function ChampFormulaire({
 // Il regroupe uniquement les informations non cliniques, avec validation visuelle et etat de chargement.
 function PageCreationDossierMere() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { mereId } = useParams()
   const estModeEdition = Boolean(mereId)
   const [formulaire, setFormulaire] = useState(ETAT_INITIAL_FORMULAIRE)
@@ -237,7 +233,6 @@ function PageCreationDossierMere() {
       }
 
       setFormulaire({
-        numeroDossier: dossier.numeroDossier ?? '',
         dateEnregistrement: dossier.dateEnregistrement ?? dateDuJourIso(),
         nom: dossier.nom ?? '',
         postnom: dossier.postnom ?? '',
@@ -319,7 +314,6 @@ function PageCreationDossierMere() {
 
     try {
       const chargeUtile = {
-        numeroDossier: formulaire.numeroDossier,
         dateEnregistrement: formulaire.dateEnregistrement,
         nom: formulaire.nom,
         postnom: formulaire.postnom,
@@ -344,7 +338,17 @@ function PageCreationDossierMere() {
           throw new Error('DOSSIER_INTROUVABLE')
         }
       } else {
-        await serviceDossiersMeres.creer(chargeUtile)
+        const patienteCreee = await serviceDossiersMeres.creer(chargeUtile)
+        // Si on vient d'un module (ex: CPN), on redirige directement vers ce module
+        // avec la nouvelle patiente pré-sélectionnée
+        const redirectApresCrea = location.state?.redirectApresCrea
+        if (redirectApresCrea && patienteCreee) {
+          navigate(redirectApresCrea, {
+            replace: true,
+            state: { patientePreselectionnee: patienteCreee },
+          })
+          return
+        }
       }
 
       navigate('/patients', {
@@ -353,7 +357,6 @@ function PageCreationDossierMere() {
           messageSucces: estModeEdition
             ? `Le dossier administratif de ${resumeEnregistrement} a été modifié avec succès.`
             : `Le dossier administratif de ${resumeEnregistrement} a été créé avec succès.`,
-          numeroDossier: formulaire.numeroDossier,
         },
       })
     } catch (erreur) {
@@ -415,23 +418,10 @@ function PageCreationDossierMere() {
       <form className="space-y-6" onSubmit={enregistrerDossier}>
         <section className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
           <div className="mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-tertiary">fingerprint</span>
             <h3 className="text-lg font-bold tracking-tight text-on-surface">1. Identité</h3>
           </div>
           <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-4 lg:grid-cols-6">
-            <ChampFormulaire champ="numeroDossier" label="Numéro de dossier" obligatoire erreur={erreurs.numeroDossier} aide="Généré automatiquement par le système." className="md:col-span-2">
-              {/* Harmonisation police avec fiche enfant */}
-              <input
-                type="text"
-                value={formulaire.numeroDossier}
-                readOnly
-                disabled
-                className={[
-                  'w-full rounded-lg border-none bg-surface-container-lowest py-5 px-6 font-mono text-xs font-bold text-primary outline-none disabled:cursor-not-allowed disabled:opacity-80',
-                  erreurs.numeroDossier ? 'ring-2 ring-error/20' : '',
-                ].join(' ')}
-              />
-            </ChampFormulaire>
+            {/* Le numéro de dossier est généré automatiquement par le serveur au format AFIA-{année}-{initiales}{numéro} */}
 
             <ChampFormulaire champ="dateEnregistrement" label="Date d enregistrement" obligatoire erreur={erreurs.dateEnregistrement} className="md:col-span-2">
               {/* Champ désactivé pour empêcher la modification de la date du jour */}

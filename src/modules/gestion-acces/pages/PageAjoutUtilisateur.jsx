@@ -5,6 +5,7 @@ import Bouton from '../../../composants/interface/Bouton'
 import serviceUtilisateurs from '../../../services/api/serviceUtilisateurs'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
+const MOT_DE_PASSE_PAR_DEFAUT = '12345'
 
 const ETAT_INITIAL_FORMULAIRE = {
   nomComplet: '',
@@ -12,8 +13,6 @@ const ETAT_INITIAL_FORMULAIRE = {
   dateNaissance: '',
   telephone: '',
   roleCode: 'RECEPTION',
-  motDePasseInitial: '',
-  confirmationMotDePasse: '',
   actif: true,
 }
 
@@ -42,10 +41,7 @@ function PageAjoutUtilisateur() {
   }, [])
 
   const mettreAJourChamp = (champ, valeur) => {
-    setFormulaire((formulaireCourant) => ({
-      ...formulaireCourant,
-      [champ]: valeur,
-    }))
+    setFormulaire((formulaireCourant) => ({ ...formulaireCourant, [champ]: valeur }))
   }
 
   const enregistrerUtilisateur = async (event) => {
@@ -67,16 +63,6 @@ function PageAjoutUtilisateur() {
       return
     }
 
-    if (!formulaire.motDePasseInitial || formulaire.motDePasseInitial.length < 4) {
-      setErreur('Le mot de passe initial doit contenir au moins 4 caracteres.')
-      return
-    }
-
-    if (formulaire.motDePasseInitial !== formulaire.confirmationMotDePasse) {
-      setErreur('La confirmation du mot de passe ne correspond pas.')
-      return
-    }
-
     setEstEnregistrement(true)
 
     try {
@@ -86,7 +72,7 @@ function PageAjoutUtilisateur() {
         dateNaissance: formulaire.dateNaissance || null,
         telephone: formulaire.telephone || null,
         roleCode: formulaire.roleCode,
-        motDePasseInitial: formulaire.motDePasseInitial,
+        motDePasseInitial: MOT_DE_PASSE_PAR_DEFAUT,
         actif: formulaire.actif,
       })
 
@@ -187,12 +173,11 @@ function PageAjoutUtilisateur() {
             </label>
 
             <label className="ajout-utilisateur__champ">
-              <span>Mot de passe initial</span>
+              <span>Mot de passe initial attribué</span>
               <input
-                type="password"
-                placeholder="••••••••"
-                value={formulaire.motDePasseInitial}
-                onChange={(event) => mettreAJourChamp('motDePasseInitial', event.target.value)}
+                type="text"
+                value={MOT_DE_PASSE_PAR_DEFAUT}
+                readOnly
               />
             </label>
 
@@ -224,15 +209,13 @@ function PageAjoutUtilisateur() {
               </div>
             </div>
 
-            <label className="ajout-utilisateur__champ">
-              <span>Confirmer le mot de passe</span>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={formulaire.confirmationMotDePasse}
-                onChange={(event) => mettreAJourChamp('confirmationMotDePasse', event.target.value)}
-              />
-            </label>
+            <div className="ajout-utilisateur__champ">
+              <span>Règle de première connexion</span>
+              <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
+                Chaque nouvel utilisateur reçoit le mot de passe par défaut <strong>{MOT_DE_PASSE_PAR_DEFAUT}</strong>
+                {' '}et devra le remplacer lors de sa première connexion.
+              </div>
+            </div>
           </div>
         </section>
 

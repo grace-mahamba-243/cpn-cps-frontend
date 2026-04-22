@@ -4,7 +4,6 @@ import BadgeEtat from '../../composants/interface/BadgeEtat'
 import Bouton from '../../composants/interface/Bouton'
 import Carte from '../../composants/interface/Carte'
 import CarteIndicateur from '../../composants/interface/CarteIndicateur'
-import ChampTexte from '../../composants/interface/ChampTexte'
 import TableauDonnees from '../../composants/interface/TableauDonnees'
 import BlocTitrePage from '../../composants/partages/BlocTitrePage'
 import EtatChargement from '../../composants/partages/EtatChargement'
@@ -134,23 +133,19 @@ function BibliothequeComposantsPage() {
       >
         <div className="bibliotheque__champ-grid">
           <div className="bibliotheque__champ-cases">
-            <ChampTexte id="nom-complet" label="Nom complet" defaultValue="Amani Bisimwa" />
-            <ChampTexte id="email" label="Adresse email" placeholder="amani@example.com" />
-            <ChampTexte id="mot-passe-demo" label="Mot de passe" type="password" defaultValue="********" />
+            <label>Nom complet<br /><input type="text" defaultValue="Amani Bisimwa" className="w-full rounded-lg border border-[#dfeaee] p-2" /></label>
+            <label>Adresse email<br /><input type="text" placeholder="amani@example.com" className="w-full rounded-lg border border-[#dfeaee] p-2" /></label>
+            <label>Mot de passe<br /><input type="password" defaultValue="********" className="w-full rounded-lg border border-[#dfeaee] p-2" /></label>
           </div>
 
           <div className="bibliotheque__champ-cases">
-            <ChampTexte
-              id="type-consultation"
-              label="Type de consultation"
-              as="select"
-              defaultValue="pediatrie"
-              options={[
-                { value: 'pediatrie', label: 'Consultation pediatrique' },
-                { value: 'maternite', label: 'Consultation maternelle' },
-                { value: 'urgence', label: 'Triage d urgence' },
-              ]}
-            />
+            <label>Type de consultation<br />
+              <select defaultValue="pediatrie" className="w-full rounded-lg border border-[#dfeaee] p-2">
+                <option value="pediatrie">Consultation pediatrique</option>
+                <option value="maternite">Consultation maternelle</option>
+                <option value="urgence">Triage d urgence</option>
+              </select>
+            </label>
 
             <div className="bibliotheque__choix">
               <strong>Statut d urgence</strong>
@@ -172,12 +167,9 @@ function BibliothequeComposantsPage() {
             </label>
           </div>
 
-          <ChampTexte
-            id="observations"
-            label="Observations cliniques"
-            as="textarea"
-            placeholder="Saisissez ici les notes medicales detaillees..."
-          />
+          <label>Observations cliniques<br />
+            <textarea placeholder="Saisissez ici les notes medicales detaillees..." className="w-full rounded-lg border border-[#dfeaee] p-2" rows={3} />
+          </label>
         </div>
       </Carte>
 

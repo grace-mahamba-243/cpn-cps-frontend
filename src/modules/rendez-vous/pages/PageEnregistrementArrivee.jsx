@@ -73,7 +73,7 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
 
       <div className="relative" ref={rechercheRef}>
         <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-          Nom ou numero de dossier <span className="text-error">*</span>
+          Nom ou numero de dossier
         </label>
         <div className="relative group">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
@@ -85,7 +85,7 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
             onChange={(e) => { setRecherche(e.target.value); setMenuOuvert(true) }}
             onFocus={() => setMenuOuvert(true)}
             placeholder={`Entrez le nom ou le numero de dossier ${typePatient === 'Enfant' ? 'enfant' : 'mere'}...`}
-            className="w-full rounded-lg border-none bg-surface-container-lowest py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-lg border-2 border-primary/40 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
             autoFocus
           />
         </div>
@@ -111,14 +111,16 @@ function EtapeRecherche({ typePatient, setTypePatient, dossiersFiltres, selectio
         {menuOuvert && recherche.trim().length >= 2 && dossiersFiltres.length === 0 && !enChargement && (
           <div className="absolute z-50 mt-1 w-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-4 py-3 shadow-xl">
             <p className="text-sm text-on-surface-variant mb-3">Aucun dossier trouvé pour cette recherche.</p>
+            {typePatient === 'Mere' && (
             <button
               type="button"
               onClick={() => onCreerDossier(typePatient)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
             >
               <span className="material-symbols-outlined text-base">person_add</span>
-              Creer un nouveau dossier {typePatient === 'Mere' ? 'mere' : 'enfant'}
+              Creer un nouveau dossier mere
             </button>
+            )}
           </div>
         )}
       </div>
@@ -309,7 +311,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
         {/* Service */}
         <div>
           <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-            Service de destination <span className="text-error">*</span>
+            Service de destination
           </label>
           <select
             value={service}
@@ -327,7 +329,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
         {/* Motif */}
         <div>
           <label className="mb-1.5 ml-1 block text-sm font-semibold text-on-surface-variant">
-            Motif de la visite <span className="text-error">*</span>
+            Motif de la visite
           </label>
           <input
             type="text"
@@ -335,7 +337,7 @@ function EtapeAucunRdv({ dossierSelectionne, onSoumettre, enChargement }) {
             maxLength={100}
             onChange={(e) => { setMotif(e.target.value); setErreurs((p) => ({ ...p, motif: undefined })) }}
             placeholder="Ex: Consultation CPN, Suivi vaccinal..."
-            className="w-full rounded-lg border-none bg-surface-container-lowest px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-lg border-2 border-primary/40 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
           />
           {erreurs.motif && <p className="ml-1 mt-1 text-xs text-error">{erreurs.motif}</p>}
         </div>
@@ -515,7 +517,7 @@ function PageEnregistrementArrivee() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-6 pb-16 pt-24">
+    <div className="mx-auto max-w-2xl space-y-8 px-6 pb-16 pt-2">
       {/* En-tete */}
       <div>
         <button
@@ -584,7 +586,7 @@ function PageEnregistrementArrivee() {
               menuOuvert={menuOuvert}
               setMenuOuvert={setMenuOuvert}
               enChargement={enChargementDossiers}
-              onCreerDossier={(type) => navigate(type === 'Mere' ? '/patients/nouveau' : '/enfants/nouveau')}
+              onCreerDossier={(type) => type === 'Mere' ? navigate('/patients/nouveau') : undefined}
             />
           )}
 

@@ -39,15 +39,15 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
               style={{ background: 'linear-gradient(135deg, #006784 0%, #005a74 100%)' }}
             >
               <span
-                className="material-symbols-outlined text-[18px] text-white"
+                className="material-symbols-outlined text-lg text-white"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 local_hospital
               </span>
             </div>
             <div>
-              <h1 className="text-[15px] font-bold leading-tight text-slate-900">Afia Himbi</h1>
-              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#006784' }}>
+              <h1 className="text-base font-bold leading-tight text-slate-900">Afia Himbi</h1>
+              <p className="text-[0.625rem] font-semibold uppercase tracking-widest" style={{ color: '#006784' }}>
                 Gestion Médicale
               </p>
             </div>
@@ -78,12 +78,12 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
                     }
                   >
                     <span
-                      className="material-symbols-outlined text-[20px] shrink-0"
+                    className="material-symbols-outlined text-xl shrink-0"
                       style={estActif ? { fontVariationSettings: "'FILL' 1" } : undefined}
                     >
                       {lien.icone}
                     </span>
-                    <span className={`text-[13.5px] ${estActif ? 'font-semibold' : 'font-medium'}`}>
+                    <span className={`text-sm ${estActif ? 'font-semibold' : 'font-medium'}`}>
                       {lien.label}
                     </span>
                     {estActif && (
@@ -99,7 +99,7 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
           ) : (
             sections?.map(({ section, items }) => (
               <div key={section} className="mb-4">
-                <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <p className="mb-1 px-3 text-[0.625rem] font-bold uppercase tracking-widest text-slate-400">
                   {section}
                 </p>
                 <div className="space-y-0.5">
@@ -118,12 +118,12 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
                       {({ isActive }) => (
                         <>
                           <span
-                            className="material-symbols-outlined text-[20px] shrink-0"
+                            className="material-symbols-outlined text-xl shrink-0"
                             style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
                           >
                             {lien.icone ?? 'apps'}
                           </span>
-                          <span className={`text-[13.5px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                          <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
                             {lien.label}
                           </span>
                           {isActive && (
@@ -151,8 +151,8 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-red-500 transition-colors hover:bg-red-50"
             onClick={() => deconnexion()}
           >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            <span className="text-[13.5px] font-medium">Déconnexion</span>
+            <span className="material-symbols-outlined text-xl">logout</span>
+            <span className="text-sm font-medium">Déconnexion</span>
           </button>
 
           <div
@@ -165,10 +165,10 @@ function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion,
               variant="secondaire"
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-bold text-slate-900">
+              <p className="truncate text-sm font-bold text-slate-900">
                 {utilisateurConnecte?.nomAffichage ?? 'Utilisateur'}
               </p>
-              <p className="truncate text-[11px] font-medium text-slate-400">
+              <p className="truncate text-xs font-medium text-slate-400">
                 {utilisateurConnecte?.role ?? 'Profil'}
               </p>
             </div>
@@ -197,8 +197,7 @@ function BarreLaterale() {
   const estProfilReception =
     roleNormalise === 'RECEPTION' ||
     roleNormalise.includes('RECEPTION') ||
-    roleNormalise.includes('ACCUEIL') ||
-    aPermissionReception
+    roleNormalise.includes('ACCUEIL')
   const estProfilAdmin =
     roleNormalise === 'SUPER_ADMIN' ||
     roleNormalise === 'ADMIN' ||

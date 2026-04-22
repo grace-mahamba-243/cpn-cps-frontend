@@ -156,6 +156,7 @@ function ListeAntecedents({ label, icone, placeholder, items, onChangeItems }) {
 // ─── Étape 1 : Sélection de la femme ─────────────────────────────────────────
 
 function EtapeSelection({ onSelectionner }) {
+  const navigate = useNavigate()
   const [recherche, setRecherche] = useState('')
   const [resultats, setResultats] = useState([])
   const [chargement, setChargement] = useState(false)
@@ -243,16 +244,20 @@ function EtapeSelection({ onSelectionner }) {
       {aucunResultat && (
         <div className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-4">
           <span className="material-symbols-outlined mt-0.5 text-on-surface-variant">search_off</span>
-          <div>
+          <div className="flex-1">
             <p className="font-semibold text-on-surface">Aucune patiente trouvée</p>
             <p className="mt-1 text-sm text-on-surface-variant">
               Vérifiez l'orthographe du nom ou le numéro de dossier.
-              Si la femme n'est pas encore enregistrée, rendez-vous à la{' '}
-              <a href="/patients/nouveau" className="font-semibold text-primary underline-offset-2 hover:underline">
-                réception pour la créer
-              </a>{' '}
-              avant d'ouvrir une CPN.
+              Si la femme n'est pas encore enregistrée, créez-la d'abord.
             </p>
+            <button
+              type="button"
+              onClick={() => navigate('/patients/nouveau', { state: { redirectApresCrea: '/cpn/nouveau' } })}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-base">person_add</span>
+              Créer une nouvelle mère
+            </button>
           </div>
         </div>
       )}
@@ -324,8 +329,22 @@ function EtapeFormulaire({ patiente, formulaire, onChange, onRetourSelection, er
             </div>
             <div className="flex flex-col">
               <label className={cls.label}>DDR (Dernières règles)</label>
-              <input type="date" value={formulaire.derniersRegles}
-                onChange={(e) => onChange('derniersRegles', e.target.value)} className={cls.input} />
+              <input
+                type="date"
+                value={formulaire.derniersRegles}
+                onChange={(e) => onChange('derniersRegles', e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                min={(() => { const d = new Date(); d.setMonth(d.getMonth() - 10); return d.toISOString().slice(0, 10) })()}
+                className={cls.input}
+              />
+              {formulaire.derniersRegles && (() => {
+                const ddr = new Date(formulaire.derniersRegles)
+                const auj = new Date(); auj.setHours(0, 0, 0, 0)
+                const ddrMin = new Date(auj); ddrMin.setMonth(ddrMin.getMonth() - 10)
+                if (ddr > auj) return <p className="mt-1 text-xs font-medium text-error flex items-center gap-1"><span className="material-symbols-outlined text-sm">warning</span>La DDR ne peut pas être dans le futur.</p>
+                if (ddr < ddrMin) return <p className="mt-1 text-xs font-medium text-error flex items-center gap-1"><span className="material-symbols-outlined text-sm">warning</span>Date trop ancienne (max 10 mois en arrière).</p>
+                return null
+              })()}
             </div>
             <div className="flex flex-col">
               <label className={cls.label}>DPA (Date prévue)</label>
@@ -533,11 +552,13 @@ function PageOuvertureCpn() {
   const { utilisateurConnecte } = useAuthentification()
   const modeEdition = location.state?.modeEdition === true
   const dossierExistant = location.state?.dossierExistant ?? null
+  const patientePreselectionnee = location.state?.patientePreselectionnee ?? null
 
-  // En mode edition : on saute directement a l etape 2 avec les donnees existantes
-  const [etape, setEtape] = useState(modeEdition ? 2 : 1)
+  // En mode edition ou pré-sélection : on saute directement a l etape 2
+  const [etape, setEtape] = useState(modeEdition || patientePreselectionnee ? 2 : 1)
   const [patiente, setPatiente] = useState(() => {
     if (modeEdition && dossierExistant?.patiente) return dossierExistant.patiente
+    if (patientePreselectionnee) return patientePreselectionnee
     return null
   })
   const [formulaire, setFormulaire] = useState(() => {
@@ -576,6 +597,18 @@ function PageOuvertureCpn() {
   const [erreur, setErreur] = useState('')
   const [enregistrement, setEnregistrement] = useState(false)
   const [chargementAuto, setChargementAuto] = useState(false)
+  const [dossierDejaExistant, setDossierDejaExistant] = useState(null)
+
+  // Vérifier si la patiente pré-sélectionnée a déjà un dossier → rediriger vers son profil
+  useEffect(() => {
+    if (!patientePreselectionnee) return
+    serviceCpn.dossierParPatienteId(patientePreselectionnee.id)
+      .then((existant) => {
+        if (existant && existant.statut === 'OUVERT') navigate(`/cpn/${existant.id}`, { replace: true })
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Pré-sélection automatique depuis les params URL (?refDossier= ou ?nom=)
   useEffect(() => {
@@ -602,10 +635,19 @@ function PageOuvertureCpn() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const selectionnerPatiente = (p) => {
+  const selectionnerPatiente = async (p) => {
     setPatiente(p)
-    setEtape(2)
     setErreur('')
+    setDossierDejaExistant(null)
+    // Vérifier si la patiente a déjà un dossier CPN (peu importe le statut) — si oui, rediriger vers son profil
+    try {
+      const existant = await serviceCpn.dossierParPatienteId(p.id)
+      if (existant && existant.statut === 'OUVERT') {
+        navigate(`/cpn/${existant.id}`, { replace: true })
+        return
+      }
+    } catch { /* ignorer les erreurs de vérification */ }
+    setEtape(2)
     // Pré-cocher automatiquement les facteurs de risque liés à l'âge
     const statut = statutAgeMaternel(p.dateNaissance)
     if (statut.id === 'primipare_jeune' || statut.id === 'age_maternel_risque') {
@@ -618,6 +660,7 @@ function PageOuvertureCpn() {
     setEtape(1)
     setFormulaire(ETAT_INITIAL_FORM)
     setErreur('')
+    setDossierDejaExistant(null)
   }
 
   const majChamp = (champ, valeur) => {
@@ -631,10 +674,27 @@ function PageOuvertureCpn() {
   const soumettre = async (e) => {
     e.preventDefault()
     setErreur('')
+
+    // Validation DDR : entre aujourd'hui et 10 mois en arrière max
+    if (formulaire.derniersRegles) {
+      const ddr = new Date(formulaire.derniersRegles)
+      const aujourd = new Date(); aujourd.setHours(0, 0, 0, 0)
+      const ddrMin = new Date(aujourd); ddrMin.setMonth(ddrMin.getMonth() - 10)
+      if (ddr > aujourd) {
+        setErreur('La DDR ne peut pas être dans le futur.')
+        return
+      }
+      if (ddr < ddrMin) {
+        setErreur(`La DDR (${ddr.toLocaleDateString('fr-FR')}) est trop ancienne. Une grossesse dure au maximum ~10 mois. Veuillez vérifier la date.`)
+        return
+      }
+    }
+
     setEnregistrement(true)
     try {
       const donnees = {
-        patienteId: patiente.id,
+        patienteId: patiente.id, // conservé pour compatibilité interne
+        numeroDossierMere: patiente.numeroDossier,
         ...formulaire,
         gestite: Number(formulaire.gestite),
         parite: Number(formulaire.parite),
@@ -663,6 +723,11 @@ function PageOuvertureCpn() {
         navigate(`/cpn/${rep.id}`, { replace: true, state: { messageSucces: 'Dossier CPN ouvert avec succès.' } })
       }
     } catch (ex) {
+      // Dossier actif déjà existant → rediriger vers le profil de la patiente
+      if (ex.statut === 409 && ex.corps?.dossierId) {
+        navigate(`/cpn/${ex.corps.dossierId}`, { replace: true })
+        return
+      }
       setErreur(ex.message)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } finally {

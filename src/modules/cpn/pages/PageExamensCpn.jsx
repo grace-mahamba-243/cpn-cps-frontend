@@ -33,8 +33,8 @@ function BadgeStatut({ statut, typeExamen }) {
 function iconeExamen(typeExamen, statut) {
   const recu = statut === 'RESULTAT_RECU' || statut === 'RESULTAT_ENVOYE'
   if (recu) return 'task_alt'
-  if (typeExamen === 'ECHOGRAPHIE') return 'ultrasound'
-  if (typeExamen === 'BIOLOGIQUE') return 'science'
+  if (typeExamen === 'ECHOGRAPHIE') return 'ecg'
+  if (typeExamen === 'BIOLOGIQUE') return 'biotech'
   return 'hourglass_top'
 }
 
@@ -106,8 +106,152 @@ function PanneauInterpretation({ examen, dossierId, contacts, onTermine, onAnnul
   )
 }
 
+// ── Formulaire demande d'examen ───────────────────────────────────────────────
+function FormulaireDemandeExamen({ dossierId, onTermine, onAnnuler }) {
+  const [typeExamen, setTypeExamen] = useState('BIOLOGIQUE')
+  const [nouvelExamen, setNouvelExamen] = useState('')
+  const [examensTodo, setExamensTodo] = useState([])
+  const [notes, setNotes] = useState('')
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState('')
+
+  const ajouterExamen = () => {
+    const libelle = nouvelExamen.trim()
+    if (!libelle) return
+
+    setExamensTodo((precedent) => [...precedent, { libelle, typeExamen }])
+    setNouvelExamen('')
+  }
+
+  const supprimerExamen = (index) => {
+    setExamensTodo((precedent) => precedent.filter((_, i) => i !== index))
+  }
+
+  const soumettre = async (e) => {
+    e.preventDefault()
+    if (examensTodo.length === 0) {
+      setErreur('Selectionnez au moins un examen.')
+      return
+    }
+
+    setEnvoi(true)
+    setErreur('')
+    try {
+      for (const examen of examensTodo) {
+        await serviceCpn.demanderExamen(dossierId, {
+          typeExamen: examen.typeExamen,
+          libelle: examen.libelle,
+          notes: notes.trim() || null,
+        })
+      }
+
+      onTermine()
+    } catch (ex) {
+      setErreur(ex.message)
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-on-surface">Nouvelle demande d'examen</h3>
+      <form onSubmit={soumettre} className="space-y-5">
+        <section className="space-y-4 rounded-xl border border-outline-variant/40 bg-surface p-4">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">science</span>
+            <h4 className="text-sm font-semibold text-on-surface">Selection des examens</h4>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {['BIOLOGIQUE', 'ECHOGRAPHIE'].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTypeExamen(type)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${typeExamen === type ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container-low'}`}
+              >
+                {type === 'BIOLOGIQUE' ? 'Biologique' : 'Echographie'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={nouvelExamen}
+              onChange={(e) => setNouvelExamen(e.target.value)}
+              className="w-full rounded-lg border border-outline-variant/50 bg-surface-container-lowest px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-3/5"
+              placeholder="Ajouter un examen a la todo-list"
+            />
+            <button
+              type="button"
+              onClick={ajouterExamen}
+              className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:opacity-90"
+            >
+              Ajouter
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {examensTodo.map((item, index) => (
+              <div key={`${item.libelle}-${index}`} className="flex items-center justify-between rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-bold text-on-surface-variant">
+                    {item.typeExamen === 'BIOLOGIQUE' ? 'Biologique' : 'Echographie'}
+                  </span>
+                  <span className="text-sm text-on-surface">{item.libelle}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => supprimerExamen(index)}
+                  className="rounded-full p-1 text-on-surface-variant hover:bg-surface-container"
+                  aria-label="Supprimer examen"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-xl border border-outline-variant/40 bg-surface p-4">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Notes cliniques</label>
+          <textarea
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            placeholder="Ajouter des notes cliniques..."
+          />
+        </section>
+
+        {erreur && <p className="text-xs text-error">{erreur}</p>}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            disabled={envoi}
+            className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary hover:opacity-90 disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            {envoi ? 'Envoi...' : 'Envoyer au laboratoire'}
+          </button>
+          <button
+            type="button"
+            onClick={onAnnuler}
+            className="rounded-full bg-surface-container px-5 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
+          >
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 // ── Carte examen ──────────────────────────────────────────────────────────────
-function CarteExamen({ examen, dossierId, contacts, onRecharger }) {
+function CarteExamen({ examen, dossierId, contacts, onRecharger, dossierStatut }) {
   const [panneauOuvert, setPanneauOuvert] = useState(false)
 
   const estEcho = examen.typeExamen === 'ECHOGRAPHIE'
@@ -171,7 +315,7 @@ function CarteExamen({ examen, dossierId, contacts, onRecharger }) {
         {/* Badge + action */}
         <div className="flex flex-shrink-0 flex-col items-end gap-2">
           <BadgeStatut statut={examen.statut} typeExamen={examen.typeExamen} />
-          {estEcho && enAttente && (
+          {estEcho && enAttente && dossierStatut === 'OUVERT' && (
             <button
               onClick={() => setPanneauOuvert((v) => !v)}
               className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
@@ -230,6 +374,7 @@ function PageExamensCpn() {
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState('')
   const [filtre, setFiltre] = useState('TOUS') // TOUS | BIOLOGIQUE | ECHOGRAPHIE | EN_ATTENTE | RECU
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false)
 
   const charger = async () => {
     setChargement(true)
@@ -307,50 +452,32 @@ function PageExamensCpn() {
 
       {/* Bouton retour */}
       <button
-        onClick={() => navigate(`/cpn/${dossierId}`)}
+        onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
         Retour au dossier
       </button>
 
-      {/* En-tête */}
-      <div className="rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-2xl text-tertiary">biotech</span>
-            <div>
-              <h2 className="text-2xl font-extrabold tracking-tight text-on-surface">Examens</h2>
-              {dossier && (
-                <p className="mt-0.5 text-sm text-on-surface-variant">
-                  {dossier.numeroDossierCpn} · {dossier.patiente?.nomComplet}
-                </p>
-              )}
-            </div>
-          </div>
-          {/* Compteurs rapides */}
-          <div className="flex flex-wrap gap-3">
-            {nbEchoEnAttente > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-secondary-container/50 px-3 py-1 text-xs font-semibold text-secondary">
-                <span className="material-symbols-outlined text-[14px]">ultrasound</span>
-                {nbEchoEnAttente} écho{nbEchoEnAttente > 1 ? 's' : ''} en attente
-              </div>
-            )}
-            {nbBioEnAttente > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]">science</span>
-                {nbBioEnAttente} bio{nbBioEnAttente > 1 ? 's' : ''} au labo
-              </div>
-            )}
-            {nbRecus > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-tertiary-container/50 px-3 py-1 text-xs font-semibold text-tertiary">
-                <span className="material-symbols-outlined text-[14px]">task_alt</span>
-                {nbRecus} résultat{nbRecus > 1 ? 's' : ''} reçu{nbRecus > 1 ? 's' : ''}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Bouton nouvelle demande */}
+      {dossier?.statut === 'OUVERT' && !formulaireOuvert && (
+        <button
+          onClick={() => setFormulaireOuvert(true)}
+          className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-sm hover:opacity-90 transition-all"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Nouvelle demande d'examen
+        </button>
+      )}
+
+      {/* Formulaire demande */}
+      {formulaireOuvert && (
+        <FormulaireDemandeExamen
+          dossierId={dossierId}
+          onTermine={() => { setFormulaireOuvert(false); charger() }}
+          onAnnuler={() => setFormulaireOuvert(false)}
+        />
+      )}
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2">
@@ -371,7 +498,7 @@ function PageExamensCpn() {
       {/* Liste */}
       {examensFiltres.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface-container-lowest py-16 text-on-surface-variant/50">
-          <span className="material-symbols-outlined text-4xl">science</span>
+          <span className="material-symbols-outlined text-4xl">biotech</span>
           <p className="text-sm">Aucun examen pour ce filtre</p>
         </div>
       ) : (
@@ -383,6 +510,7 @@ function PageExamensCpn() {
               dossierId={dossierId}
               contacts={dossier?.contacts ?? []}
               onRecharger={charger}
+              dossierStatut={dossier?.statut}
             />
           ))}
         </div>

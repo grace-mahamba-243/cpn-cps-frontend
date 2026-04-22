@@ -51,6 +51,19 @@ function normaliserSession(payload) {
   }
 }
 
+function normaliserUtilisateur(payload) {
+  const utilisateur = payload?.utilisateur
+
+  if (!utilisateur) {
+    throw new Error("La reponse du serveur est incomplete pour mettre a jour l'utilisateur.")
+  }
+
+  return {
+    utilisateur,
+    message: payload?.message ?? 'Mot de passe modifie avec succes.',
+  }
+}
+
 // Ce service centralise les appels HTTP d'authentification et normalise les reponses
 // du backend pour les rendre directement exploitables par le frontend.
 const serviceAuthentification = {
@@ -111,6 +124,46 @@ const serviceAuthentification = {
     } catch {
       return
     }
+  },
+
+  async changerMotDePasse({ identifiant, motDePasseActuel, nouveauMotDePasse }) {
+    const identifiantNettoye = identifiant.trim()
+    const motDePasseActuelNettoye = motDePasseActuel.trim()
+    const nouveauMotDePasseNettoye = nouveauMotDePasse.trim()
+
+    if (!identifiantNettoye || !motDePasseActuelNettoye || !nouveauMotDePasseNettoye) {
+      throw new Error('Veuillez renseigner tous les champs obligatoires.')
+    }
+
+    if (nouveauMotDePasseNettoye.length < 4) {
+      throw new Error('Le nouveau mot de passe doit contenir au moins 4 caracteres.')
+    }
+
+    let reponse
+
+    try {
+      reponse = await fetch(`${URL_API}/auth/changer-mot-de-passe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifiant: identifiantNettoye,
+          motDePasseActuel: motDePasseActuelNettoye,
+          nouveauMotDePasse: nouveauMotDePasseNettoye,
+        }),
+      })
+    } catch {
+      throw new Error("Impossible de joindre le serveur d'authentification.")
+    }
+
+    const corps = await lireCorpsJson(reponse)
+
+    if (!reponse.ok) {
+      throw new Error(construireMessageErreur(reponse, corps))
+    }
+
+    return normaliserUtilisateur(corps)
   },
 }
 
