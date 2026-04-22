@@ -1,7 +1,7 @@
 
 ##  Présentation du Projet
 
-### Contexte
+### Contexteg
 
 Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et des naissances est encore largement géré sur papier, avec les risques de perte de données, d'erreurs et d'absence de traçabilité que cela implique.
 
