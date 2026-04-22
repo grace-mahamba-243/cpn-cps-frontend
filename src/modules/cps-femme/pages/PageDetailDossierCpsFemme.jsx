@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
+import serviceRendezVous from '../../../services/api/serviceRendezVous'
 import useAuthentification from '../../authentification/hooks/useAuthentification'
+import InfoEnregistrement from '../../../composants/partages/InfoEnregistrement'
 
 /*  Bandeau héro CPS  */
 function BandeauCps({ dossier }) {
@@ -11,8 +13,11 @@ function BandeauCps({ dossier }) {
   const visitesProtocole = ['SIX_HEURES', 'SIX_JOURS', 'SIX_SEMAINES']
   const faits = new Set((dossier.visites ?? []).map((v) => v.typeVisite))
   const labels = { SIX_HEURES: '6 heures', SIX_JOURS: '6 jours', SIX_SEMAINES: '6 semaines' }
-  const prochain = visitesProtocole.find((t) => !faits.has(t))
-  const prochaineVisite = prochain ? `Prochaine : visite ${labels[prochain]}` : 'Protocole complet'
+  const derniereVisite = (dossier.visites ?? []).at(-1)
+  const prochainRdv = derniereVisite?.prochainRdvDate
+  const prochaineVisite = prochainRdv
+    ? `Prochain RDV : ${new Date(prochainRdv).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`
+    : visitesProtocole.every((t) => faits.has(t)) ? 'Protocole complet' : 'Aucun RDV planifié'
 
   return (
     <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary-dim p-8 text-on-primary shadow-md">
@@ -38,9 +43,11 @@ function BandeauCps({ dossier }) {
           </div>
         </div>
         <div className="min-w-[190px] rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest opacity-70">Visites postnatales</p>
           <p className="font-headline text-xl font-bold">{(dossier.visites ?? []).length} visite(s)</p>
-          <p className="mt-0.5 text-xs opacity-80">{prochaineVisite}</p>
+          <div className="mt-2 border-t border-white/10 pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest opacity-70">Prochain RDV</p>
+            <p className="mt-0.5 text-xs font-semibold">{prochainRdv ? new Date(prochainRdv).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Aucun planifié'}</p>
+          </div>
         </div>
       </div>
       <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
@@ -58,16 +65,11 @@ function CarteRaccourci({ icone, titre, sousTitre, badge, couleurIcone, couleurB
       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${couleurIcone}`}>
         <span className="material-symbols-outlined text-2xl">{icone}</span>
       </div>
-      <div className="pr-6">
-        <p className="text-sm font-bold text-on-surface">{titre}</p>
-        {sousTitre && <p className="mt-0.5 text-[12px] leading-snug text-on-surface-variant">{sousTitre}</p>}
-      </div>
+      <p className="text-sm font-bold text-on-surface">{titre}</p>
       {badge !== null && badge !== undefined && (
         <span className={`absolute right-3 top-3 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${couleurBadge}`}>{badge}</span>
       )}
-      <span className="material-symbols-outlined absolute bottom-4 right-4 text-[16px] text-on-surface-variant/25 transition-colors group-hover:text-on-surface-variant/60">
-        arrow_forward
-      </span>
+
     </button>
   )
 }
@@ -88,6 +90,18 @@ function PageDetailDossierCpsFemme() {
   const [modaleEnfantOuverte, setModaleEnfantOuverte] = useState(false)
   const [formEnfant, setFormEnfant] = useState({ nom: '', postnom: '', prenom: '', sexe: '', dateNaissance: '' })
   const [envoiEnfant, setEnvoiEnfant] = useState({ chargement: false, erreur: null, succes: false })
+  const [rdvDuJour, setRdvDuJour] = useState(null)
+  const [finEnCours, setFinEnCours] = useState(false)
+  const [modaleSuppressionOuverte, setModaleSuppressionOuverte] = useState(false)
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false)
+
+  const chargerRdvDuJour = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const liste = await serviceRendezVous.lister({ date: today, statut: 'Arrive', serviceDestination: 'Maternite (CPS)' })
+      setRdvDuJour(liste)
+    } catch { setRdvDuJour([]) }
+  }
 
   const chargerDossier = async () => {
     setChargement(true)
@@ -108,6 +122,7 @@ function PageDetailDossierCpsFemme() {
       window.history.replaceState({ ...location.state, messageSucces: undefined }, '')
     }
   }, [dossierId])
+  useEffect(() => { chargerRdvDuJour() }, [dossierId])
 
   useEffect(() => {
     if (!messageSucces) return
@@ -157,6 +172,17 @@ function PageDetailDossierCpsFemme() {
       setMessageSucces('Dossier CPS clôturé avec succès.')
       chargerDossier()
     } catch (ex) { alert(ex.message) } finally { setClotureEnCours(false) }
+  }
+
+  const supprimerDossier = async () => {
+    setSuppressionEnCours(true)
+    try {
+      await serviceCpsFemme.supprimerDossier(dossierId)
+      navigate('/cps-femme', { replace: true, state: { messageSucces: 'Dossier CPS Femme supprimé avec succès.' } })
+    } catch (ex) {
+      alert(ex.message)
+      setModaleSuppressionOuverte(false)
+    } finally { setSuppressionEnCours(false) }
   }
 
   const soumettreEnfant = async () => {
@@ -219,6 +245,14 @@ function PageDetailDossierCpsFemme() {
         {estClos && !fromHistorique ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <CarteRaccourci
+              icone="history"
+              titre="Historique CPS"
+              badge={null}
+              couleurIcone="bg-primary/10 text-primary"
+              couleurBadge={null}
+              onClick={() => navigate(`/cps-femme/historique/${dossier.patiente?.id ?? dossier.patienteId}`)}
+            />
+            <CarteRaccourci
               icone="child_friendly"
               titre="Infos accouchement"
               badge={null}
@@ -226,33 +260,20 @@ function PageDetailDossierCpsFemme() {
               couleurBadge={null}
               onClick={() => navigate(`/cps-femme/${dossierId}/accouchement`)}
             />
-            <CarteRaccourci
-              icone="folder_shared"
-              titre="Dossier administratif"
-              sousTitre={dossier.patiente?.telephone ?? null}
-              badge={null}
-              couleurIcone="bg-surface-container-high text-on-surface-variant"
-              couleurBadge={null}
-              onClick={() => navigate(`/patients/${dossier.patiente?.id ?? dossier.patienteId}`)}
-            />
-            {!fromHistorique && (
-              <CarteRaccourci
-                icone="history"
-                titre="Historique CPS"
-                sousTitre="Suivis postnatals précédents"
-                badge={null}
-                couleurIcone="bg-secondary-container text-on-secondary-container"
-                couleurBadge={null}
-                onClick={() => navigate(`/cps-femme/historique/${dossier.patienteId ?? dossier.patiente?.id}`)}
-              />
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <CarteRaccourci
+              icone="history"
+              titre="Historique CPS"
+              badge={null}
+              couleurIcone="bg-primary/10 text-primary"
+              couleurBadge={null}
+              onClick={() => navigate(`/cps-femme/historique/${dossier.patiente?.id ?? dossier.patienteId}`)}
+            />
+            <CarteRaccourci
               icone="child_friendly"
               titre="Infos accouchement"
-              sousTitre={dossier.modeAccouchement ? `Mode : ${dossier.modeAccouchement.toLowerCase()}` : null}
               badge={null}
               couleurIcone="bg-secondary-container text-on-secondary-container"
               couleurBadge={null}
@@ -261,7 +282,6 @@ function PageDetailDossierCpsFemme() {
             <CarteRaccourci
               icone="calendar_month"
               titre="Visites CPS"
-              sousTitre={`${visitesRealisees}/3 visites protocole`}
               badge={nbVisites}
               couleurIcone="bg-tertiary-container/30 text-tertiary"
               couleurBadge="bg-tertiary-container text-on-tertiary-container"
@@ -270,32 +290,12 @@ function PageDetailDossierCpsFemme() {
             <CarteRaccourci
               icone="biotech"
               titre="Examens"
-              sousTitre="Examens des visites postnatales"
               badge={dossier.visites?.length ?? null}
               couleurIcone="bg-surface-container-high text-on-surface-variant"
               couleurBadge="bg-surface-variant text-on-surface-variant"
               onClick={() => navigate(`/cps-femme/${dossierId}/examens`, { state: stateHistorique })}
             />
-            {!fromHistorique && (
-              <CarteRaccourci
-                icone="history"
-                titre="Historique CPS"
-                sousTitre="Suivis postnatals précédents"
-                badge={null}
-                couleurIcone="bg-secondary-container text-on-secondary-container"
-                couleurBadge={null}
-                onClick={() => navigate(`/cps-femme/historique/${dossier.patienteId ?? dossier.patiente?.id}`)}
-              />
-            )}
-            <CarteRaccourci
-              icone="folder_shared"
-              titre="Dossier administratif"
-              sousTitre={dossier.patiente?.telephone ?? null}
-              badge={null}
-              couleurIcone="bg-surface-container-high text-on-surface-variant"
-              couleurBadge={null}
-              onClick={() => navigate(`/patients/${dossier.patiente?.id ?? dossier.patienteId}`)}
-            />
+
           </div>
         )}
       </section>
@@ -322,15 +322,6 @@ function PageDetailDossierCpsFemme() {
               Nouvelle visite
             </button>
           )}
-          {!fromHistorique && (
-            <button
-              onClick={() => setModaleEnfantOuverte(true)}
-              className="flex items-center gap-2 rounded-full bg-tertiary px-5 py-2.5 text-sm font-semibold text-on-tertiary shadow-sm hover:opacity-90 transition-opacity"
-            >
-              <span className="material-symbols-outlined text-base">child_care</span>
-              Enregistrer un enfant
-            </button>
-          )}
           {!estClos && !fromHistorique && (
             <button
               onClick={() => setModaleClotureOuverte(true)}
@@ -340,8 +331,45 @@ function PageDetailDossierCpsFemme() {
               Clore le dossier
             </button>
           )}
+
+          {/* Supprimer : uniquement si aucune visite */}
+          {nbVisites === 0 && (
+            <button
+              onClick={() => setModaleSuppressionOuverte(true)}
+              className="flex items-center gap-2 rounded-full bg-error-container px-5 py-2.5 text-sm font-semibold text-on-error-container shadow-sm hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-base">delete</span>
+              Supprimer le dossier
+            </button>
+          )}
         </div>
       </section>
+
+      <InfoEnregistrement enregistrePar={dossier.enregistrePar} modifiePar={dossier.modifiePar} />
+
+      {/* Modale confirmation suppression */}
+      {modaleSuppressionOuverte && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-error-container">
+              <span className="material-symbols-outlined text-2xl text-on-error-container">delete_forever</span>
+            </div>
+            <h3 className="font-headline text-lg font-bold text-on-surface">Supprimer ce dossier CPS Femme ?</h3>
+            <p className="mt-2 text-sm text-on-surface-variant">Cette action est irréversible. Le dossier sera définitivement supprimé.</p>
+            <div className="mt-6 flex gap-3 justify-end">
+              <button onClick={() => setModaleSuppressionOuverte(false)} className="rounded-full bg-surface-container px-5 py-2.5 text-sm font-semibold text-on-surface-variant hover:opacity-80">Annuler</button>
+              <button
+                onClick={supprimerDossier}
+                disabled={suppressionEnCours}
+                className="flex items-center gap-2 rounded-full bg-error px-5 py-2.5 text-sm font-semibold text-on-error hover:opacity-90 disabled:opacity-50"
+              >
+                {suppressionEnCours && <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>}
+                Confirmer la suppression
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/*  Modale clôture  */}
       {modaleClotureOuverte && (

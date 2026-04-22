@@ -176,22 +176,24 @@ function PageNouveauContactCpn() {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; background: #fff; padding: 32px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 3px solid #1a56db; margin-bottom: 24px; }
-    .hopital { font-size: 13px; color: #6b7280; }
-    .hopital strong { font-size: 16px; color: #111827; display: block; margin-bottom: 4px; }
-    .badge { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 8px 16px; text-align: right; }
-    .badge .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
-    .badge .value { font-size: 14px; font-weight: 700; color: #1a56db; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 3px solid #005eb8; margin-bottom: 24px; background: #005eb8; border-radius: 10px; padding: 16px 20px; color: #fff; }
+    .hopital { display: flex; align-items: center; gap: 12px; }
+    .hopital .icon { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .hopital strong { font-size: 16px; color: #fff; display: block; margin-bottom: 2px; }
+    .hopital span { font-size: 11px; color: rgba(255,255,255,0.8); }
+    .badge { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 8px 16px; text-align: right; }
+    .badge .label { font-size: 11px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: .05em; }
+    .badge .value { font-size: 14px; font-weight: 700; color: #fff; }
     .patiente { background: #f9fafb; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 40px; }
     .patiente .field .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; }
     .patiente .field .value { font-size: 15px; font-weight: 600; color: #111827; margin-top: 2px; }
     h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; margin-bottom: 12px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    thead tr { background: #1a56db; color: #fff; }
+    thead tr { background: #005eb8; color: #fff; }
     thead th { padding: 10px 8px; text-align: left; font-size: 12px; font-weight: 600; }
     tbody tr:nth-child(even) { background: #f9fafb; }
     .decision { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; white-space: pre-wrap; font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 24px; }
-    .footer { border-top: 2px solid #1a56db; margin-top: 32px; padding-top: 16px; display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; }
+    .footer { border-top: 2px solid #005eb8; margin-top: 32px; padding-top: 16px; display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; }
     .signature { text-align: right; }
     .signature .ligne { width: 160px; border-top: 1px solid #374151; margin-top: 48px; padding-top: 6px; font-size: 12px; color: #374151; }
     @media print { body { padding: 16px; } }
@@ -200,8 +202,11 @@ function PageNouveauContactCpn() {
 <body>
   <div class="header">
     <div class="hopital">
-      <strong>Hôpital de Référence de Himbi</strong>
-      Goma, Nord-Kivu — République Démocratique du Congo
+      <div class="icon">&#10010;</div>
+      <div>
+        <strong>Centre de Santé Afia Himbi</strong>
+        <span>Goma, Nord-Kivu — République Démocratique du Congo</span>
+      </div>
     </div>
     <div class="badge">
       <div class="label">Ordonnance CPN</div>
@@ -292,6 +297,29 @@ function PageNouveauContactCpn() {
   const soumettre = async (e) => {
     e.preventDefault()
     setErreur('')
+
+    // Validation : dateContact doit être entre dateOuverture et DPA + 2 mois
+    if (formulaire.dateContact && dossier) {
+      const dateContact = new Date(formulaire.dateContact)
+      if (dossier.dateOuverture) {
+        const dateMin = new Date(dossier.dateOuverture)
+        dateMin.setHours(0, 0, 0, 0)
+        if (dateContact < dateMin) {
+          setErreur(`La date du contact (${dateContact.toLocaleDateString('fr-FR')}) ne peut pas être antérieure à la date d'ouverture du dossier CPN (${new Date(dossier.dateOuverture).toLocaleDateString('fr-FR')}).`)
+          return
+        }
+      }
+      if (dossier.dateProbableAccouchement) {
+        const dateMax = new Date(dossier.dateProbableAccouchement)
+        dateMax.setMonth(dateMax.getMonth() + 2)
+        dateMax.setHours(23, 59, 59, 999)
+        if (dateContact > dateMax) {
+          setErreur(`La date du contact (${dateContact.toLocaleDateString('fr-FR')}) dépasse la limite autorisée : DPA + 2 mois (${dateMax.toLocaleDateString('fr-FR')}).`)
+          return
+        }
+      }
+    }
+
     setEnregistrement(true)
 
     let tensionSystolique = null
@@ -429,16 +457,46 @@ function PageNouveauContactCpn() {
 
             {/* Date de la visite */}
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-on-surface-variant ml-1">Date de la visite</label>
-              <div className="bg-surface-container rounded-lg px-4 py-3 flex items-center opacity-70 cursor-not-allowed">
-                <span className="material-symbols-outlined text-outline mr-3">calendar_today</span>
-                <input
-                  type="date"
-                  disabled
-                  className="bg-transparent border-none w-full text-on-surface p-0 cursor-not-allowed"
-                  value={formulaire.dateContact}
-                />
-              </div>
+              <label className="text-sm font-semibold text-on-surface-variant ml-1">Date de la visite <span className="text-error">*</span></label>
+              {(() => {
+                const dc = formulaire.dateContact ? new Date(formulaire.dateContact) : null
+                const dateMin = dossier?.dateOuverture ? new Date(dossier.dateOuverture) : null
+                const dateMaxDpa = dossier?.dateProbableAccouchement
+                  ? (() => { const d = new Date(dossier.dateProbableAccouchement); d.setMonth(d.getMonth() + 2); return d })()
+                  : null
+                const avantOuverture = dc && dateMin && dc < dateMin
+                const apresDpaPlus2 = dc && dateMaxDpa && dc > dateMaxDpa
+                const horsPlage = avantOuverture || apresDpaPlus2
+                const dateVisiteDesactivee = modeEdition
+                return (
+                  <>
+                    <div className={`rounded-lg px-4 py-3 flex items-center transition-all ${dateVisiteDesactivee ? 'opacity-70 cursor-not-allowed' : 'focus-within:ring-2'} ${horsPlage ? 'bg-error-container ring-2 ring-error/40' : 'bg-surface-container focus-within:bg-surface-container-lowest focus-within:ring-primary/20'}`}>
+                      <span className={`material-symbols-outlined mr-3 ${horsPlage ? 'text-error' : 'text-outline'}`}>calendar_today</span>
+                      <input
+                        type="date"
+                        className={`bg-transparent border-none w-full text-on-surface p-0 ${dateVisiteDesactivee ? 'cursor-not-allowed' : ''}`}
+                        value={formulaire.dateContact}
+                        disabled={dateVisiteDesactivee}
+                        onChange={(e) => maj('dateContact', e.target.value)}
+                        min={dossier?.dateOuverture ?? undefined}
+                        max={dateMaxDpa ? dateMaxDpa.toISOString().slice(0, 10) : undefined}
+                      />
+                    </div>
+                    {avantOuverture && (
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-error mt-1">
+                        <span className="material-symbols-outlined text-sm">warning</span>
+                        <span>Antérieure à l'ouverture du dossier ({new Date(dossier.dateOuverture).toLocaleDateString('fr-FR')})</span>
+                      </div>
+                    )}
+                    {apresDpaPlus2 && (
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-error mt-1">
+                        <span className="material-symbols-outlined text-sm">warning</span>
+                        <span>Dépasse la limite DPA + 2 mois ({dateMaxDpa.toLocaleDateString('fr-FR')})</span>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
 
             {/* État général */}
@@ -929,100 +987,6 @@ function PageNouveauContactCpn() {
                 Ajouter ce médicament
               </button>
             </div>
-          </div>
-
-          {/* Séparateur */}
-          <div className="border-t border-outline-variant/50-container" />
-
-          {/* 5b — Examens à demander */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-xl">biotech</span>
-              <h4 className="font-bold text-on-surface">Examens à demander</h4>
-            </div>
-
-            {/* Examens déjà enregistrés pour ce dossier (en mode édition) */}
-            {modeEdition && examensExistants.length > 0 && (
-              <div className="rounded-xl border border-outline-variant/40 bg-surface-container-low px-4 py-3 space-y-1.5">
-                <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Examens déjà enregistrés (non modifiables)</p>
-                <div className="space-y-1">
-                  {examensExistants.map((ex) => (
-                    <div key={ex.id} className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant">science</span>
-                      <span className="text-xs text-on-surface-variant">{ex.libelle}</span>
-                      <span className="text-[10px] rounded-full bg-surface-container px-2 py-0.5 text-on-surface-variant">{ex.typeExamen}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {examensADemander.length > 0 && (
-              <div className="space-y-2">
-                {examensADemander.map((ex) => (
-                  <div key={ex.id} className="flex items-center gap-3 bg-surface-container-lowest rounded-xl px-4 py-3">
-                    <span className="material-symbols-outlined text-secondary text-base">science</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-on-surface text-sm">{ex.libelle}</p>
-                      <p className="text-xs text-on-surface-variant capitalize">{ex.type.toLowerCase()}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => supprimerExamen(ex.id)}
-                      className="text-error hover:bg-error-container rounded-full p-1 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="bg-surface-container rounded-xl p-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  placeholder="Libellé de l'examen *"
-                  className="bg-surface-container-lowest rounded-lg border-none px-3 py-2 text-sm text-on-surface sm:col-span-2"
-                  value={nouvelExamen.libelle}
-                  onChange={(e) => setNouvelExamen((ex) => ({ ...ex, libelle: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), ajouterExamen())}
-                />
-                <select
-                  className="bg-surface-container-lowest rounded-lg border-none px-3 py-2 text-sm text-on-surface"
-                  value={nouvelExamen.type}
-                  onChange={(e) => setNouvelExamen((ex) => ({ ...ex, type: e.target.value }))}
-                >
-                  <option value="BIOLOGIQUE">Biologique</option>
-                  <option value="ECHOGRAPHIE">Échographie</option>
-                  <option value="AUTRE">Autre</option>
-                </select>
-              </div>
-              <button
-                type="button"
-                onClick={ajouterExamen}
-                disabled={
-                  !nouvelExamen.libelle.trim() ||
-                  examensADemander.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase()) ||
-                  examensExistants.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase())
-                }
-                className="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary text-sm font-semibold rounded-full disabled:opacity-40 hover:opacity-90 transition-all"
-              >
-                <span className="material-symbols-outlined text-base">add</span>
-                {(examensADemander.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase()) ||
-                  examensExistants.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase()))
-                  ? 'Cet examen existe déjà'
-                  : 'Ajouter cet examen'
-                }
-              </button>
-            </div>
-
-            {examensADemander.length > 0 && (
-              <p className="text-xs text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">info</span>
-                {examensADemander.length} nouvel examen{examensADemander.length > 1 ? 's' : ''} sera enregistr\u00e9{examensADemander.length > 1 ? 's' : ''} lors de l'enregistrement. Les \u00e9chographies restent dans le dossier, seuls les examens biologiques sont envoy\u00e9s au laboratoire.
-              </p>
-            )}
           </div>
 
           {/* Séparateur */}

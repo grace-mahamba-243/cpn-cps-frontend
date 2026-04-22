@@ -1,4 +1,6 @@
 // Ce service gere les appels API du module CPN vers le backend NestJS.
+import { enrichirAvecUtilisateur } from './utilitairesApi'
+
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
 async function lireCorpsJson(reponse) {
@@ -30,6 +32,12 @@ function construireMessageErreur(reponse, corps) {
 }
 
 async function appelerApi(url, options = {}) {
+  if (options.body && (options.method === 'POST' || options.method === 'PATCH' || options.method === 'PUT')) {
+    try {
+      const d = JSON.parse(options.body)
+      options = { ...options, body: JSON.stringify(enrichirAvecUtilisateur(d)) }
+    } catch { /* corps non-JSON */ }
+  }
   const reponse = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
@@ -45,7 +53,9 @@ const serviceCpn = {
   // --- Dossiers ---
 
   async listerDossiers(recherche = '') {
-    const params = recherche ? `?recherche=${encodeURIComponent(recherche)}` : ''
+    // Supprimer le '#' en tête pour permettre la saisie de "#CPN-2026-XXXX"
+    const terme = recherche ? recherche.replace(/^#/, '').trim() : ''
+    const params = terme ? `?recherche=${encodeURIComponent(terme)}` : ''
     const corps = await appelerApi(`${URL_API}/cpn${params}`)
     return Array.isArray(corps?.dossiers) ? corps.dossiers : []
   },
@@ -147,6 +157,11 @@ const serviceCpn = {
       body: JSON.stringify(donnees),
     })
     return corps?.examen ?? corps
+  },
+
+  // Supprimer un dossier CPN (uniquement si pas d'accouchement lié et aucun contact)
+  async supprimerDossier(dossierId) {
+    return appelerApi(`${URL_API}/cpn/${dossierId}`, { method: 'DELETE' })
   },
 }
 

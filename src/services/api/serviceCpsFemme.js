@@ -1,4 +1,6 @@
 // Ce service gere les appels API du module CPS Femme vers le backend NestJS.
+import { enrichirAvecUtilisateur } from './utilitairesApi'
+
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
 async function lireCorpsJson(reponse) {
@@ -30,6 +32,12 @@ function construireMessageErreur(reponse, corps) {
 }
 
 async function appelerApi(url, options = {}) {
+  if (options.body && (options.method === 'POST' || options.method === 'PATCH' || options.method === 'PUT')) {
+    try {
+      const d = JSON.parse(options.body)
+      options = { ...options, body: JSON.stringify(enrichirAvecUtilisateur(d)) }
+    } catch { /* corps non-JSON */ }
+  }
   const reponse = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
@@ -154,19 +162,38 @@ const serviceCpsFemme = {
     return corps
   },
 
-  // Retourne les examens liés au dossier CPN associé à ce CPS
+  // Retourne les examens biologiques / échographies du dossier CPS Femme
   async listerExamens(dossierId) {
     const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`)
-    return Array.isArray(corps?.examens) ? corps.examens : []
+    return Array.isArray(corps) ? corps : (Array.isArray(corps?.examens) ? corps.examens : [])
   },
 
-  // Demande un nouvel examen pour ce dossier CPS
+  // Demande un nouvel examen pour ce dossier CPS Femme
   async demanderExamen(dossierId, donnees) {
     const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens`, {
       method: 'POST',
       body: JSON.stringify(donnees),
     })
     return corps?.examen ?? corps
+  },
+
+  // Enregistre un résultat ou interprétation pour un examen CPS Femme
+  async enregistrerResultat(dossierId, examenId, donnees) {
+    const corps = await appelerApi(`${URL_API}/cps-femme/${dossierId}/examens/${examenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(donnees),
+    })
+    return corps?.examen ?? corps
+  },
+
+  // Alias pour interprétation échographie
+  async entrerInterpretation(dossierId, examenId, donnees) {
+    return this.enregistrerResultat(dossierId, examenId, { interpretation: donnees.interpretation, statut: 'RESULTAT_RECU' })
+  },
+
+  // Supprimer un dossier CPS Femme (uniquement si aucune visite ni examen)
+  async supprimerDossier(dossierId) {
+    return appelerApi(`${URL_API}/cps-femme/${dossierId}`, { method: 'DELETE' })
   },
 }
 

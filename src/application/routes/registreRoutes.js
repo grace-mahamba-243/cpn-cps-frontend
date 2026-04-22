@@ -17,6 +17,7 @@ const routesPrivees = [
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
+    rolesExclus: ['MEDECIN', 'INFIRMIERE', 'SAGE_FEMME'],
   },
   {
     path: '/patients/nouveau',
@@ -69,6 +70,7 @@ const routesPrivees = [
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
+    rolesExclus: ['MEDECIN', 'INFIRMIERE', 'SAGE_FEMME'],
   },
   {
     path: '/enfants/nouveau',
@@ -121,6 +123,7 @@ const routesPrivees = [
     modePermissions: 'toutes',
     visibleMenu: true,
     visibleEntete: true,
+    rolesExclus: ['MEDECIN', 'INFIRMIERE', 'SAGE_FEMME'],
   },
   {
     path: '/rendez-vous/:rendezVousId',
@@ -160,6 +163,19 @@ const routesPrivees = [
     modePermissions: 'toutes',
     visibleMenu: false,
     visibleEntete: false,
+  },
+  {
+    path: '/file-attente',
+    label: 'File d\'attente',
+    abreviation: 'FA',
+    icone: 'queue',
+    section: 'Services',
+    fil: 'Services / File d\'attente',
+    titre: 'File d\'attente clinique',
+    permissions: [PERMISSIONS.CPN_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: true,
+    visibleEntete: true,
   },
   {
     path: '/cpn',
@@ -305,6 +321,19 @@ const routesPrivees = [
     visibleEntete: false,
   },
   {
+    path: '/accouchements',
+    label: 'Accouchements',
+    abreviation: 'ACC',
+    icone: 'baby_changing_station',
+    section: 'Services',
+    fil: 'Services / Accouchements',
+    titre: 'Liste des accouchements',
+    permissions: [PERMISSIONS.ACCOUCHEMENT_CONSULTER, PERMISSIONS.ACCOUCHEMENT_GERER],
+    modePermissions: 'une',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
     path: '/accouchements/nouveau',
     label: 'Accouchements',
     abreviation: 'NACC',
@@ -326,6 +355,19 @@ const routesPrivees = [
     fil: 'Services / Accouchements / Détail',
     titre: 'Détail accouchement',
     permissions: [PERMISSIONS.ACCOUCHEMENT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/accouchements/:accouchementId/modifier',
+    label: 'Accouchements',
+    abreviation: 'MACC',
+    icone: 'edit',
+    section: 'Services',
+    fil: 'Services / Accouchements / Modification',
+    titre: 'Modifier accouchement',
+    permissions: [PERMISSIONS.ACCOUCHEMENT_GERER],
     modePermissions: 'une',
     visibleMenu: false,
     visibleEntete: false,
@@ -448,6 +490,97 @@ const routesPrivees = [
     visibleEntete: false,
   },
   {
+    path: '/cps-enfant',
+    label: 'CPS Enfant',
+    abreviation: 'CPSE',
+    icone: 'child_care',
+    section: 'Services',
+    fil: 'Services / CPS Enfant',
+    titre: 'Suivi postnatal — CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: true,
+    visibleEntete: true,
+  },
+  {
+    path: '/cps-enfant/nouveau',
+    label: 'CPS Enfant',
+    abreviation: 'NCPSE',
+    icone: 'add_circle',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Ouverture',
+    titre: 'Ouvrir un dossier CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_GERER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cps-enfant/:dossierId',
+    label: 'CPS Enfant',
+    abreviation: 'DCPSE',
+    icone: 'description',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Dossier',
+    titre: 'Dossier CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cps-enfant/:dossierId/visites',
+    label: 'CPS Enfant',
+    abreviation: 'LVCPSE',
+    icone: 'calendar_month',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Dossier / Visites',
+    titre: 'Visites CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cps-enfant/:dossierId/visites/nouvelle',
+    label: 'CPS Enfant',
+    abreviation: 'NVCPSE',
+    icone: 'add_circle',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Dossier / Nouvelle visite',
+    titre: 'Nouvelle visite CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_GERER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cps-enfant/:dossierId/visites/:visiteId',
+    label: 'CPS Enfant',
+    abreviation: 'DVCPSE',
+    icone: 'description',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Dossier / Visite',
+    titre: 'Détail visite CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/cps-enfant/:dossierId/examens',
+    label: 'CPS Enfant',
+    abreviation: 'EXCPSE',
+    icone: 'biotech',
+    section: 'Services',
+    fil: 'Services / CPS Enfant / Dossier / Examens',
+    titre: 'Examens CPS Enfant',
+    permissions: [PERMISSIONS.CPS_ENFANT_CONSULTER],
+    modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
     path: '/laboratoire',
     label: 'Laboratoire',
     abreviation: 'LABO',
@@ -470,6 +603,71 @@ const routesPrivees = [
     titre: "Detail demande d'examen",
     permissions: [PERMISSIONS.LABORATOIRE_CONSULTER],
     modePermissions: 'une',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/dossier-enfant/:enfantId',
+    label: 'Enfants',
+    abreviation: 'DosEnf',
+    icone: 'child_care',
+    section: 'Principal',
+    fil: 'Reception / Dossier clinique enfant',
+    titre: 'Dossier clinique enfant',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/dossier-enfant/:enfantId/suivis/nouveau',
+    label: 'Enfants',
+    abreviation: 'NSuivi',
+    icone: 'monitor_heart',
+    section: 'Principal',
+    fil: 'Reception / Dossier clinique enfant / Nouveau suivi',
+    titre: 'Nouveau suivi clinique',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/dossier-enfant/:enfantId/vaccinations',
+    label: 'Enfants',
+    abreviation: 'Vacc',
+    icone: 'vaccines',
+    section: 'Principal',
+    fil: 'Reception / Dossier clinique enfant / Carnet vaccinal',
+    titre: 'Carnet vaccinal',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/dossier-enfant/:enfantId/vaccinations/nouvelle',
+    label: 'Enfants',
+    abreviation: 'NVacc',
+    icone: 'vaccines',
+    section: 'Principal',
+    fil: 'Reception / Dossier clinique enfant / Dose vaccinale',
+    titre: 'Enregistrer une dose vaccinale',
+    permissions: [],
+    modePermissions: 'toutes',
+    visibleMenu: false,
+    visibleEntete: false,
+  },
+  {
+    path: '/dossier-enfant/:enfantId/examens',
+    label: 'Enfants',
+    abreviation: 'ExEnf',
+    icone: 'biotech',
+    section: 'Principal',
+    fil: 'Reception / Dossier clinique enfant / Examens',
+    titre: 'Examens — dossier enfant',
+    permissions: [],
+    modePermissions: 'toutes',
     visibleMenu: false,
     visibleEntete: false,
   },
@@ -657,12 +855,19 @@ function estRouteAccessible(utilisateur, route) {
 }
 
 function filtrerRoutesAutorisees(utilisateur, { groupe, visibleMenuSeulement = false } = {}) {
+  const roleNormalisé = normaliserCodeRole(utilisateur?.roleCode ?? utilisateur?.role) ?? ''
+
   return routesPrivees.filter((route) => {
     if (groupe && route.groupe !== groupe) {
       return false
     }
 
     if (visibleMenuSeulement && !route.visibleMenu) {
+      return false
+    }
+
+    // Exclure du menu les routes marquées comme exclues pour ce rôle
+    if (visibleMenuSeulement && Array.isArray(route.rolesExclus) && route.rolesExclus.includes(roleNormalisé)) {
       return false
     }
 
@@ -693,14 +898,22 @@ function obtenirPremiereRouteAutorisee(utilisateur, options = {}) {
   return filtrerRoutesAutorisees(utilisateur, options)[0] ?? null
 }
 
-function obtenirCheminAccueilParProfil(utilisateur) {
-  const roleNormalise = normaliserCodeRole(utilisateur?.roleCode ?? utilisateur?.role) ?? ''
+function utilisateurDoitChangerMotDePasse(utilisateur) {
+  return utilisateur?.doitChangerMotDePasse === true
+}
 
-  if (roleNormalise === 'RECEPTION') {
-    return '/reception'
+function obtenirCheminAccueilParProfil(utilisateur) {
+  if (utilisateurDoitChangerMotDePasse(utilisateur)) {
+    return '/premiere-connexion'
   }
 
-  return '/reception'
+  const roleNormalise = normaliserCodeRole(utilisateur?.roleCode ?? utilisateur?.role) ?? ''
+
+  if (ROLES_ADMINISTRATEURS.includes(roleNormalise)) {
+    return '/admin/utilisateurs'
+  }
+
+  return '/laboratoire'
 }
 
 function obtenirCheminAccueil(utilisateur, { groupe, fallback = '/acces-refuse' } = {}) {
@@ -743,4 +956,5 @@ export {
   peutAccederAuChemin,
   routesAdministration,
   routesPrivees,
+  utilisateurDoitChangerMotDePasse,
 }

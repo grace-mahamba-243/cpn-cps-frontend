@@ -1,6 +1,7 @@
 // Ce composant permet d'ouvrir un dossier CPS Femme : recherche de la mere, détection automatique du dossier CPN associé, puis saisie de l'accouchement.
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { BandeauPatientImpression, ConteneurImpression, EnTeteImpression, PiedDePageImpression } from '../../../composants/partages/EnTeteImpression'
 import serviceCpsFemme from '../../../services/api/serviceCpsFemme'
 import serviceCpn from '../../../services/api/serviceCpn'
 
@@ -10,6 +11,7 @@ function PageOuvertureCpsFemme() {
   const navigate = useNavigate()
   const location = useLocation()
   const patientePreselectionnee = location.state?.patientePreselectionnee ?? null
+  const accouchementIdDepuisAccouchement = location.state?.accouchementId ?? null
 
   const [etape, setEtape] = useState(patientePreselectionnee ? 2 : 1)
   const [termeRecherche, setTermeRecherche] = useState('')
@@ -44,12 +46,31 @@ function PageOuvertureCpsFemme() {
   const [dossierCpnDetecte, setDossierCpnDetecte] = useState(null)
 
   // Si patiente pré-sélectionnée depuis le profil : vérifier si elle a un dossier OUVERT
+  // et charger le dernier dossier CPN pour pré-remplir les données maternelles
   useEffect(() => {
     if (!patientePreselectionnee) return
+
     serviceCpsFemme.dossierParPatienteId(patientePreselectionnee.id)
       .then((existant) => {
         if (existant && existant.statut === 'OUVERT') {
           navigate(`/cps-femme/${existant.id}`, { replace: true })
+        }
+      })
+      .catch(() => {})
+
+    // Charger le dernier dossier CPN (potentiellement clôturé) pour pré-remplir les données maternelles
+    serviceCpn.dossierParPatienteId(patientePreselectionnee.id)
+      .then((cpn) => {
+        if (cpn) {
+          setDossierCpnDetecte(cpn)
+          setFormulaire((f) => ({
+            ...f,
+            gestite: cpn.gestite != null ? cpn.gestite : f.gestite,
+            parite: cpn.parite != null ? cpn.parite : f.parite,
+            groupeSanguin: cpn.groupeSanguin ?? f.groupeSanguin,
+            rhesus: cpn.rhesus ?? f.rhesus,
+            vihStatut: cpn.vihStatut ?? f.vihStatut,
+          }))
         }
       })
       .catch(() => {})
@@ -125,6 +146,7 @@ function PageOuvertureCpsFemme() {
         patienteId: patienteSelectionnee.id,
         typeAccouchementEntree: formulaire.typeAccouchementEntree,
         dossierCpnId: formulaire.typeAccouchementEntree === 'INTERNE' && dossierCpnDetecte ? dossierCpnDetecte.id : undefined,
+        accouchementId: accouchementIdDepuisAccouchement || undefined,
         dateOuverture: formulaire.dateOuverture,
         dateAccouchement: formulaire.dateAccouchement,
         modeAccouchement: formulaire.modeAccouchement,
@@ -222,7 +244,8 @@ function PageOuvertureCpsFemme() {
 
   // ── Étape 2 : Formulaire d'ouverture ──
   return (
-    <form onSubmit={soumettre} className="flex flex-col gap-6 max-w-3xl mx-auto">
+  <>
+    <form onSubmit={soumettre} className="screen-only flex flex-col gap-6 max-w-3xl mx-auto">
       <button
         type="button"
         onClick={() => { setEtape(1); setPatienteSelectionnee(null) }}
@@ -289,7 +312,16 @@ function PageOuvertureCpsFemme() {
         </div>
       )}
 
-      {/* ── Section accouchement ── */}
+      {/* ── Section accouchement : masquée si déjà enregistré ── */}
+      {accouchementIdDepuisAccouchement ? (
+        <div className="rounded-2xl border border-secondary/20 bg-secondary/5 px-5 py-4 flex items-start gap-3">
+          <span className="material-symbols-outlined text-secondary mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <div>
+            <p className="text-sm font-bold text-secondary">Accouchement déjà enregistré</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Les informations de l'accouchement ont été enregistrées. Cette CPS est liée à cet accouchement.</p>
+          </div>
+        </div>
+      ) : (
       <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
         <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">Accouchement</h3>
 
@@ -340,8 +372,10 @@ function PageOuvertureCpsFemme() {
             className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none resize-none placeholder:text-on-surface-variant" />
         </div>
       </div>
+      )}
 
-      {/* ── Section nouveau-né ── */}
+      {/* ── Section nouveau-né : masquée si accouchement déjà enregistré ── */}
+      {!accouchementIdDepuisAccouchement && (
       <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
         <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">Nouveau-né</h3>
 
@@ -388,25 +422,40 @@ function PageOuvertureCpsFemme() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Section données maternelles ── */}
       <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-5">
-        <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">Données maternelles</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">Données maternelles</h3>
+          {accouchementIdDepuisAccouchement && dossierCpnDetecte && (
+            <span className="flex items-center gap-1 rounded-full bg-secondary/10 px-3 py-0.5 text-xs font-semibold text-secondary">
+              <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+              Pré-rempli depuis le CPN
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-on-surface-variant">Gestité</label>
-            <input type="number" min="0" value={formulaire.gestite} onChange={(e) => maj('gestite', e.target.value)}
-              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none" />
+            <input type="number" min="0" value={formulaire.gestite}
+              onChange={(e) => maj('gestite', e.target.value)}
+              disabled={!!(accouchementIdDepuisAccouchement && dossierCpnDetecte)}
+              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-on-surface-variant">Parité</label>
-            <input type="number" min="0" value={formulaire.parite} onChange={(e) => maj('parite', e.target.value)}
-              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none" />
+            <input type="number" min="0" value={formulaire.parite}
+              onChange={(e) => maj('parite', e.target.value)}
+              disabled={!!(accouchementIdDepuisAccouchement && dossierCpnDetecte)}
+              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none disabled:opacity-60 disabled:cursor-not-allowed" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-on-surface-variant">Groupe sanguin</label>
-            <select value={formulaire.groupeSanguin} onChange={(e) => maj('groupeSanguin', e.target.value)}
-              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none">
+            <select value={formulaire.groupeSanguin}
+              onChange={(e) => maj('groupeSanguin', e.target.value)}
+              disabled={!!(accouchementIdDepuisAccouchement && dossierCpnDetecte)}
+              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none disabled:opacity-60 disabled:cursor-not-allowed">
               <option value="">—</option>
               <option value="A">A</option>
               <option value="B">B</option>
@@ -416,8 +465,10 @@ function PageOuvertureCpsFemme() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-on-surface-variant">Rhésus</label>
-            <select value={formulaire.rhesus} onChange={(e) => maj('rhesus', e.target.value)}
-              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none">
+            <select value={formulaire.rhesus}
+              onChange={(e) => maj('rhesus', e.target.value)}
+              disabled={!!(accouchementIdDepuisAccouchement && dossierCpnDetecte)}
+              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none disabled:opacity-60 disabled:cursor-not-allowed">
               <option value="">—</option>
               <option value="+">Positif (+)</option>
               <option value="-">Négatif (−)</option>
@@ -425,8 +476,10 @@ function PageOuvertureCpsFemme() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-on-surface-variant">Statut VIH</label>
-            <select value={formulaire.vihStatut} onChange={(e) => maj('vihStatut', e.target.value)}
-              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none">
+            <select value={formulaire.vihStatut}
+              onChange={(e) => maj('vihStatut', e.target.value)}
+              disabled={!!(accouchementIdDepuisAccouchement && dossierCpnDetecte)}
+              className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none disabled:opacity-60 disabled:cursor-not-allowed">
               <option value="INCONNU">Inconnu</option>
               <option value="NEGATIF">Négatif</option>
               <option value="POSITIF">Positif</option>
@@ -434,10 +487,15 @@ function PageOuvertureCpsFemme() {
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-on-surface-variant">Notes</label>
-          <textarea rows={2} value={formulaire.notes} onChange={(e) => maj('notes', e.target.value)}
-            placeholder="Observations générales…"
-            className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none resize-none placeholder:text-on-surface-variant" />
+          <label className="text-xs font-medium text-on-surface-variant">
+            Notes <span className="text-primary">*</span>
+            {accouchementIdDepuisAccouchement && (
+              <span className="ml-2 text-on-surface-variant font-normal normal-case tracking-normal">— à compléter avant ouverture</span>
+            )}
+          </label>
+          <textarea rows={3} value={formulaire.notes} onChange={(e) => maj('notes', e.target.value)}
+            placeholder="Observations générales, état général de la mère à l'admission…"
+            className="rounded-xl bg-surface-container px-3 py-2 text-sm text-on-surface outline-none resize-none placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20" />
         </div>
       </div>
 
@@ -466,6 +524,64 @@ function PageOuvertureCpsFemme() {
         </button>
       </div>
     </form>
+
+    {/* ── Zone imprimable : ouverture dossier CPS Femme ── */}
+    <ConteneurImpression>
+      <EnTeteImpression
+        titre="Dossier CPS Femme — Ouverture"
+        badge="Consultation Postnatale (CPS Femme)"
+        date={new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+      />
+      <BandeauPatientImpression
+        nom={patienteSelectionnee?.nom ?? '—'}
+        infos={[
+          { label: 'Mode accouchement', valeur: formulaire.modeAccouchement },
+          { label: 'Date accouchement', valeur: formulaire.dateAccouchement ? new Date(formulaire.dateAccouchement).toLocaleDateString('fr-FR') : '—' },
+          { label: 'État mère à l\'entrée', valeur: formulaire.etatMereEntree },
+        ]}
+      />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div style={{ background: '#f0f7ff', borderRadius: 6, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#526070', textTransform: 'uppercase', marginBottom: 8 }}>Données maternelles</div>
+          {[
+            ['Gestité', formulaire.gestite || '—'],
+            ['Parité', formulaire.parite || '—'],
+            ['Groupe sanguin', formulaire.groupeSanguin || '—'],
+            ['Rhésus', formulaire.rhesus || '—'],
+            ['Statut VIH', formulaire.vihStatut || '—'],
+          ].map(([label, val]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '4px 0', fontSize: 11 }}>
+              <span style={{ color: '#526070' }}>{label}</span>
+              <span style={{ fontWeight: 600, color: '#191c1d' }}>{val}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ background: '#f0f7ff', borderRadius: 6, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#526070', textTransform: 'uppercase', marginBottom: 8 }}>Nouveau-né</div>
+          {[
+            ['État', formulaire.etatNouveauNe],
+            ['Sexe', formulaire.sexeNouveauNe || '—'],
+            ['Poids naissance', formulaire.poidsNaissanceG ? `${formulaire.poidsNaissanceG} g` : '—'],
+            ['Apgar 1\'', formulaire.scoreApgar1min || '—'],
+            ['Apgar 5\'', formulaire.scoreApgar5min || '—'],
+            ['Nombre', formulaire.nombreNouveauxNes],
+          ].map(([label, val]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '4px 0', fontSize: 11 }}>
+              <span style={{ color: '#526070' }}>{label}</span>
+              <span style={{ fontWeight: 600, color: '#191c1d' }}>{val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {formulaire.notes && (
+        <div style={{ marginBottom: 16, background: '#f9fafb', borderRadius: 6, padding: '10px 14px', fontSize: 11, color: '#374151' }}>
+          <div style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', color: '#526070', marginBottom: 4 }}>Notes</div>
+          <div style={{ whiteSpace: 'pre-wrap' }}>{formulaire.notes}</div>
+        </div>
+      )}
+      <PiedDePageImpression service="Service Maternité — CPS Femme" />
+    </ConteneurImpression>
+  </>
   )
 }
 

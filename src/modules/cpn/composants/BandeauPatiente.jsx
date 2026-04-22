@@ -1,7 +1,9 @@
 ﻿// Bandeau héro affichant l'identité de la patiente, ses badges et le prochain RDV.
+import { useNavigate } from 'react-router-dom'
 import { calculerAge, formaterDateFr } from './utilitairesCpn'
 
 function BandeauPatiente({ dossier }) {
+  const navigate = useNavigate()
   const p = dossier.patiente
   const age = p?.age ?? calculerAge(dossier.dateNaissancePatiente)
   const groupeRhesus = dossier.groupeSanguin ? `${dossier.groupeSanguin}${dossier.rhesus ?? ''}` : null
@@ -22,6 +24,16 @@ function BandeauPatiente({ dossier }) {
               {age !== null && <span className="rounded-full border border-white/15 bg-white/10 px-3 py-0.5 text-[11px] font-semibold">{age} ans</span>}
               {groupeRhesus && <span className="rounded-full border border-outline-variant/50-container/30 bg-tertiary-container/20 px-3 py-0.5 text-[11px] font-bold text-tertiary-container">{groupeRhesus}</span>}
               <span className={`rounded-full px-3 py-0.5 text-[11px] font-bold ${dossier.statut === 'OUVERT' ? 'bg-white/20' : 'bg-error-container/40 text-on-error'}`}>{dossier.statut}</span>
+              {p?.id && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/patients/${p.id}`)}
+                  className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-0.5 text-[11px] font-semibold transition hover:bg-white/20"
+                >
+                  <span className="material-symbols-outlined text-xs">open_in_new</span>
+                  Dossier mère
+                </button>
+              )}
             </div>
           </div>
         </div>

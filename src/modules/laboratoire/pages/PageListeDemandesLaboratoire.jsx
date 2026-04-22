@@ -16,6 +16,31 @@ const ONGLETS = [
   { id: 'historique', label: 'Historique', icone: 'history', statut: null },
 ]
 
+function normaliserTexte(valeur) {
+  return String(valeur ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function correspondRecherche(demande, recherche) {
+  const terme = normaliserTexte(recherche)
+  if (!terme) return true
+
+  const statut = ETIQUETTES_STATUT[demande.statut]?.libelle ?? demande.statut
+  const champs = [
+    demande.libelle,
+    demande.typeExamen,
+    demande.patiente?.nom,
+    demande.numeroDossierCpn,
+    demande.numeroContact,
+    statut,
+  ]
+
+  return champs.some((champ) => normaliserTexte(champ).includes(terme))
+}
+
 function BadgeStatut({ statut }) {
   const info = ETIQUETTES_STATUT[statut] ?? { libelle: statut, couleur: 'bg-surface-container text-on-surface' }
   return (
@@ -78,6 +103,7 @@ function PageListeDemandesLaboratoire() {
   const navigate = useNavigate()
   const [ongletActif, setOngletActif] = useState('attente')
   const [demandes, setDemandes] = useState([])
+  const [recherche, setRecherche] = useState('')
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState(null)
 
@@ -106,6 +132,8 @@ function PageListeDemandesLaboratoire() {
     setDemandes([])
   }
 
+  const demandesFiltrees = demandes.filter((demande) => correspondRecherche(demande, recherche))
+
   return (
     <>
     <div className="max-w-3xl mx-auto px-4 pt-20 pb-6 space-y-6">
@@ -129,6 +157,29 @@ function PageListeDemandesLaboratoire() {
           ))}
         </div>
 
+      <div className="relative">
+        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">
+          search
+        </span>
+        <input
+          type="text"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Rechercher un examen (nom, patiente, type, statut...)"
+          className="w-full rounded-2xl border border-outline-variant bg-surface-container-lowest py-3 pl-10 pr-10 text-sm text-on-surface outline-none transition-colors focus:border-primary"
+        />
+        {recherche && (
+          <button
+            type="button"
+            onClick={() => setRecherche('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-on-surface-variant hover:bg-surface-container"
+            aria-label="Effacer la recherche"
+          >
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        )}
+      </div>
+
       {/* Contenu */}
       {chargement && (
         <div className="flex items-center justify-center py-16 gap-3 text-on-surface-variant">
@@ -144,23 +195,29 @@ function PageListeDemandesLaboratoire() {
         </div>
       )}
 
-      {!chargement && !erreur && demandes.length === 0 && (
+      {!chargement && !erreur && demandesFiltrees.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-on-surface-variant">
           <span className="material-symbols-outlined text-5xl opacity-30">inbox</span>
           <p className="text-sm">
-            {ongletActif === 'attente' && 'Aucune demande en attente.'}
-            {ongletActif === 'cours' && 'Aucune demande en cours de traitement.'}
-            {ongletActif === 'historique' && 'Aucune demande dans l\'historique.'}
+            {recherche
+              ? 'Aucun examen ne correspond à votre recherche.'
+              : (
+                <>
+                  {ongletActif === 'attente' && 'Aucune demande en attente.'}
+                  {ongletActif === 'cours' && 'Aucune demande en cours de traitement.'}
+                  {ongletActif === 'historique' && 'Aucune demande dans l\'historique.'}
+                </>
+              )}
           </p>
         </div>
       )}
 
-      {!chargement && !erreur && demandes.length > 0 && (
+      {!chargement && !erreur && demandesFiltrees.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs text-on-surface-variant px-1">
-            {demandes.length} demande{demandes.length > 1 ? 's' : ''}
+            {demandesFiltrees.length} demande{demandesFiltrees.length > 1 ? 's' : ''}
           </p>
-          {demandes.map((demande) => (
+          {demandesFiltrees.map((demande) => (
             <CarteDemande
               key={demande.id}
               demande={demande}

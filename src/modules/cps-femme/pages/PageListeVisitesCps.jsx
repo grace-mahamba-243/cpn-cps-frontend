@@ -89,43 +89,6 @@ function PageListeVisitesCps() {
         )}
       </div>
 
-      {/* ── Indicateurs protocole 6h / 6j / 6s ── */}
-      <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">Protocole postnatal</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {VISITES_PROTOCOLE.map((type) => {
-            const config = LABELS_TYPE_VISITE[type]
-            const faite = visitesExistantes.has(type)
-            const visite = visites.find((v) => v.typeVisite === type)
-            return (
-              <button
-                key={type}
-                onClick={() => {
-                  if (visite) {
-                    navigate(`/cps-femme/${dossierId}/visites/${visite.id}`, { state: fromHistorique ? { fromHistorique: true } : undefined })
-                  } else if (!estClos && !fromHistorique) {
-                    navigate(`/cps-femme/${dossierId}/visites/nouvelle?type=${type}`)
-                  }
-                }}
-                className={`flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition-all ${faite ? 'hover:opacity-80 bg-primary/5 border border-primary/20' : estClos || fromHistorique ? 'bg-surface-container border border-outline-variant/20 opacity-50 cursor-default' : 'hover:bg-surface-container-low bg-surface-container border border-outline-variant/30'}`}
-              >
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${faite ? config.couleur : 'bg-surface-container-highest text-on-surface-variant'}`}>
-                  <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: faite ? "'FILL' 1" : "'FILL' 0" }}>
-                    {faite ? 'check_circle' : config.icone}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-on-surface">{config.label}</p>
-                  <p className="text-xs text-on-surface-variant">
-                    {faite ? visite.dateVisite : !estClos && !fromHistorique ? 'Cliquer pour planifier' : 'Non effectuée'}
-                  </p>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       {/* ── Liste complète des visites ── */}
       <div className="rounded-2xl bg-surface-container-lowest p-6 shadow-sm space-y-3">
         <h3 className="text-sm font-bold text-on-surface uppercase tracking-wide">
@@ -148,7 +111,7 @@ function PageListeVisitesCps() {
             )}
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-2 gap-2">
             {visites.map((v) => {
               const config = LABELS_TYPE_VISITE[v.typeVisite] ?? LABELS_TYPE_VISITE.SURPRISE
               return (

@@ -1,4 +1,6 @@
 // Ce service gere les appels API du module accouchements vers le backend NestJS.
+import { enrichirAvecUtilisateur } from './utilitairesApi'
+
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
 async function lireCorpsJson(reponse) {
@@ -30,6 +32,12 @@ function construireMessageErreur(reponse, corps) {
 }
 
 async function appelerApi(url, options = {}) {
+  if (options.body && (options.method === 'POST' || options.method === 'PATCH' || options.method === 'PUT')) {
+    try {
+      const d = JSON.parse(options.body)
+      options = { ...options, body: JSON.stringify(enrichirAvecUtilisateur(d)) }
+    } catch { /* corps non-JSON */ }
+  }
   const reponse = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
@@ -62,10 +70,30 @@ const serviceAccouchement = {
     return corps?.accouchement ?? null
   },
 
+  // Recupere le statut des dossiers CPS (femme et enfant) lies a un accouchement
+  async obtenirStatutCps(id) {
+    return appelerApi(`${URL_API}/accouchements/${id}/statut-cps`)
+  },
+
+  // Recupere les dossiers CPN ouverts d une patiente pour le lien accouchement
+  async listerDossiersCpnPatiente(patienteId) {
+    const corps = await appelerApi(`${URL_API}/cpn?patienteId=${encodeURIComponent(patienteId)}&statut=OUVERT`)
+    return Array.isArray(corps?.dossiers) ? corps.dossiers : []
+  },
+
   // Enregistre un nouvel accouchement
   async enregistrerAccouchement(donnees) {
     const corps = await appelerApi(`${URL_API}/accouchements`, {
       method: 'POST',
+      body: JSON.stringify(donnees),
+    })
+    return corps?.accouchement ?? null
+  },
+
+  // Modifie un accouchement existant
+  async modifierAccouchement(id, donnees) {
+    const corps = await appelerApi(`${URL_API}/accouchements/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(donnees),
     })
     return corps?.accouchement ?? null

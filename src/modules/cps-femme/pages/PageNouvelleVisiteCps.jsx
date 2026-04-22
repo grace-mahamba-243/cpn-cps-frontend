@@ -539,63 +539,6 @@ function PageNouvelleVisiteCps() {
 
           <div className="border-t border-outline-variant/30" />
 
-          {/* 5b — Examens à demander */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-xl">biotech</span>
-              <h4 className="font-bold text-on-surface">Examens à demander</h4>
-            </div>
-            {examensADemander.length > 0 && (
-              <div className="space-y-2">
-                {examensADemander.map((ex) => (
-                  <div key={ex.id} className="flex items-center gap-3 bg-surface-container-lowest rounded-xl px-4 py-3">
-                    <span className="material-symbols-outlined text-secondary text-base">science</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-on-surface text-sm">{ex.libelle}</p>
-                      <p className="text-xs text-on-surface-variant capitalize">{ex.type.toLowerCase()}</p>
-                    </div>
-                    <button type="button" onClick={() => supprimerExamen(ex.id)}
-                      className="text-error hover:bg-error-container rounded-full p-1 transition-colors">
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="bg-surface-container rounded-xl p-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input type="text" placeholder="Libellé de l'examen"
-                  className="bg-surface-container-lowest rounded-lg border-none px-3 py-2 text-sm text-on-surface sm:col-span-2"
-                  value={nouvelExamen.libelle}
-                  onChange={(e) => setNouvelExamen((ex) => ({ ...ex, libelle: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), ajouterExamen())} />
-                <select className="bg-surface-container-lowest rounded-lg border-none px-3 py-2 text-sm text-on-surface"
-                  value={nouvelExamen.type}
-                  onChange={(e) => setNouvelExamen((ex) => ({ ...ex, type: e.target.value }))}>
-                  <option value="BIOLOGIQUE">Biologique</option>
-                  <option value="ECHOGRAPHIE">Échographie</option>
-                  <option value="AUTRE">Autre</option>
-                </select>
-              </div>
-              <button type="button" onClick={ajouterExamen}
-                disabled={!nouvelExamen.libelle.trim() || examensADemander.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase())}
-                className="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary text-sm font-semibold rounded-full disabled:opacity-40 hover:opacity-90 transition-all">
-                <span className="material-symbols-outlined text-base">add</span>
-                {examensADemander.some((e) => e.libelle.trim().toLowerCase() === nouvelExamen.libelle.trim().toLowerCase())
-                  ? 'Cet examen existe déjà'
-                  : 'Ajouter cet examen'}
-              </button>
-            </div>
-            {examensADemander.length > 0 && (
-              <p className="text-xs text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">info</span>
-                {examensADemander.length} examen{examensADemander.length > 1 ? 's' : ''} sera enregistré{examensADemander.length > 1 ? 's' : ''} lors de l&apos;enregistrement.
-              </p>
-            )}
-          </div>
-
-          <div className="border-t border-outline-variant/30" />
-
           {/* 5c — Décision finale + RDV */}
           <div className="space-y-6">
             <div className="flex items-center gap-2">
