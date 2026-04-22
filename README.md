@@ -310,39 +310,7 @@ OPENAI_API_KEY=sk-...votre_cle_openai...
 
 
 
-## API REST — Endpoints
 
-Le backend expose ses routes sous le préfixe `/api`.
-
-### Authentification
-
-| Méthode | Endpoint | Description | Body |
-|---------|----------|-------------|------|
-| `POST` | `/api/auth/connexion` | Connexion | `{ identifiant, motDePasse }` |
-| `POST` | `/api/auth/deconnexion` | Déconnexion | `{ jetonSession }` |
-| `GET` | `/api/auth/profil/:identifiant` | Profil utilisateur | — |
-
-**Exemple de connexion :**
-
-```bash
-curl -X POST http://localhost:3000/api/auth/connexion \
-  -H "Content-Type: application/json" \
-  -d '{ "identifiant": "admin", "motDePasse": "Admin123!" }'
-```
-
-**Réponse (200 OK) :**
-```json
-{
-  "utilisateur": {
-    "id": "uuid-...",
-    "identifiant": "admin",
-    "nomAffichage": "Administrateur",
-    "role": { "code": "ADMIN", "libelle": "Administrateur" }
-  },
-  "jeton": "uuid-session-token",
-  "expireLe": "2026-04-21T10:30:00.000Z"
-}
-```
 
 ### Patientes
 
