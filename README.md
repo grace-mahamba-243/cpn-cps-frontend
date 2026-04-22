@@ -77,18 +77,17 @@ Dans les centres de santé de Goma (RDC), le suivi médical des grossesses et de
 
 ## Stack Technologique
 
-| Couche | Technologie | Version |
-|--------|------------|---------|
-| Frontend | React | 19.2.4 |
-| Bundler | Vite | 8.0.1 |
-| CSS | Tailwind CSS | 4.2.2 |
-| Routage frontend | React Router DOM | 7.14.0 |
-| Backend | NestJS | 11.0.1 |
-| Langage backend | TypeScript | 5.x |
-| ORM | TypeORM | 0.3.28 |
-| Base de données | MySQL | 8.x |
-| Validation | class-validator / class-transformer | 0.15 / 0.5 |
-| IA | OpenAI SDK | 6.34.0 |
+| Couche | Technologie |
+|--------|------------|
+| Frontend | React | 
+| Bundler | Vite |
+| CSS | Tailwind CSS | 
+| Routage frontend | React Router DOM | 
+| Backend | NestJS | 
+| Langage backend | TypeScript | 
+| ORM | TypeORM | 
+| Base de données | MySQL 
+| IA | OpenAI SDK | 
 
 ---
 
