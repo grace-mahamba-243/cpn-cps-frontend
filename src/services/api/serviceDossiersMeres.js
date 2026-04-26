@@ -1,5 +1,6 @@
 // Ce service centralise les appels HTTP vers le module patientes du backend.
 // Il expose les operations CRUD pour les dossiers administratifs des meres.
+import { enrichirAvecUtilisateur } from './utilitairesApi'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
@@ -77,7 +78,7 @@ const serviceDossiersMeres = {
       reponse = await fetch(`${URL_API}/patientes`, {
         method: 'POST',
         headers: construireEntetes(),
-        body: JSON.stringify(dossier),
+        body: JSON.stringify(enrichirAvecUtilisateur(dossier)),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')
@@ -95,7 +96,7 @@ const serviceDossiersMeres = {
       reponse = await fetch(`${URL_API}/patientes/${encodeURIComponent(mereId)}`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify(donnees),
+        body: JSON.stringify(enrichirAvecUtilisateur(donnees)),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')

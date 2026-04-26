@@ -78,14 +78,6 @@ export default function PageConnexion() {
         />
       </main>
 
-      <div className="fixed bottom-8 right-8 z-50">
-        <button className="group flex h-14 w-14 items-center justify-center rounded-full bg-tertiary text-on-tertiary shadow-xl transition-transform hover:scale-110 active:scale-95">
-          <span className="material-symbols-outlined">support_agent</span>
-          <span className="absolute right-full mr-4 whitespace-nowrap rounded-lg bg-on-surface px-3 py-1 text-xs text-surface opacity-0 transition-opacity group-hover:opacity-100">
-            Assistance Directe
-          </span>
-        </button>
-      </div>
     </>
   )
 }

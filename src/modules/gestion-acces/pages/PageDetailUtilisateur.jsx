@@ -5,6 +5,8 @@ import AvatarInitiales from '../../../composants/interface/AvatarInitiales'
 import { CATALOGUE_PERMISSIONS } from '../controle-acces'
 import serviceUtilisateurs from '../../../services/api/serviceUtilisateurs'
 
+const MOT_DE_PASSE_PAR_DEFAUT = '12345'
+
 const LIBELLE_NON_RENSEIGNE = 'Non renseigné'
 
 function extraireInitiales(nomAffichage = '') {
@@ -131,30 +133,6 @@ function PageDetailUtilisateur() {
     }))
   }, [etat.utilisateur])
 
-  const activitesRecentes = useMemo(() => {
-    if (!etat.utilisateur) {
-      return []
-    }
-
-    return [
-      {
-        accent: 'primaire',
-        moment: etat.utilisateur.dernierAccesAt ? 'Dernière connexion' : 'Journal vide',
-        texte: formaterDateHeure(etat.utilisateur.dernierAccesAt),
-      },
-      {
-        accent: etat.utilisateur.actif ? 'primaire' : 'erreur',
-        moment: 'Statut du compte',
-        texte: etat.utilisateur.actif ? 'Compte actif et autorisé à se connecter.' : 'Compte actuellement inactif.',
-      },
-      {
-        accent: 'secondaire',
-        moment: 'Rôle opérationnel',
-        texte: `${etat.utilisateur.role} affecté à ${etat.utilisateur.unite || LIBELLE_NON_RENSEIGNE}.`,
-      },
-    ]
-  }, [etat.utilisateur])
-
   const basculerStatutCompte = async () => {
     if (!etat.utilisateur) {
       return
@@ -235,6 +213,51 @@ function PageDetailUtilisateur() {
         titre: 'Suppression impossible',
         message: exception.message,
       })
+      setActionEnCours('')
+    }
+  }
+
+  const reinitialiserMotDePasse = async () => {
+    if (!etat.utilisateur) {
+      return
+    }
+
+    const confirmation = window.confirm(
+      `Voulez-vous réinitialiser le mot de passe de ${etat.utilisateur.nomAffichage} à ${MOT_DE_PASSE_PAR_DEFAUT} ? L'utilisateur devra le changer à sa prochaine connexion.`,
+    )
+
+    if (!confirmation) {
+      return
+    }
+
+    setActionEnCours('mot-de-passe')
+    setRetourAction({ type: '', titre: '', message: '' })
+
+    try {
+      const utilisateurMisAJour = await serviceUtilisateurs.modifierUtilisateur(etat.utilisateur.id, {
+        motDePasseInitial: MOT_DE_PASSE_PAR_DEFAUT,
+      })
+
+      setEtat((etatCourant) => ({
+        ...etatCourant,
+        utilisateur: {
+          ...etatCourant.utilisateur,
+          ...utilisateurMisAJour,
+          doitChangerMotDePasse: true,
+        },
+      }))
+      setRetourAction({
+        type: 'succes',
+        titre: 'Mot de passe réinitialisé',
+        message: `Le mot de passe de ${etat.utilisateur.nomAffichage} a été réinitialisé à ${MOT_DE_PASSE_PAR_DEFAUT}. L'utilisateur devra le changer lors de sa prochaine connexion.`,
+      })
+    } catch (exception) {
+      setRetourAction({
+        type: 'erreur',
+        titre: 'Réinitialisation impossible',
+        message: exception.message,
+      })
+    } finally {
       setActionEnCours('')
     }
   }
@@ -322,6 +345,17 @@ function PageDetailUtilisateur() {
           </button>
           <button
             type="button"
+            className="detail-utilisateur__action-tonale"
+            onClick={() => {
+              void reinitialiserMotDePasse()
+            }}
+            disabled={actionEnCours === 'mot-de-passe' || etat.source === 'local'}
+          >
+            <span className="material-symbols-outlined">lock_reset</span>
+            {actionEnCours === 'mot-de-passe' ? 'Initialisation...' : 'Initialiser le mot de passe'}
+          </button>
+          <button
+            type="button"
             className="detail-utilisateur__action-primaire"
             onClick={() => navigate(`/admin/utilisateurs/${utilisateur.id}/modifier`)}
           >
@@ -399,61 +433,8 @@ function PageDetailUtilisateur() {
             </div>
           </section>
 
-          <section className="detail-utilisateur__carte">
-            <div className="detail-utilisateur__carte-entete">
-              <div className="detail-utilisateur__icone-bloc detail-utilisateur__icone-bloc--secondaire">
-                <span className="material-symbols-outlined">key</span>
-              </div>
-              <h3>Permissions et accès</h3>
-            </div>
-
-            <div className="detail-utilisateur__permissions">
-              {permissionsAffichees.map((permission) => (
-                <div
-                  key={permission.code}
-                  className={
-                    permission.estAutorisee
-                      ? 'detail-utilisateur__permission'
-                      : 'detail-utilisateur__permission detail-utilisateur__permission--inactive'
-                  }
-                >
-                  <div>
-                    <span className="material-symbols-outlined">admin_panel_settings</span>
-                    <span>{permission.libelle}</span>
-                  </div>
-
-                  <span className="material-symbols-outlined">
-                    {permission.estAutorisee ? 'check_circle' : 'cancel'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
-        <aside className="detail-utilisateur__colonne-secondaire">
-          <section className="detail-utilisateur__carte detail-utilisateur__carte--tonal">
-            <h3>Activités Récentes</h3>
-
-            <div className="detail-utilisateur__timeline">
-              {activitesRecentes.map((activite) => (
-                <div key={`${activite.moment}-${activite.texte}`} className="detail-utilisateur__timeline-item">
-                  <span
-                    className={
-                      activite.accent === 'erreur'
-                        ? 'detail-utilisateur__timeline-point detail-utilisateur__timeline-point--erreur'
-                        : 'detail-utilisateur__timeline-point'
-                    }
-                  />
-                  <div>
-                    <p>{activite.moment}</p>
-                    <strong>{activite.texte}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </aside>
       </div>
     </div>
   )

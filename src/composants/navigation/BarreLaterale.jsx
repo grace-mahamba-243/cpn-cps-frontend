@@ -6,15 +6,14 @@ import { normaliserCodeRole, PERMISSIONS } from '../../modules/gestion-acces/con
 
 const LIENS_SIDEBAR_RECEPTION = [
   { path: '/reception', label: 'Tableau de bord', icone: 'dashboard', cheminsActifs: ['/reception'] },
-  { path: '/patients', label: 'Meres', icone: 'person', cheminsActifs: ['/patients'] },
+  { path: '/patients', label: 'Mères', icone: 'person', cheminsActifs: ['/patients'] },
   { path: '/enfants', label: 'Enfants', icone: 'child_care', cheminsActifs: ['/enfants'] },
   { path: '/rendez-vous', label: 'Rendez-vous', icone: 'calendar_today', cheminsActifs: ['/rendez-vous'] },
 ]
 
 const LIENS_SIDEBAR_ADMIN = [
-  { path: '/patients', label: 'Meres', icone: 'person', cheminsActifs: ['/patients'] },
-  { path: '/enfants', label: 'Enfants', icone: 'child_care', cheminsActifs: ['/enfants'] },
-  { path: '/admin/utilisateurs', label: 'Utilisateur', icone: 'group', cheminsActifs: ['/admin/utilisateurs'] },
+  { path: '/admin/utilisateurs', label: 'Utilisateurs', icone: 'group', cheminsActifs: ['/admin/utilisateurs'] },
+  { path: '/admin/journal', label: 'Journal des activités', icone: 'history', cheminsActifs: ['/admin/journal'] },
 ]
 
 function extraireInitiales(nomAffichage = '') {
@@ -26,8 +25,162 @@ function extraireInitiales(nomAffichage = '') {
     .join('')
 }
 
-// Ce composant affiche la navigation laterale de l'espace prive, les raccourcis principaux
-// et l'action de deconnexion pour la session en cours.
+// Rendu partagé pour tous les profils avec un design unifié et moderne.
+function RenduBarreLaterale({ liens, labelNav, utilisateurConnecte, deconnexion, pathname, sections }) {
+  return (
+    <aside className="barre-laterale" style={{ background: '#fff', borderRight: '1px solid #e8f0f3' }}>
+      <div className="flex h-full flex-col overflow-hidden">
+
+        {/* En-tête marque */}
+        <div className="shrink-0 px-6 pt-8 pb-6">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
+              style={{ background: 'linear-gradient(135deg, #006784 0%, #005a74 100%)' }}
+            >
+              <span
+                className="material-symbols-outlined text-lg text-white"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                local_hospital
+              </span>
+            </div>
+            <div>
+              <h1 className="text-base font-bold leading-tight text-slate-900">Afia Himbi</h1>
+              <p className="text-[0.625rem] font-semibold uppercase tracking-widest" style={{ color: '#006784' }}>
+                Gestion Médicale
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Séparateur */}
+        <div className="mx-6 mb-4 h-px bg-slate-100" />
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3" aria-label={labelNav}>
+          {liens ? (
+            <div className="space-y-0.5">
+              {liens.map((lien) => {
+                const estActif = (lien.cheminsActifs ?? [lien.path]).some((chemin) =>
+                  pathname.startsWith(chemin)
+                )
+                return (
+                  <NavLink
+                    key={`${lien.path}-${lien.label}`}
+                    to={lien.path}
+                    end
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all"
+                    style={
+                      estActif
+                        ? { background: '#f0f9fc', color: '#006784' }
+                        : { color: '#64748b' }
+                    }
+                  >
+                    <span
+                    className="material-symbols-outlined text-xl shrink-0"
+                      style={estActif ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                    >
+                      {lien.icone}
+                    </span>
+                    <span className={`text-sm ${estActif ? 'font-semibold' : 'font-medium'}`}>
+                      {lien.label}
+                    </span>
+                    {estActif && (
+                      <span
+                        className="ml-auto h-1.5 w-1.5 rounded-full shrink-0"
+                        style={{ background: '#006784' }}
+                      />
+                    )}
+                  </NavLink>
+                )
+              })}
+            </div>
+          ) : (
+            sections?.map(({ section, items }) => (
+              <div key={section} className="mb-4">
+                <p className="mb-1 px-3 text-[0.625rem] font-bold uppercase tracking-widest text-slate-400">
+                  {section}
+                </p>
+                <div className="space-y-0.5">
+                  {items.map((lien) => (
+                    <NavLink
+                      key={lien.path}
+                      to={lien.path}
+                      end={lien.path === '/reception'}
+                      style={({ isActive }) =>
+                        isActive
+                          ? { background: '#f0f9fc', color: '#006784' }
+                          : { color: '#64748b' }
+                      }
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all"
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <span
+                            className="material-symbols-outlined text-xl shrink-0"
+                            style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                          >
+                            {lien.icone ?? 'apps'}
+                          </span>
+                          <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                            {lien.label}
+                          </span>
+                          {isActive && (
+                            <span
+                              className="ml-auto h-1.5 w-1.5 rounded-full shrink-0"
+                              style={{ background: '#006784' }}
+                            />
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </nav>
+
+        {/* Bas : déconnexion + profil */}
+        <div className="shrink-0 px-3 pb-5 pt-2">
+          <div className="mx-3 mb-3 h-px bg-slate-100" />
+
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-red-500 transition-colors hover:bg-red-50"
+            onClick={() => deconnexion()}
+          >
+            <span className="material-symbols-outlined text-xl">logout</span>
+            <span className="text-sm font-medium">Déconnexion</span>
+          </button>
+
+          <div
+            className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{ background: '#f8fafc' }}
+          >
+            <AvatarInitiales
+              initiales={extraireInitiales(utilisateurConnecte?.nomAffichage ?? 'UC')}
+              taille="moyen"
+              variant="secondaire"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {utilisateurConnecte?.nomAffichage ?? 'Utilisateur'}
+              </p>
+              <p className="truncate text-xs font-medium text-slate-400">
+                {utilisateurConnecte?.role ?? 'Profil'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+// Ce composant affiche la navigation latérale de l'espace privé, les raccourcis principaux
+// et l'action de déconnexion pour la session en cours.
 function BarreLaterale() {
   const { pathname } = useLocation()
   const { deconnexion, utilisateurConnecte } = useAuthentification()
@@ -44,200 +197,24 @@ function BarreLaterale() {
   const estProfilReception =
     roleNormalise === 'RECEPTION' ||
     roleNormalise.includes('RECEPTION') ||
-    roleNormalise.includes('ACCUEIL') ||
-    aPermissionReception
+    roleNormalise.includes('ACCUEIL')
   const estProfilAdmin =
     roleNormalise === 'SUPER_ADMIN' ||
     roleNormalise === 'ADMIN' ||
     roleNormalise.includes('ADMIN') ||
     aPermissionAdministration
 
+  const props = { utilisateurConnecte, deconnexion, pathname }
+
   if (estProfilAdmin) {
-    return (
-      <aside className="barre-laterale border-r border-slate-100 bg-white">
-        <div className="flex h-full flex-col px-6 py-10">
-          <div className="mb-12 px-2">
-            <h1 className="text-[22px] font-bold leading-tight text-slate-900">Afia Himbi</h1>
-            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">GESTION MEDICALE</p>
-          </div>
-
-          <nav className="flex-1 space-y-2" aria-label="Navigation administration">
-            {LIENS_SIDEBAR_ADMIN.map((lien) => {
-              const estActif = (lien.cheminsActifs ?? [lien.path]).some((chemin) => pathname.startsWith(chemin))
-
-              return (
-                <NavLink
-                  key={`${lien.path}-${lien.label}`}
-                  to={lien.path}
-                  end
-                  className={
-                    estActif
-                      ? 'flex items-center gap-4 rounded-xl bg-primary/5 px-4 py-3.5 font-bold text-primary transition-all'
-                      : 'flex items-center gap-4 rounded-xl px-4 py-3.5 text-slate-500 transition-all hover:bg-slate-50'
-                  }
-                >
-                  <span
-                    className="material-symbols-outlined text-[22px]"
-                    style={estActif ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                  >
-                    {lien.icone}
-                  </span>
-                  <span className="text-[15px]">{lien.label}</span>
-                </NavLink>
-              )
-            })}
-          </nav>
-
-          <div className="mt-auto space-y-4">
-            <button
-              type="button"
-              className="flex w-full items-center gap-4 rounded-xl px-4 py-3 font-semibold text-red-600 transition-colors hover:bg-red-50"
-              onClick={() => deconnexion()}
-            >
-              <span className="material-symbols-outlined text-[22px]">logout</span>
-              <span className="text-[15px]">Deconnexion</span>
-            </button>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100/50 bg-slate-50 p-3">
-              <AvatarInitiales
-                initiales={extraireInitiales(utilisateurConnecte?.nomAffichage ?? 'UC')}
-                taille="moyen"
-                variant="secondaire"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-bold text-slate-900">
-                  {utilisateurConnecte?.nomAffichage ?? 'Utilisateur'}
-                </p>
-                <p className="truncate text-[11px] text-slate-500">{utilisateurConnecte?.role ?? 'Administrateur'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
-    )
+    return <RenduBarreLaterale {...props} liens={LIENS_SIDEBAR_ADMIN} labelNav="Navigation administration" />
   }
 
   if (estProfilReception) {
-    return (
-      <aside className="barre-laterale border-r border-slate-100 bg-white">
-        <div className="flex h-full flex-col px-6 py-10">
-          <div className="mb-12 px-2">
-            <h1 className="text-[22px] font-bold leading-tight text-slate-900">Afia Himbi</h1>
-            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">GESTION MEDICALE</p>
-          </div>
-
-          <nav className="flex-1 space-y-2" aria-label="Navigation reception">
-            {LIENS_SIDEBAR_RECEPTION.map((lien) => {
-              const estActif = (lien.cheminsActifs ?? [lien.path]).some((chemin) => pathname.startsWith(chemin))
-
-              return (
-                <NavLink
-                  key={`${lien.path}-${lien.label}`}
-                  to={lien.path}
-                  end
-                  className={
-                    estActif
-                      ? 'flex items-center gap-4 rounded-xl bg-primary/5 px-4 py-3.5 font-bold text-primary transition-all'
-                      : 'flex items-center gap-4 rounded-xl px-4 py-3.5 text-slate-500 transition-all hover:bg-slate-50'
-                  }
-                >
-                  <span
-                    className="material-symbols-outlined text-[22px]"
-                    style={estActif ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                  >
-                    {lien.icone}
-                  </span>
-                  <span className="text-[15px]">{lien.label}</span>
-                </NavLink>
-              )
-            })}
-          </nav>
-
-          <div className="mt-auto space-y-4">
-            <button
-              type="button"
-              className="flex w-full items-center gap-4 rounded-xl px-4 py-3 font-semibold text-red-600 transition-colors hover:bg-red-50"
-              onClick={() => deconnexion()}
-            >
-              <span className="material-symbols-outlined text-[22px]">logout</span>
-              <span className="text-[15px]">Deconnexion</span>
-            </button>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100/50 bg-slate-50 p-3">
-              <AvatarInitiales
-                initiales={extraireInitiales(utilisateurConnecte?.nomAffichage ?? 'UC')}
-                taille="moyen"
-                variant="secondaire"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-bold text-slate-900">
-                  {utilisateurConnecte?.nomAffichage ?? 'Utilisateur'}
-                </p>
-                <p className="truncate text-[11px] text-slate-500">{utilisateurConnecte?.role ?? 'Receptionniste'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
-    )
+    return <RenduBarreLaterale {...props} liens={LIENS_SIDEBAR_RECEPTION} labelNav="Navigation réception" />
   }
 
-  return (
-    <aside className="barre-laterale">
-      <div className="barre-laterale__bloc">
-        <div className="barre-laterale__entete-marque">
-          <h1 className="barre-laterale__marque-principale">Afia Himbi</h1>
-          <p className="barre-laterale__marque">Gestion Medicale</p>
-        </div>
-
-        <nav className="barre-laterale__navigation" aria-label="Navigation principale">
-          {sectionsNavigation.map(({ section, items }) => (
-            <div key={section} className="barre-laterale__section">
-              <p className="barre-laterale__section-titre">{section}</p>
-
-              {items.map((lien) => (
-                <NavLink
-                  key={lien.path}
-                  to={lien.path}
-                  end={lien.path === '/reception'}
-                  className={({ isActive }) =>
-                    isActive ? 'barre-laterale__lien barre-laterale__lien--actif' : 'barre-laterale__lien'
-                  }
-                >
-                  <span className="material-symbols-outlined barre-laterale__icone" aria-hidden="true">
-                    {lien.icone ?? 'apps'}
-                  </span>
-                  <span>{lien.label}</span>
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </nav>
-      </div>
-
-      <div className="barre-laterale__bas">
-        <button type="button" className="barre-laterale__deconnexion" onClick={() => deconnexion()}>
-          <span className="material-symbols-outlined barre-laterale__icone-deconnexion" aria-hidden="true">
-            logout
-          </span>
-          Deconnexion
-        </button>
-
-        <div className="barre-laterale__profil-courant">
-          <AvatarInitiales
-            initiales={extraireInitiales(utilisateurConnecte?.nomAffichage ?? 'UC')}
-            taille="moyen"
-            variant="secondaire"
-          />
-
-          <div className="barre-laterale__profil-texte">
-            <p className="barre-laterale__titre">{utilisateurConnecte?.nomAffichage ?? 'Utilisateur'}</p>
-            <p className="barre-laterale__role">{utilisateurConnecte?.role ?? 'Profil en cours'}</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
+  return <RenduBarreLaterale {...props} sections={sectionsNavigation} labelNav="Navigation principale" />
 }
 
 export default BarreLaterale

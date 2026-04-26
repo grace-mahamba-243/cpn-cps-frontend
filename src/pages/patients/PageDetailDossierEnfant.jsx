@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersEnfants from '../../services/api/serviceDossiersEnfants'
+import serviceRendezVous from '../../services/api/serviceRendezVous'
 
 function formaterDate(dateIso) {
   if (!dateIso) {
@@ -19,17 +20,19 @@ function formaterDate(dateIso) {
   }
 }
 
-function LigneInfo({ label, valeur }) {
+function ChampLecture({ label, valeur, principal }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-surface-container-lowest px-4 py-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-on-surface">{valeur || 'Non renseigné'}</p>
+    <div className="flex flex-col">
+      <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
+      <div className={`w-[90%] rounded-lg px-3 py-3 text-sm font-semibold bg-surface-container ${principal ? 'text-primary' : 'text-on-surface'}`}>
+        {valeur || <span className="font-normal italic text-on-surface-variant/60">Non renseigné</span>}
+      </div>
     </div>
   )
 }
 
-// Ce composant affiche uniquement le dossier administratif d'un enfant pour la réception.
-// Il exclut volontairement tout contenu clinique lié au suivi, à la nutrition ou à la vaccination.
+// Ce composant affiche le dossier administratif d'un enfant pour la réception.
+// Il inclut un rapport d'impression professionnel (section print-only).
 function PageDetailDossierEnfant() {
   const navigate = useNavigate()
   const { enfantId } = useParams()
@@ -37,6 +40,7 @@ function PageDetailDossierEnfant() {
     chargement: true,
     dossier: null,
   })
+  const [historiqueRdv, setHistoriqueRdv] = useState([])
 
   useEffect(() => {
     let estActif = true
@@ -52,6 +56,12 @@ function PageDetailDossierEnfant() {
         chargement: false,
         dossier,
       })
+
+      if (dossier?.numeroFiche) {
+        serviceRendezVous.recupererHistoriqueParDossier(dossier.numeroFiche)
+          .then(setHistoriqueRdv)
+          .catch(() => {})
+      }
     }
 
     void chargerDossier()
@@ -63,7 +73,7 @@ function PageDetailDossierEnfant() {
 
   if (etat.chargement) {
     return (
-      <div className="mx-auto max-w-7xl px-8 pb-16 pt-24">
+      <div className="mx-auto max-w-7xl px-8 pb-16 pt-2">
         <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-10 text-on-surface-variant shadow-sm">
           <span className="material-symbols-outlined">hourglass_top</span>
           <p>Chargement du dossier administratif enfant...</p>
@@ -74,7 +84,7 @@ function PageDetailDossierEnfant() {
 
   if (!etat.dossier) {
     return (
-      <div className="mx-auto max-w-7xl space-y-6 px-8 pb-16 pt-24">
+      <div className="mx-auto max-w-7xl space-y-6 px-8 pb-16 pt-2">
         <Alerte type="erreur" titre="Dossier introuvable">
           Le dossier administratif enfant demandé est introuvable ou n est plus disponible.
         </Alerte>
@@ -93,14 +103,16 @@ function PageDetailDossierEnfant() {
 
   const dossier = etat.dossier
   const nomComplet = [dossier.nom, dossier.postnom, dossier.prenom].filter(Boolean).join(' ')
+  const dateAujourdhui = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-24">
+    <>
+    <div className="screen-only mx-auto max-w-7xl space-y-8 px-8 pb-16 pt-2">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <button
             type="button"
-            className="mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface"
+            className="no-print mb-4 inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-4 py-2 text-sm font-semibold text-on-surface"
             onClick={() => navigate('/enfants')}
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -111,47 +123,228 @@ function PageDetailDossierEnfant() {
           <p className="mt-2 text-on-surface-variant">{nomComplet}</p>
         </div>
 
-        <div className="rounded-2xl bg-primary px-5 py-4 text-on-primary shadow-lg shadow-primary/20">
-          <p className="text-xs uppercase tracking-[0.16em] text-on-primary/80">Numéro fiche</p>
-          <p className="mt-1 text-lg font-black">{dossier.numeroFiche}</p>
+        <div className="no-print flex items-center gap-3">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-5 py-2.5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+            onClick={() => window.print()}
+          >
+            <span className="material-symbols-outlined text-base">print</span>
+            Imprimer
+          </button>
+          <div className="rounded-2xl bg-primary px-5 py-4 text-on-primary shadow-lg shadow-primary/20">
+            <p className="text-xs uppercase tracking-[0.16em] text-on-primary/80">Numéro fiche</p>
+            <p className="mt-1 text-lg font-black">{dossier.numeroFiche}</p>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Cette page expose seulement les informations administratives de l enfant. Aucun accès clinique vers suivi enfant, nutrition ou vaccination n est présent.
-        </p>
-      </div>
-
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Identité</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LigneInfo label="Nom" valeur={dossier.nom} />
-          <LigneInfo label="Postnom" valeur={dossier.postnom} />
-          <LigneInfo label="Prénom" valeur={dossier.prenom} />
-          <LigneInfo label="Sexe" valeur={dossier.sexe} />
-          <LigneInfo label="Date de naissance" valeur={formaterDate(dossier.dateNaissance)} />
-          <LigneInfo label="Date d enregistrement" valeur={formaterDate(dossier.dateEnregistrement)} />
+      <section className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">child_care</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Identité</h4>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+          <ChampLecture label="Nom" valeur={dossier.nom} />
+          <ChampLecture label="Postnom" valeur={dossier.postnom} />
+          <ChampLecture label="Prénom" valeur={dossier.prenom} />
+          <ChampLecture label="Sexe" valeur={dossier.sexe} />
+          <ChampLecture label="Date de naissance" valeur={formaterDate(dossier.dateNaissance)} />
+          <ChampLecture label="Date d'enregistrement" valeur={formaterDate(dossier.dateEnregistrement)} />
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Responsables</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LigneInfo label="Nom de la mère" valeur={dossier.nomMere} />
-          <LigneInfo label="Nom du père" valeur={dossier.nomPere} />
-          <LigneInfo label="Téléphone" valeur={dossier.telephone} />
+      <section className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">group</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Responsables</h4>
+        </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-3">
+          <ChampLecture label="Nom de la mère" valeur={dossier.nomMere} />
+          <ChampLecture label="Nom du père" valeur={dossier.nomPere} />
+          <ChampLecture label="Téléphone" valeur={dossier.telephone} />
         </div>
       </section>
 
-      <section className="space-y-4 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-        <h2 className="text-xl font-black text-on-surface">Coordonnées</h2>
-        <div className="grid grid-cols-1 gap-4">
-          <LigneInfo label="Adresse" valeur={dossier.adresse} />
+      <section className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">location_on</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Coordonnées</h4>
         </div>
+        <ChampLecture label="Adresse" valeur={dossier.adresse} />
+      </section>
+
+      <section className="w-[70%] mx-auto rounded-xl border-l-4 border-outline-variant/40 bg-surface-container-lowest p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary">calendar_month</span>
+          <h4 className="text-lg font-bold tracking-tight text-on-surface">Historique des rendez-vous</h4>
+        </div>
+        {historiqueRdv.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">Aucun rendez-vous enregistré pour ce dossier.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-outline-variant/20 text-left">
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Date</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Heure</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Service</th>
+                  <th className="pb-3 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Statut</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Motif</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {historiqueRdv.map((rdv) => (
+                  <tr
+                    key={rdv.id}
+                    className="cursor-pointer transition-colors hover:bg-surface-container-low/30"
+                    onClick={() => navigate(`/rendez-vous/${rdv.id}`)}
+                  >
+                    <td className="py-3 pr-6 text-on-surface-variant">{rdv.date ? new Intl.DateTimeFormat('fr-FR').format(new Date(rdv.date)) : ''}</td>
+                    <td className="py-3 pr-6 font-bold text-primary">{rdv.heure ?? ''}</td>
+                    <td className="py-3 pr-6 text-on-surface-variant">{rdv.service ?? ''}</td>
+                    <td className="py-3 pr-6">
+                      <span className="rounded-full bg-surface-container px-2.5 py-1 text-xs font-semibold text-on-surface">{rdv.statut ?? ''}</span>
+                    </td>
+                    <td className="py-3 text-on-surface-variant">{rdv.motif ?? ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
+
+    {/* ============================================================
+        RAPPORT D'IMPRESSION  masqué à l'écran, visible uniquement à l'impression
+        ============================================================ */}
+    <div className="print-only" style={{ fontFamily: 'Inter, sans-serif', background: 'white', color: '#191c1d', padding: '0', position: 'relative', overflow: 'hidden' }}>
+
+      {/* En-tête du document */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ width: '56px', height: '56px', background: '#005eb8', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+            <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '32px' }}>child_care</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: '18px', fontWeight: 900, color: '#00478d', margin: 0, letterSpacing: '-0.5px' }}>Centre de Santé Afia Himbi</h1>
+            <p style={{ color: '#424752', fontWeight: 600, fontSize: '12px', margin: '2px 0' }}>Unité de Soins Pédiatriques et Postnatals</p>
+            <p style={{ color: '#424752', fontSize: '11px', margin: '4px 0 0 0', lineHeight: '1.5' }}>
+              Goma, Nord-Kivu, République Démocratique du Congo<br />
+              +243 000 000 000
+            </p>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <span style={{ display: 'inline-block', padding: '3px 10px', background: '#d5e4f7', color: '#526070', fontSize: '9px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '99px', marginBottom: '6px' }}>Dossier Enfant Officiel</span>
+          <p style={{ color: '#424752', fontSize: '11px', margin: '2px 0' }}>N° Fiche : <strong style={{ color: '#191c1d' }}>{dossier.numeroFiche}</strong></p>
+          <p style={{ color: '#424752', fontSize: '11px', margin: '2px 0' }}>Date : <strong style={{ color: '#191c1d' }}>{dateAujourdhui}</strong></p>
+        </div>
+      </div>
+
+      {/* Identification de l'enfant */}
+      <div style={{ background: '#f3f4f5', borderRadius: '8px', padding: '24px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+        <div>
+          <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700, margin: '0 0 4px 0' }}>Nom de l'enfant</p>
+          <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#00478d', margin: 0, fontFamily: 'Manrope, sans-serif' }}>{nomComplet || 'Non renseigné'}</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', borderLeft: '1px solid #c2c6d4', paddingLeft: '24px' }}>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Date de naissance</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{formaterDate(dossier.dateNaissance)}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Sexe</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{dossier.sexe || ''}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Téléphone</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{dossier.telephone || ''}</p>
+          </div>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Enregistrement</p>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{formaterDate(dossier.dateEnregistrement)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Responsables + Coordonnées */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+        <div>
+          <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Responsables</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Nom de la mère</p>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{dossier.nomMere || ''}</p>
+            </div>
+            <div>
+              <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Nom du père</p>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{dossier.nomPere || ''}</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Coordonnées</h3>
+          <div>
+            <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 3px 0' }}>Adresse</p>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#191c1d', margin: 0 }}>{dossier.adresse || ''}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Historique des rendez-vous */}
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: '#191c1d', fontSize: '13px', borderBottom: '1px solid #e1e3e4', paddingBottom: '6px', marginBottom: '12px' }}>Historique des rendez-vous</h3>
+        {historiqueRdv.length === 0 ? (
+          <p style={{ color: '#424752', fontSize: '12px', fontStyle: 'italic' }}>Aucun rendez-vous enregistré pour ce dossier.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <thead>
+              <tr style={{ background: '#f3f4f5' }}>
+                {['Date', 'Heure', 'Service', 'Statut', 'Motif'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#424752', borderBottom: '2px solid #e1e3e4' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {historiqueRdv.map((rdv, i) => (
+                <tr key={rdv.id} style={{ background: i % 2 === 0 ? 'white' : '#f8f9fa', borderBottom: '1px solid #e1e3e4' }}>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{rdv.date ? new Intl.DateTimeFormat('fr-FR').format(new Date(rdv.date)) : ''}</td>
+                  <td style={{ padding: '6px 10px', color: '#00478d', fontWeight: 700 }}>{rdv.heure ?? ''}</td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{rdv.service ?? ''}</td>
+                  <td style={{ padding: '6px 10px' }}><span style={{ padding: '2px 8px', background: '#d5e4f7', color: '#526070', fontSize: '9px', fontWeight: 700, borderRadius: '99px' }}>{rdv.statut ?? ''}</span></td>
+                  <td style={{ padding: '6px 10px', color: '#424752' }}>{rdv.motif ?? ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pied de page */}
+      <div style={{ borderTop: '1px solid #e1e3e4', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <p style={{ color: '#424752', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: '0 0 8px 0' }}>Signature autorisée</p>
+          <div style={{ height: '48px', width: '200px', background: '#f3f4f5', borderRadius: '4px', borderBottom: '2px solid rgba(0,71,141,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '6px' }}>
+            <span style={{ fontFamily: 'Manrope, sans-serif', color: 'rgba(0,71,141,0.6)', fontSize: '18px', fontStyle: 'italic' }}>Centre Afia Himbi</span>
+          </div>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#191c1d', margin: '0' }}>Centre de Santé Afia Himbi</p>
+          <p style={{ fontSize: '10px', color: '#424752', margin: '0' }}>Service Pédiatrie  Goma, RDC</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginBottom: '4px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00478d', display: 'inline-block' }}></span>
+            <p style={{ fontSize: '9px', color: '#424752', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, margin: 0 }}>Document officiel vérifié</p>
+          </div>
+          <p style={{ fontSize: '10px', color: '#424752', margin: '0' }}>Page 1 sur 1</p>
+        </div>
+      </div>
+
+      {/* Bande décorative en bas */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(to right, #00478d, #005eb8, #526070)' }} />
+    </div>
+    </>
   )
 }
 

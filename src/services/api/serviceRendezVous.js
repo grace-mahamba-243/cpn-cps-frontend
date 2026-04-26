@@ -1,6 +1,7 @@
 // Ce service centralise les appels HTTP vers le module rendez-vous du backend.
 // Il normalise les donnees entre le format backend (champs snake_case, statuts UPPERCASE)
 // et le format attendu par les composants frontend (champs French, statuts capitalized).
+import { enrichirAvecUtilisateur } from './utilitairesApi'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api').replace(/\/$/, '')
 
@@ -34,6 +35,7 @@ function construireMessageErreur(reponse, corps) {
   if (typeof corps?.message === 'string') return corps.message
   if (Array.isArray(corps?.message) && corps.message.length > 0) return corps.message[0]
   if (reponse.status === 404) return 'Rendez-vous introuvable.'
+  if (reponse.status === 409) return corps?.message ?? 'Ce patient a deja un rendez-vous ce jour.'
   if (reponse.status >= 500) return 'Le serveur est indisponible pour le moment.'
   return 'Une erreur inattendue est survenue.'
 }
@@ -47,7 +49,6 @@ const STATUT_VERS_FRONTEND = {
   TERMINE: 'Termine',
   ANNULE: 'Annule',
   REPROGRAMME: 'Reprogramme',
-  SURPRISE: 'Surprise',
 }
 
 // Mappage statut frontend → backend
@@ -57,7 +58,6 @@ const STATUT_VERS_BACKEND = {
   Termine: 'TERMINE',
   Annule: 'ANNULE',
   Reprogramme: 'REPROGRAMME',
-  Surprise: 'SURPRISE',
 }
 
 // Derive les initiales (ex: "Kavira Masika Marie" → "KM")
@@ -82,7 +82,6 @@ function normaliserDepuisApi(entite) {
     initialesPatient: entite.initialesPatient ?? deriveInitiales(entite.nomPatient),
     numeroDossier: entite.refDossier ?? '',
     service: entite.serviceDestination ?? '',
-    typeRendezVous: entite.typeRdv === 'SURPRISE' ? 'Surprise' : 'Consultation',
     statut: statutFrontend,
     motif: entite.motif,
     observations: entite.observations ?? null,
@@ -95,11 +94,6 @@ function normaliserDepuisApi(entite) {
 
 // Normalise une creation/mise a jour frontend vers le DTO backend attendu.
 function normaliserVersApi(donnees) {
-  const typeRdv =
-    donnees.typeRendezVous === 'Surprise' || (donnees.typeRendezVous ?? '').includes('Urgence')
-      ? 'SURPRISE'
-      : 'PROGRAMME'
-
   const statut = STATUT_VERS_BACKEND[donnees.statut] ?? 'EN_ATTENTE'
 
   return {
@@ -107,7 +101,7 @@ function normaliserVersApi(donnees) {
     heureRdv: donnees.heure,
     motif: donnees.motif,
     statut,
-    typeRdv,
+    typeRdv: 'PROGRAMME',
     nomPatient: donnees.nomPatient,
     initialesPatient: donnees.initialesPatient ?? deriveInitiales(donnees.nomPatient),
     typePatient: donnees.typePatient ?? null,
@@ -129,6 +123,7 @@ const serviceRendezVousApi = {
     if (filtres.statut) params.set('statut', STATUT_VERS_BACKEND[filtres.statut] ?? filtres.statut)
     if (filtres.typeRdv) params.set('typeRdv', filtres.typeRdv)
     if (filtres.serviceDestination) params.set('serviceDestination', filtres.serviceDestination)
+    if (filtres.refDossier) params.set('refDossier', filtres.refDossier)
     if (filtres.recherche) params.set('recherche', filtres.recherche)
 
     const suffixe = params.toString() ? `?${params.toString()}` : ''
@@ -170,7 +165,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous`, {
         method: 'POST',
         headers: construireEntetes(),
-        body: JSON.stringify(normaliserVersApi(donnees)),
+        body: JSON.stringify(enrichirAvecUtilisateur(normaliserVersApi(donnees))),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')
@@ -188,7 +183,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/statut`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ statut: 'ARRIVE' }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ statut: 'ARRIVE' })),
       })
     } catch {
       throw new Error('Impossible de joindre le serveur.')
@@ -216,7 +211,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/statut`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ statut: statutBackend }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ statut: statutBackend })),
       })
     } catch {
       throw new Error('Impossible de mettre a jour le statut.')
@@ -234,7 +229,7 @@ const serviceRendezVousApi = {
       reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(id)}/reprogrammer`, {
         method: 'PATCH',
         headers: construireEntetes(),
-        body: JSON.stringify({ dateRdv: date, heureRdv: heure }),
+        body: JSON.stringify(enrichirAvecUtilisateur({ dateRdv: date, heureRdv: heure })),
       })
     } catch {
       throw new Error('Impossible de reprogrammer le rendez-vous.')
@@ -244,7 +239,55 @@ const serviceRendezVousApi = {
     if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
     return normaliserDepuisApi(corps)
   },
+
+  // Cherche les rendez-vous d un dossier pour aujourd hui (statuts non termines/annules).
+  // Utilise pour verifier si un patient a un RDV avant d enregistrer son arrivee.
+  async chercherRdvDuJourParDossier(refDossier) {
+    const date = new Date().toISOString().slice(0, 10)
+    return this.lister({ refDossier, date })
+  },
+
+  // Retourne l historique complet des rendez-vous d un dossier (tri date desc).
+  async recupererHistoriqueParDossier(refDossier) {
+    if (!refDossier) return []
+    const liste = await this.lister({ refDossier })
+    return liste.sort((a, b) => {
+      const dateA = a.date + (a.heure ?? '00:00')
+      const dateB = b.date + (b.heure ?? '00:00')
+      return dateB.localeCompare(dateA)
+    })
+  },
+
+  // Retourne les RDV programmes dans le futur (date > aujourd hui) actifs (pas annule/termine/arrive).
+  // Utilise pour detecter si un patient a un RDV futur avant d enregistrer son arrivee.
+  async chercherRdvFuturActifParDossier(refDossier) {
+    if (!refDossier) return []
+    const today = new Date().toISOString().slice(0, 10)
+    const liste = await this.lister({ refDossier })
+    return liste
+      .filter((rdv) => {
+        const s = (rdv.statut ?? '').toLowerCase()
+        return rdv.date > today && s !== 'annule' && s !== 'termine' && s !== 'arrive'
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+  },
+
+  // Annule un RDV programme et cree une arrivee pour aujourd hui (appel atomique backend).
+  async remplacerParArrivee(ancienRdvId) {
+    let reponse
+    try {
+      reponse = await fetch(`${URL_API}/rendez-vous/${encodeURIComponent(ancienRdvId)}/remplacer-par-arrivee`, {
+        method: 'POST',
+        headers: construireEntetes(),
+      })
+    } catch {
+      throw new Error('Impossible de joindre le serveur.')
+    }
+
+    const corps = await lireCorpsJson(reponse)
+    if (!reponse.ok) throw new Error(construireMessageErreur(reponse, corps))
+    return normaliserDepuisApi(corps)
+  },
 }
 
 export default serviceRendezVousApi
-

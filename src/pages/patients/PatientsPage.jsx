@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Alerte from '../../composants/interface/Alerte'
 import serviceDossiersMeres from '../../services/api/serviceDossiersMeres'
@@ -104,7 +104,7 @@ function PatientsPage() {
   const nouveauxDossiers = etat.meres.length
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-8 pb-16 pt-24">
+    <div className="mx-auto max-w-7xl space-y-10 px-8 pb-16 pt-2">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-on-surface">Dossiers des Mères</h1>
@@ -128,13 +128,6 @@ function PatientsPage() {
           {messageSucces}
         </Alerte>
       ) : null}
-
-      <div className="rounded-3xl border border-tertiary/15 bg-tertiary/5 px-5 py-4 text-sm text-on-surface-variant">
-        <p className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-base text-tertiary">shield_locked</span>
-          Cette page est strictement administrative. Aucune donnée clinique n est affichée ni accessible depuis cette liste.
-        </p>
-      </div>
 
       {/* Champ de recherche rapide supprimé à la demande */}
 
@@ -162,7 +155,6 @@ function PatientsPage() {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Nom complet</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Âge</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Téléphone</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Adresse</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Enregistrement</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Action</th>
                   </tr>
@@ -182,7 +174,6 @@ function PatientsPage() {
                       <td className="px-6 py-6 font-bold text-on-surface">{construireNomComplet(mere)}</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.age} ans</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.telephone}</td>
-                      <td className="px-6 py-6 text-on-surface-variant">{mere.adresse}</td>
                       <td className="px-6 py-6 text-on-surface-variant">{mere.dateEnregistrement}</td>
                       <td className="px-6 py-6">
                         <button
@@ -242,22 +233,6 @@ function PatientsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="relative overflow-hidden rounded-xl bg-primary p-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-dim opacity-100" />
-          <div className="relative z-10">
-            <span className="material-symbols-outlined mb-4 block text-primary-container">group_add</span>
-            <div className="text-3xl font-extrabold text-on-primary">{nouveauxDossiers}</div>
-            <div className="text-sm uppercase tracking-widest text-on-primary/80">Nouveaux dossiers</div>
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-secondary-container p-6">
-          <span className="material-symbols-outlined mb-4 block text-secondary">event_note</span>
-          <div className="text-3xl font-extrabold text-on-secondary-container">{totalDossiers}</div>
-          <div className="text-sm uppercase tracking-widest text-on-secondary-container/80">Total dossiers actifs</div>
-        </div>
-      </div>
     </div>
   )
 }

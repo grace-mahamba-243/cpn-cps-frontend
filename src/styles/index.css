@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+html {
+  font-size: 78%;
+}
+
+/* Maintenir la taille originale de la barre latérale malgré le zoom global */
+.barre-laterale {
+  font-size: 87.5%; /* 87.5% × 80% = 70% — conserve l'échelle d'origine */
+}
+
 @theme {
   --color-surface-container-high: #e5e9eb;
   --color-surface-container-lowest: #ffffff;
@@ -91,6 +100,20 @@
 
 * {
   box-sizing: border-box;
+  box-shadow: none !important;
+}
+
+/* Suppression des bordures colorées (border-l-4, border-primary, etc.) */
+[class*="border-l-"],
+[class*="border-r-"],
+[class*="border-t-"],
+[class*="border-b-"],
+[class*="border-primary"],
+[class*="border-secondary"],
+[class*="border-tertiary"],
+[class*="border-error"],
+[class*="border-outline"] {
+  border-color: transparent !important;
 }
 
 html,
@@ -103,7 +126,7 @@ body {
   margin: 0;
   color: #2d3335;
   background: transparent;
-  zoom: 80%;
+  zoom: 100%;
 }
 
 button,
@@ -164,9 +187,8 @@ p {
 .barre-laterale {
   position: sticky;
   top: 0;
-  align-self: stretch;
-  height: 100%;
-  min-height: 100dvh;
+  align-self: start;
+  height: 100dvh;
   width: 13.75rem;
   display: flex;
   flex-direction: column;
@@ -175,7 +197,7 @@ p {
   padding: 0;
   background: #f8fafc;
   border-right: none;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 50;
 }
 
@@ -187,6 +209,8 @@ p {
 
 .barre-laterale__bloc {
   padding: 1rem 1rem 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .barre-laterale__bas {
@@ -394,7 +418,7 @@ p {
 
 .entete-application__recherche-champ {
   width: 100%;
-  border: none;
+  border: 1px solid #dfeaee;
   border-radius: 999px;
   padding: 0.78rem 1rem 0.78rem 2.6rem;
   background: rgba(241, 245, 249, 0.75);
@@ -699,7 +723,7 @@ p {
 .champ-recherche__controle {
   width: 100%;
   padding: 0.95rem 1rem 0.95rem 3rem;
-  border: 1px solid rgba(173, 179, 181, 0.25);
+  border: 1px solid #dfeaee;
   border-radius: 1rem;
   background: #ffffff;
 }
@@ -1349,7 +1373,7 @@ p {
 .utilisateurs-admin__filtres-champs select {
   min-width: 12rem;
   padding: 0.95rem 1rem;
-  border: 1px solid rgba(173, 179, 181, 0.2);
+  border: 1px solid #dfeaee;
   border-radius: 0.9rem;
   background: #ffffff;
   color: var(--couleur-texte-secondaire);
@@ -1543,7 +1567,11 @@ p {
   justify-content: space-between;
   gap: 1.5rem;
   padding: 2rem;
-  border-left: 0.35rem solid var(--couleur-primaire);
+  border-left: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.page-detail-utilisateur .alerte {
+  border-left-color: rgba(226, 232, 240, 0.92);
 }
 
 .detail-utilisateur__hero-identite,
@@ -3078,7 +3106,7 @@ p {
   .reception__recherche-champ {
     width: 100%;
     padding: 0.95rem 1.25rem 0.95rem 3rem;
-    border: 1px solid rgba(173, 179, 181, 0.25);
+    border: 1px solid #dfeaee;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.94);
     color: #2d3335;
@@ -3269,4 +3297,60 @@ p {
 .cpn-champ > textarea:focus {
   border-color: #006784;
   box-shadow: 0 0 0 2px rgba(0, 103, 132, 0.18);
+}
+
+
+/* ============================================================
+   STYLES D'IMPRESSION — Dossier administratif mère
+   ============================================================ */
+
+/* Cacher la section print-only en mode écran */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  /* Masquer tout sauf le rapport imprimable */
+  .screen-only,
+  .barre-laterale,
+  .entete-application,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Annuler le layout principal */
+  .layout-prive {
+    display: block !important;
+  }
+  .layout-prive__contenu {
+    min-height: auto !important;
+    margin-left: 0 !important;
+  }
+  .layout-prive__principal {
+    padding: 0 !important;
+  }
+  .pt-24 {
+    padding-top: 0 !important;
+  }
+
+  /* Afficher le rapport imprimable */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Fond blanc */
+  body, html, #root {
+    background: white !important;
+  }
+
+  /* Format de page A4 — margin:0 supprime l'URL/date du navigateur dans les marges */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Padding interne pour compenser le margin:0 */
+  .print-only {
+    padding: 12mm 14mm !important;
+  }
 }
